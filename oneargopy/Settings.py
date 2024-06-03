@@ -15,7 +15,6 @@
 # 
 #
 # Imports
-from typing import List
 import os
 
 
@@ -24,14 +23,14 @@ class DownloadSettings():
         needed in to create directories to store downloaded data from 
         GDAC, when to log downloads, and when to update downloaded data.
 
-        :param: base_dir : str -The base directory that all sub directories should be created at.
-        :param: sub_dirs : List -A list of folders to that will store downloaded data.
-        :param: verbose : bool -A boolean value that determines weather to log verbosely or not.
-        :param: update : int -An integer value that determines the threshold for updating downloaded files.
+        :param: base_dir : str - The base directory that all sub directories should be created at.
+        :param: sub_dirs : list - A list of folders to that will store downloaded data.
+        :param: verbose : bool - A boolean value that determines weather to log verbosely or not.
+        :param: update : int - An integer value that determines the threshold for updating downloaded files.
     """
     def __init__(self, 
                  base_dir: str = None, 
-                 sub_dirs: List = None,
+                 sub_dirs: list = None,
                  verbose: bool = True,
                  update: int = 3600) -> None:
         self.base_dir = base_dir if base_dir is not None else os.path.dirname(os.path.realpath(__file__))
@@ -63,7 +62,7 @@ class AnalysisSettings():
 
         :param: temp_thresh : int -
         :param: dens_thresh : int -
-        :param: interp_lonlat : bool -A boolean value determining weather or not to interpolate missing latitude and longitude values
+        :param: interp_lonlat : bool - A boolean value determining weather or not to interpolate missing latitude and longitude values
     """
     def __init__(self,
                  temp_thresh: float = 0.2,
@@ -101,9 +100,9 @@ class PlotSettings():
 class SourceSettings():
     """ The SourceSettings class is used to store information about where we are collecting the Argo Float data from.
 
-        :param: hosts : The US and French GDAC URLs. IFREMER is often faster than GODAE so it is listed first.
-        :param: avail_vars : List -The full set of available variables
-        :param: dacs : List -List of Data Assimilation Centers
+        :param: hosts : list - The US and French GDAC URLs. IFREMER is often faster than GODAE so it is listed first.
+        :param: avail_vars : list - The full set of available variables
+        :param: dacs : list - list of Data Assimilation Centers
     """
     def __init__(self) -> None:
         self.hosts =  ["https://data-argo.ifremer.fr/", 
