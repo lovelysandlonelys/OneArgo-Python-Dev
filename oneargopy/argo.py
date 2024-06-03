@@ -20,26 +20,26 @@ from Settings import DownloadSettings, SourceSettings
 from pathlib import Path
 import requests
 import time
+import datetime
 
 class argo():
     """ The argo class which contains functions for downloading and handling argo float data. 
     """
+
+    def __init__(self): 
+        self.download_settings = DownloadSettings()
+        self.source_settings = SourceSettings()
 
 
     def initialize(self) -> None:
         """ The initialize function downloads the index files form GDAC and stores them in
             the proper directories defined in the DewnloadSettings class. 
         """
-        # Instantiating DownloadSettings and SourceSettings
-        # classes to use default settings of both.
-        download_settings = DownloadSettings()
-        source_settings = SourceSettings()
-
         # Check for and create subdirectories if needed
-        print(f'Your current download settings are: {download_settings}')
+        print(f'Your current download settings are: {self.download_settings}')
         print(f'Checking for and creating necessary subdirectories...')
-        for directory in download_settings.sub_dirs:
-            directory_path = download_settings.base_dir.joinpath(directory)
+        for directory in self.download_settings.sub_dirs:
+            directory_path = self.download_settings.base_dir.joinpath(directory)
             if directory_path.exists():
                 print(f'The {directory_path} directory already exists!')
             else:
@@ -47,13 +47,10 @@ class argo():
                 directory_path.mkdir()
 
         # Download files from GDAC to Index directory
-        index_directory = download_settings.base_dir.joinpath("Index")
+        index_directory = self.download_settings.base_dir.joinpath("Index")
         if index_directory: 
-            for file in download_settings.index_files:
-                # Check if the file we want to download is already at our savepoint
-                    # If the file is already there check if we need to update it or not
-                # If the file does not exist or we want to update the file then: 
-                self.download_file(file, index_directory, source_settings.hosts)
+            for file in self.download_settings.index_files:
+                self.download_file(file, index_directory, self.source_settings.hosts)
         else: 
             print(f'The Index directory does not exist, we need the index directory to save the index files to.')
 
@@ -65,15 +62,32 @@ class argo():
             # his any of that still relevant? 
 
     
-    def download_file(self, filename: str, savepoint: Path, hosts: list) -> None:
+    def download_file(self, file_name: str, save_point: Path) -> None:
         """ A function to download and save a file from GDAC sources. 
 
             :param: filename : str - The name of the file we are downloading.
             :param: savepoint : Path - The directory that we are saving the file to.
             :param: hosts : list - A list of URLs to the GDAC sources. 
         """
-        for host in hosts: 
-            response = self.try_download("".join([host, filename]))
+        # Check if the file we want to download is already at our savepoint
+        file_path = save_point.joinpath(file_name)
+        if file_path.exists():
+            # Check if the file needs to be updated
+            if (self.download_settings.update > 0): 
+                last_modified_time = Path(file_path).stat().st_mtime
+                current_time = datetime.now().timestamp()
+                seconds_since_modified = current_time - last_modified_time
+                if (seconds_since_modified > self.download_settings.update):
+                    # Download and replace file
+                
+
+        # If the file isn't there OR it needs to be updated then 
+            # if connection failed try both sources number of times that the general settins says
+                # First try primary host
+                
+                # Try secondary host
+            # if the file never got downloaded then issue a warning if an old file exists locally
+            # if it doesn't exist locally then raise an exception
 
 
     # Rewrite to be iterative rather than recursive because we don't want to be stuck
