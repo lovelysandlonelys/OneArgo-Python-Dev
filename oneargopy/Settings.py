@@ -21,12 +21,13 @@ import os
 class DownloadSettings():
     """ The DownloadSettings class is used to store all of the information
         needed in to create directories to store downloaded data from 
-        GDAC, when to log downloads, and when to update downloaded data.
+        the Global Data Assembly Center (GDAC), when to log downloads, and 
+        when to update downloaded data.
 
         :param: base_dir : str - The base directory that all sub directories should be created at.
         :param: sub_dirs : list - A list of folders to that will store downloaded data.
         :param: verbose : bool - A boolean value that determines weather to log verbosely or not.
-        :param: update : int - An integer value that determines the threshold for updating downloaded files.
+        :param: update : int - An integer value that determines the threshold for updating downloaded files (0: do not update; >0: maximum number of seconds since an index file was downloaded before downloading it again for new profile selection).
     """
     def __init__(self, 
                  base_dir: str = None, 
@@ -34,7 +35,7 @@ class DownloadSettings():
                  verbose: bool = True,
                  update: int = 3600) -> None:
         self.base_dir = base_dir if base_dir is not None else os.path.dirname(os.path.realpath(__file__))
-        self.sub_dirs = sub_dirs if sub_dirs is not None else ["/Index/", "/Meta/", "/Tech/", "/Traj/"]
+        self.sub_dirs = sub_dirs if sub_dirs is not None else ["/Index", "/Meta", "/Tech", "/Traj", "/Profiles"]
         self.verbose = verbose
         self.update = update
 
@@ -60,8 +61,8 @@ class AnalysisSettings():
     """ The AnalysisSettings class is used to store all of the default settings for analyzing
         data from the argo floats.
 
-        :param: temp_thresh : int -
-        :param: dens_thresh : int -
+        :param: temp_thresh : float - The temperature threshold for mixed layer depth calculations measured in degrees Celsius. 
+        :param: dens_thresh : float - The density threshold for mixed layer depth calculations measured in kg/m^3.
         :param: interp_lonlat : bool - A boolean value determining weather or not to interpolate missing latitude and longitude values
     """
     def __init__(self,
@@ -74,7 +75,7 @@ class AnalysisSettings():
 
 
     def __str__(self) -> str:
-        return f'\n[Analysis Settings] -> Temp Thresh: {self.temp_thresh}, Dense Thresh: {self.dens_thresh}, Interpolate Latitude and Longitude: {self.interp_lonlat}'
+        return f'\n[Analysis Settings] -> Temperature Threshold: {self.temp_thresh}, Density Threshold: {self.dens_thresh}, Interpolate Latitude and Longitude: {self.interp_lonlat}'
     
 
     def __repr__(self) -> str:
