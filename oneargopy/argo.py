@@ -19,6 +19,7 @@ from Settings import DownloadSettings, SourceSettings
 # System
 from pathlib import Path
 import requests
+import time
 
 class argo():
     """ The argo class which contains functions for downloading and handling argo float data. 
@@ -71,7 +72,21 @@ class argo():
             :param: savepoint : Path - The directory that we are saving the file to.
             :param: hosts : list - A list of URLs to the GDAC sources. 
         """
-        
-        
+        response = try_download()
+
+
+    def try_download(url: str):
+        """ A recursive function to return a request from a URL in the case of there
+            being a connection error. Function taken from GO-BGC Python tutorial and 
+            slightly altered.
+
+            :param: url : str - The URL to download the file.
+        """
+        try:
+            return requests.get(url,stream=True,auth=None,verify=False)
+        except requests.exceptions.ConnectionError as error_tag:
+            print('Error connecting:',error_tag)
+            time.sleep(1)
+            return try_download(url)
         
 
