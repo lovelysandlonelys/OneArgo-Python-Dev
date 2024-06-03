@@ -26,7 +26,7 @@ class argo():
     """
 
 
-    def initialize() -> None:
+    def initialize(self) -> None:
         """ The initialize function downloads the index files form GDAC and stores them in
             the proper directories defined in the DewnloadSettings class. 
         """
@@ -53,7 +53,7 @@ class argo():
                 # Check if the file we want to download is already at our savepoint
                     # If the file is already there check if we need to update it or not
                 # If the file does not exist or we want to update the file then: 
-                download_file(file, index_directory, source_settings.hosts)
+                self.download_file(file, index_directory, source_settings.hosts)
         else: 
             print(f'The Index directory does not exist, we need the index directory to save the index files to.')
 
@@ -65,17 +65,20 @@ class argo():
             # his any of that still relevant? 
 
     
-    def download_file(filename: str, savepoint: Path, hosts: list) -> None:
+    def download_file(self, filename: str, savepoint: Path, hosts: list) -> None:
         """ A function to download and save a file from GDAC sources. 
 
             :param: filename : str - The name of the file we are downloading.
             :param: savepoint : Path - The directory that we are saving the file to.
             :param: hosts : list - A list of URLs to the GDAC sources. 
         """
-        response = try_download()
+        for host in hosts: 
+            response = self.try_download("".join([host, filename]))
 
 
-    def try_download(url: str):
+    # Rewrite to be iterative rather than recursive because we don't want to be stuck
+    # trying one of the hosts FOREVER when we have two sources to look at. 
+    def try_download(self, url: str):
         """ A recursive function to return a request from a URL in the case of there
             being a connection error. Function taken from GO-BGC Python tutorial and 
             slightly altered.
@@ -87,6 +90,6 @@ class argo():
         except requests.exceptions.ConnectionError as error_tag:
             print('Error connecting:',error_tag)
             time.sleep(1)
-            return try_download(url)
+            return self.try_download(url)
         
 
