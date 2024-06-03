@@ -90,14 +90,6 @@ class AnalysisSettings():
         else: return False
 
 
-class PlotSettings():
-    """ The PlotSettings class is used to store settings for plotting data. 
-
-        NOTE: holding out on filling out, I want to cross reference the python versions that have been made to see if we still need
-        a lot of these values. 
-    """
-    pass
-
 class SourceSettings():
     """ The SourceSettings class is used to store information about where we are collecting the Argo Float data from.
 

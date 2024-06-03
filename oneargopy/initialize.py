@@ -14,6 +14,7 @@
 #Imports
 
 # Check for and create subdirectories if needed
+    # Show current download settings. 
 
 # Download files from GDAC to Index directory
     # Sprof
