@@ -18,13 +18,14 @@ from Settings import DownloadSettings, SourceSettings
 
 # System
 from pathlib import Path
+import requests
 
 class argo():
     """ The argo class which contains functions for downloading and handling argo float data. 
     """
 
 
-    def initialize():
+    def initialize() -> None:
         """ The initialize function downloads the index files form GDAC and stores them in
             the proper directories defined in the DewnloadSettings class. 
         """
@@ -45,11 +46,15 @@ class argo():
                 directory_path.mkdir()
 
         # Download files from GDAC to Index directory
-            # Sprof
-            # Prof
-            # Meta
-            # Tech
-            # Traj
+        index_directory = download_settings.base_dir.joinpath("Index")
+        if index_directory: 
+            for file in download_settings.index_files:
+                # Check if the file we want to download is already at our savepoint
+                    # If the file is already there check if we need to update it or not
+                # If the file does not exist or we want to update the file then: 
+                download_file(file, index_directory, source_settings.hosts)
+        else: 
+            print(f'The Index directory does not exist, we need the index directory to save the index files to.')
 
         # Fill in avail_vars variable in the SourceSettings class
         # Fill in dacs variable in the SourceSettings class
@@ -57,4 +62,16 @@ class argo():
         # Extract Unique floats from both data frames
             # There is some post processing that they do on unique floats in the initalize_argo.m
             # his any of that still relevant? 
-        pass
+
+    
+    def download_file(filename: str, savepoint: Path, hosts: list) -> None:
+        """ A function to download and save a file from GDAC sources. 
+
+            :param: filename : str - The name of the file we are downloading.
+            :param: savepoint : Path - The directory that we are saving the file to.
+            :param: hosts : list - A list of URLs to the GDAC sources. 
+        """
+        
+        
+        
+
