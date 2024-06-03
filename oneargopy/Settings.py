@@ -108,9 +108,7 @@ class SourceSettings():
     def __init__(self) -> None:
         self.hosts =  ["https://data-argo.ifremer.fr/", 
                        "https://usgodae.org/ftp/outgoing/argo/"]
-
         self.avail_vars =  None
-
         self.dacs =  None
 
 
@@ -119,7 +117,7 @@ class SourceSettings():
     
 
     def __repr__(self) -> str:
-        return f'\nSourceSettings({self.hosts}, {self.avail_vars}, {self.verbose}, {self.dacs})'
+        return f'\nSourceSettings()'
     
 
     def __eq__(self, __value: object) -> bool:
