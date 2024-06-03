@@ -102,31 +102,24 @@ class SourceSettings():
     """ The SourceSettings class is used to store information about where we are collecting the Argo Float data from.
 
         :param: hosts : list - The US and French GDAC URLs. IFREMER is often faster than GODAE so it is listed first.
-        :param: avail_vars : list - The full set of available variables
-        :param: dacs : list - list of Data Assimilation Centers
+        :param: avail_vars : list - The full set of available variables, will be filled during evaluation of the index files.
+        :param: dacs : list - A list of Data Assimilation Centers, will be fileld during evaluation of the index files. 
     """
     def __init__(self) -> None:
         self.hosts =  ["https://data-argo.ifremer.fr/", 
                        "https://usgodae.org/ftp/outgoing/argo/"]
 
-        self.avail_vars =  ['PRES','PSAL','TEMP','CNDC','DOXY','BBP','BBP470',
-                            'BBP532','BBP700','TURBIDITY','CP','CP660','CHLA','CDOM','NITRATE',
-                            'BISULFIDE','PH_IN_SITU_TOTAL','DOWN_IRRADIANCE','DOWN_IRRADIANCE380',
-                            'DOWN_IRRADIANCE412','DOWN_IRRADIANCE443','DOWN_IRRADIANCE490',
-                            'DOWN_IRRADIANCE555','DOWN_IRRADIANCE670','DOWNWELLING_PAR',
-                            'UP_RADIANCE','UP_RADIANCE412','UP_RADIANCE443','UP_RADIANCE490',
-                            'UP_RADIANCE555']
+        self.avail_vars =  None
 
-        self.dacs =  ['aoml', 'bodc', 'coriolis', 'csio', 'csiro',
-                      'incois', 'jma', 'kma', 'kordi', 'meds']
+        self.dacs =  None
 
 
     def __str__(self) -> str:
-        return f'\n[Analysis Settings] -> Temp Thresh: {self.hosts}, Dense Thresh: {self.avail_vars}, Interpolate Latitude and Longitude: {self.dacs}'
+        return f'\n[Source Settings] -> Hosts: {self.hosts}, Available Variables: {self.avail_vars}, Data Assimilation Centers: {self.dacs}'
     
 
     def __repr__(self) -> str:
-        return f'\nAnalysisSettings({self.hosts}, {self.avail_vars}, {self.verbose}, {self.dacs})'
+        return f'\nSourceSettings({self.hosts}, {self.avail_vars}, {self.verbose}, {self.dacs})'
     
 
     def __eq__(self, __value: object) -> bool:
