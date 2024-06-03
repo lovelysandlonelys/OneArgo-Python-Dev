@@ -11,9 +11,13 @@
 #----------------------------------
 # 
 #
-#Imports
+# Imports
+
+# Local
 from Settings import DownloadSettings, SourceSettings
 
+# System
+from pathlib import Path
 
 class argo():
     """ The argo class which contains functions for downloading and handling argo float data. 
@@ -21,11 +25,24 @@ class argo():
 
 
     def initialize():
-        """ The initialize function 
+        """ The initialize function downloads the index files form GDAC and stores them in
+            the proper directories defined in the DewnloadSettings class. 
         """
-        print("testing\n")
+        # Instantiating DownloadSettings and SourceSettings
+        # classes to use default settings of both.
+        download_settings = DownloadSettings()
+        source_settings = SourceSettings()
+
         # Check for and create subdirectories if needed
-        # Show current download settings. 
+        print(f'Your current download settings are: {download_settings}')
+        print(f'Checking for and creating necessary subdirectories...')
+        for directory in download_settings.sub_dirs:
+            directory_path = download_settings.base_dir.joinpath(directory)
+            if directory_path.exists():
+                print(f'The {directory_path} directory already exists!')
+            else:
+                print(f'Creating the {directory} directory!')
+                directory_path.mkdir()
 
         # Download files from GDAC to Index directory
             # Sprof
