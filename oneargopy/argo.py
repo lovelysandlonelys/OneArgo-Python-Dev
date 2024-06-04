@@ -121,18 +121,36 @@ class argo():
         """
         success = False
         iterations = 0
-        while(not success and iterations < self.download_settings.try_download):
+        while(not success and iterations < self.download_settings.max_attempts):
             # Try the first host
+            try:
+                with requests.get(self.source_settings.hosts[1], stream=True) as r:
+                    r.raise_for_status()
+                    with open(file_name, 'wb') as f:
+                        shutil.copyfileobj(r.raw, f)
+                success = True
+            except requests.HTTPError as e:
+                print(f'HTTPError encountered: {e}. Trying next host...')
+
             # Try the second host
-            pass
+            if (not success):
+                try:
+                    with requests.get(self.source_settings.hosts[2], stream=True) as r:
+                        r.raise_for_status()
+                        with open(file_name, 'wb') as f:
+                            shutil.copyfileobj(r.raw, f)
+                    success = True
+                except requests.HTTPError as e:
+                    print(f'HTTPError encountered: {e}. Trying both hosts again...')
+
+            #Increment Iterations
+            iterations = iterations + 1
 
         # If ultimately nothing could be downloaded
         if (not success): 
             if (update_status):
-                # Raise warning that the local version of file isn't the most recent
-                pass
+                print(f'WARNING: The file: {file_name} is not the newest version of the file. The newest version could not be downloaded at this time.')
             else:
-                # Raise exception
-                pass
+                raise AttributeError(f'Argo could not download {file_name} at this time.')
         
 
