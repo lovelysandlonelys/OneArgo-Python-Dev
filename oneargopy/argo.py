@@ -47,11 +47,15 @@ class argo():
             self.download_index_files(file)
         
         # Fill in avail_vars variable in the SourceSettings class
+        self.source_settings.set_avail_vars()
+
         # Fill in dacs variable in the SourceSettings class
+        self.source_settings.set_dacs()
 
         # Extract Unique floats from both data frames
             # There is some post processing that they do on unique floats in the initalize_argo.m
             # his any of that still relevant? 
+
         print(f'Initialize is finished!')
 
     def initialize_subdirectories(self) -> None:
@@ -108,13 +112,8 @@ class argo():
             print(f'The file: {file_name} needs to be downloaded.')
             self.try_download(file_name, False)
 
-
-    # Download profiles function
-    def download_netdcf_files() -> None:
-        pass
-
  
-    def try_download(self, file_name: str, update_status: bool):
+    def try_download(self, file_name: str, update_status: bool)-> None:
         """ A function that attempts to download a file from both GDAC sources.
 
             :param: file_name : str - The name of the file to download
@@ -152,3 +151,4 @@ class argo():
         if not success: 
             message = 'Update failed:' if update_status else 'Download failed:'
             raise Exception(f'{message} {file_name} could not be downloaded at this time.')
+        

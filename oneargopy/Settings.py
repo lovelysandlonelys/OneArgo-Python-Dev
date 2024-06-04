@@ -130,6 +130,21 @@ class SourceSettings():
         self.dacs =  None
 
 
+    def set_avail_vars(self) -> None:
+        """ A function to dynamically fill the avail_vars parameter from the
+            source settings with variables from the argo_synthetic_profile_index.
+
+            :param:
+        """
+        pass
+
+
+    def set_dacs(self) -> None:
+        """
+        """
+        pass
+
+
     def __str__(self) -> str:
         return f'\n[Source Settings] -> Hosts: {self.hosts}, Available Variables: {self.avail_vars}, Data Assimilation Centers: {self.dacs}'
     
