@@ -130,10 +130,12 @@ class argo():
             for host in self.source_settings.hosts:
                 url = "".join([host, file_name])
                 print(f'URL we are trying to download from: {url}')
+                print(f'WE are saving {file_name} to {save_path}')
                 try:
                     with requests.get(url, stream=True) as r:
                         r.raise_for_status()
                         with open(save_path, 'wb') as f:
+                            r.raw.decode_content = True
                             shutil.copyfileobj(r.raw, f)
                     success = True
                     # Exit the loop if download is successful so we don't try additional
