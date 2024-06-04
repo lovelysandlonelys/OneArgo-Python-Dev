@@ -21,6 +21,7 @@ from pathlib import Path
 import requests
 import time
 import datetime
+import shutil
 
 class argo():
     """ The argo class which contains functions for downloading and handling argo float data. 
@@ -29,6 +30,7 @@ class argo():
     def __init__(self): 
         self.download_settings = DownloadSettings()
         self.source_settings = SourceSettings()
+        self.index_directory = self.download_settings.base_dir.joinpath("Index")
 
 
     def initialize(self) -> None:
@@ -36,21 +38,12 @@ class argo():
             the proper directories defined in the DewnloadSettings class. 
         """
         # Check for and create subdirectories if needed
-        print(f'Your current download settings are: {self.download_settings}')
-        print(f'Checking for and creating necessary subdirectories...')
-        for directory in self.download_settings.sub_dirs:
-            directory_path = self.download_settings.base_dir.joinpath(directory)
-            if directory_path.exists():
-                print(f'The {directory_path} directory already exists!')
-            else:
-                print(f'Creating the {directory} directory!')
-                directory_path.mkdir()
+        self.initialize_subdirectories()
 
         # Download files from GDAC to Index directory
-        index_directory = self.download_settings.base_dir.joinpath("Index")
-        if index_directory: 
+        if self.index_directory.exists(): 
             for file in self.download_settings.index_files:
-                self.download_file(file, index_directory, self.source_settings.hosts)
+                self.download_index_files(file)
         else: 
             print(f'The Index directory does not exist, we need the index directory to save the index files to.')
 
@@ -61,51 +54,79 @@ class argo():
             # There is some post processing that they do on unique floats in the initalize_argo.m
             # his any of that still relevant? 
 
+    def initialize_subdirectories(self) -> None:
+        """ A function that checks for and creates the necessary folders as 
+            listed in the download settings sub_dir list. 
+        """
+        print(f'Your current download settings are: {self.download_settings}')
+        print(f'Checking for and creating necessary subdirectories...')
+        for directory in self.download_settings.sub_dirs:
+            directory_path = self.download_settings.base_dir.joinpath(directory)
+            if directory_path.exists():
+                print(f'The {directory_path} directory already exists!')
+            else:
+                try:
+                    print(f'Creating the {directory} directory!')
+                    directory_path.mkdir()
+                except Exception as e:
+                    print(f'Failed to create the {directory} directory: {e}')
+
     
-    def download_file(self, file_name: str, save_point: Path) -> None:
-        """ A function to download and save a file from GDAC sources. 
+    def download_index_files(self, file_name: str) -> None:
+        """ A function to download and save an index file from GDAC sources. 
 
             :param: filename : str - The name of the file we are downloading.
-            :param: savepoint : Path - The directory that we are saving the file to.
-            :param: hosts : list - A list of URLs to the GDAC sources. 
         """
-        # Check if the file we want to download is already at our savepoint
-        file_path = save_point.joinpath(file_name)
+        # Get the expected filepath for the file
+        file_path = self.index_directory.joinpath(file_name)
+
+        # Check if the filepath exists
         if file_path.exists():
-            # Check if the file needs to be updated
-            if (self.download_settings.update > 0): 
+
+            # Check if the settings allow  for updates
+            if (self.download_settings.update == 0):
+                print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
+            else: 
                 last_modified_time = Path(file_path).stat().st_mtime
+                print(f'The last modified time: {last_modified_time}')
                 current_time = datetime.now().timestamp()
+                print(f'The current time: {current_time}')
                 seconds_since_modified = current_time - last_modified_time
+                print(f'The seconds since modified: {seconds_since_modified}')
+                print(f'The download threshold: {self.download_settings.update}')
+
+                # Check if the file should be updated
                 if (seconds_since_modified > self.download_settings.update):
-                    # Download and replace file
-                    pass
-                pass
-                
+                    print(f'The file: {file_name} needs to be updated.')
+                    self.try_download(file_name ,True)
+                else:
+                    print(f'The file: {file_name} does not need to be updated yet.')
 
-        # If the file isn't there OR it needs to be updated then 
-            # if connection failed try both sources number of times that the general settins says
-                # First try primary host
-                
-                # Try secondary host
-            # if the file never got downloaded then issue a warning if an old file exists locally
-            # if it doesn't exist locally then raise an exception
+        # if the file doesn't exist then download it
+        else: 
+            print(f'The file: {file_name} needs to be downloaded.')
+            self.try_download(file_name, False)
 
 
-    # Rewrite to be iterative rather than recursive because we don't want to be stuck
-    # trying one of the hosts FOREVER when we have two sources to look at. 
-    def try_download(self, url: str):
-        """ A recursive function to return a request from a URL in the case of there
-            being a connection error. Function taken from GO-BGC Python tutorial and 
-            slightly altered.
+    # Download profiles function
+    def download_netdcf_files() -> None:
+        pass
+
+ 
+    def try_download(self, file_name: str, update_status: bool):
+        """ A function that attempts to download a file from both GDAC sources.
 
             :param: url : str - The URL to download the file.
+            :param: update_status: bool - True if the file exists and we are trying to update it. False if the file hasn't been downloaded yet. 
         """
-        try:
-            return requests.get(url,stream=True,auth=None,verify=False)
-        except requests.exceptions.ConnectionError as error_tag:
-            print('Error connecting:',error_tag)
-            time.sleep(1)
-            return self.try_download(url)
+        success = False
+        iterations = 0
+        while(not success and iterations < self.download_settings.try_download):
+            # Try the first host
+
+            # Try the second host
+        # If ultimatly nothing could be downloaded
+        if(not success): 
+            pass
         
 
