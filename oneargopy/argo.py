@@ -123,10 +123,16 @@ class argo():
         iterations = 0
         while(not success and iterations < self.download_settings.try_download):
             # Try the first host
-
             # Try the second host
-        # If ultimatly nothing could be downloaded
-        if(not success): 
             pass
+
+        # If ultimately nothing could be downloaded
+        if (not success): 
+            if (update_status):
+                # Raise warning that the local version of file isn't the most recent
+                pass
+            else:
+                # Raise exception
+                pass
         
 
