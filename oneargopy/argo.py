@@ -118,7 +118,9 @@ class argo():
         """ A function that attempts to download a file from both GDAC sources.
 
             :param: file_name : str - The name of the file to download
-            :param: update_status: bool - True if the file exists and we are trying to update it. False if the file hasn't been downloaded yet. 
+            :param: update_status: bool - True if the file exists and we 
+                are trying to update it. False if the file hasn't been 
+                downloaded yet. 
         """
         success = False
         iterations = 0
