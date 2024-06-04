@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 #initialize.py
-#----------------------------------
+#------------------------------------------------------------------------------
 # Created By: Savannah Stephenson
 # Creation Date: 05/30/2024
 # Version: 1.0
-#----------------------------------
+#------------------------------------------------------------------------------
 """ The argo class contains the primary functions for downloading and handling
     data gathered from GDAC.
 """
-#----------------------------------
+#------------------------------------------------------------------------------
 # 
 #
 # Imports
@@ -23,7 +23,8 @@ from datetime import datetime
 import shutil
 
 class argo():
-    """ The argo class which contains functions for downloading and handling argo float data. 
+    """ The argo class which contains functions for downloading and handling 
+        argo float data. 
     """
 
     def __init__(self): 
@@ -33,9 +34,11 @@ class argo():
 
 
     def initialize(self) -> None:
-        """ The initialize function downloads the index files form GDAC and stores them in
-            the proper directories defined in the DewnloadSettings class. 
+        """ The initialize function downloads the index files form GDAC and 
+            stores them in the proper directories defined in the 
+            DownloadSettings class. 
         """
+        print(f'Starting initialize process...')
         # Check for and create subdirectories if needed
         self.initialize_subdirectories()
 
@@ -49,6 +52,7 @@ class argo():
         # Extract Unique floats from both data frames
             # There is some post processing that they do on unique floats in the initalize_argo.m
             # his any of that still relevant? 
+        print(f'Initialize is finished!')
 
     def initialize_subdirectories(self) -> None:
         """ A function that checks for and creates the necessary folders as 
@@ -73,6 +77,7 @@ class argo():
 
             :param: filename : str - The name of the file we are downloading.
         """
+        print(f'Checking for and downloading index files...')
         # Get the expected filepath for the file
         file_path = self.index_directory.joinpath(file_name)
 
@@ -121,7 +126,8 @@ class argo():
         while (not success) and (iterations < self.download_settings.max_attempts):
             # Try both hosts (perfered one is listed first in download settings)
             for host in self.source_settings.hosts:
-                url = "".join(host, file_name)
+                url = "".join([host, file_name])
+                print(f'URL we are trying to download from: {url}')
                 try:
                     with requests.get(url, stream=True) as r:
                         r.raise_for_status()
@@ -141,4 +147,4 @@ class argo():
         # If ultimately nothing could be downloaded
         if not success: 
             message = 'Update failed:' if update_status else 'Download failed:'
-            raise Exception(f'{message} {file_name} could not be downloaded.')
+            raise Exception(f'{message} {file_name} could not be downloaded at this time.')
