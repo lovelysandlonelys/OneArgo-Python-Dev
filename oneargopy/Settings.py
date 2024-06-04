@@ -30,7 +30,7 @@ class DownloadSettings():
         :parm: index_files : list - A list of the index files that will be downloaded.
         :param: verbose : bool - A boolean value that determines weather to log verbosely or not.
         :param: update : int - An integer value that determines the threshold for updating downloaded files (0: do not update; >0: maximum number of seconds since an index file was downloaded before downloading it again for new profile selection).
-        :param: try_download : int - An integer value that determines the number of times argo tries to download the same file before raising an exception.
+        :param: max_attempts : int - An integer value that determines the number of times argo tries to download the same file before raising an exception.
     """
     def __init__(self, 
                  base_dir: Path = None, 
@@ -38,22 +38,22 @@ class DownloadSettings():
                  index_files: list = None,
                  verbose: bool = True,
                  update: int = 3600,
-                 try_download: int = 10) -> None:
+                 max_attempts: int = 10) -> None:
         self.base_dir = base_dir if base_dir is not None else Path(__file__).resolve().parent
         self.sub_dirs = sub_dirs if sub_dirs is not None else ["Index", "Meta", "Tech", "Traj", "Profiles"]
         self.index_files = index_files if index_files is not None else ["ar_index_global_traj.txt", "ar_index_global_tech.txt", "ar_index_global_meta.txt", 
                                                                         "ar_index_global_prof.txt", "argo_synthetic-profile_index.txt"]
         self.verbose = verbose
         self.update = update
-        self.try_download = try_download
+        self.max_attempts = max_attempts
 
 
     def __str__(self) -> str:
-        return f'\n[Download Settings] -> Base Directory: {self.base_dir}, Sub Directories: {self.sub_dirs}, Index Files: {self.index_files}, Verbose Setting: {self.verbose}'
+        return f'\n[Download Settings] -> Base Directory: {self.base_dir}, Sub Directories: {self.sub_dirs}, Index Files: {self.index_files}, Verbose Setting: {self.verbose}, Max Attempts: {self.max_attempts}'
     
 
     def __repr__(self) -> str:
-        return f'\nDownloadSettings({self.base_dir}, {self.sub_dirs}, {self.index_files}, {self.verbose}, {self.update})'
+        return f'\nDownloadSettings({self.base_dir}, {self.sub_dirs}, {self.index_files}, {self.verbose}, {self.update}, {self.max_attempts})'
     
 
     def __eq__(self, __value: object) -> bool:
@@ -61,7 +61,8 @@ class DownloadSettings():
             self.sub_dirs == __value.sub_dirs and
             self.index_files == __value.index_files and
             self.verbose == __value.verbose and
-            self.update == __value.update):
+            self.update == __value.update and
+            self.max_attempts == __value.max_attempts):
             return True
         else: return False
 
