@@ -39,10 +39,13 @@ class argo():
             DownloadSettings class. 
         """
         print(f'Starting initialize process...')
+
         # Check for and create subdirectories if needed
+        print(f'Checking for subdirectories...')
         self.initialize_subdirectories()
 
         # Download files from GDAC to Index directory
+        print(f'Downloading index files...')
         for file in self.download_settings.index_files:
             self.download_index_files(file)
         
@@ -63,7 +66,6 @@ class argo():
             listed in the download settings sub_dir list. 
         """
         print(f'Your current download settings are: {self.download_settings}')
-        print(f'Checking for and creating necessary subdirectories...')
         for directory in self.download_settings.sub_dirs:
             directory_path = self.download_settings.base_dir.joinpath(directory)
             if directory_path.exists():
@@ -81,7 +83,6 @@ class argo():
 
             :param: filename : str - The name of the file we are downloading.
         """
-        print(f'Checking for and downloading index files...')
         # Get the expected filepath for the file
         file_path = self.index_directory.joinpath(file_name)
 
@@ -127,7 +128,14 @@ class argo():
         while (not success) and (iterations < self.download_settings.max_attempts):
             # Try both hosts (perfered one is listed first in download settings)
             for host in self.source_settings.hosts:
+
                 url = "".join([host, file_name])
+
+                # We want to download the prof and synthetic files as gz and then unzip them
+                if (file_name == "ar_index_global_prof.txt") or (file_name == "argo_synthetic-profile_index.txt"):
+                    gz_url = "".join([url, ".gz"])
+                    ##################Finish implementation
+
                 print(f'URL we are trying to download from: {url}')
                 print(f'WE are saving {file_name} to {save_path}')
                 try:
