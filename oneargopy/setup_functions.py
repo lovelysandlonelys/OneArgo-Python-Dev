@@ -31,8 +31,6 @@ def initialize_subdirectories(download_settings: DownloadSettings) -> None:
             DownloadSettings class containing the current download
             settings when the function is called by argo.py.
     """
-    
-    print(f'Your current download settings are: {download_settings}')
     for directory in download_settings.sub_dirs:
         directory_path = download_settings.base_dir.joinpath(directory)
         if directory_path.exists():

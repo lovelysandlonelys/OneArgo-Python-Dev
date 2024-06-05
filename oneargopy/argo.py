@@ -17,21 +17,28 @@
 from Settings import DownloadSettings, SourceSettings
 from setup_functions import initialize_subdirectories, download_index_files
 
-def initialize() -> None:
+def initialize(user_settings: str = None) -> None:
     """ The initialize function downloads the index files form GDAC and 
         stores them in the proper directories defined in the 
         DownloadSettings class. 
     """
-    print(f'Starting initialize process...')
-    download_settings = DownloadSettings()
-    source_settings = SourceSettings()
+    print(f'Starting initialize process...\n')
+    if user_settings:
+        download_settings = DownloadSettings()
+        source_settings = SourceSettings()
+    else: 
+        download_settings = DownloadSettings()
+        source_settings = SourceSettings()
+    
+    print(f'Your current download settings are: {download_settings}')
+    print(f'Your current source settings are: {source_settings}')
 
     # Check for and create subdirectories if needed
-    print(f'Checking for subdirectories...')
+    print(f'Checking for subdirectories...\n')
     initialize_subdirectories(download_settings)
 
     # Download files from GDAC to Index directory
-    print(f'Downloading index files...')
+    print(f'\nDownloading index files...\n')
     for file in download_settings.index_files:
         download_index_files(file, download_settings, source_settings)
     

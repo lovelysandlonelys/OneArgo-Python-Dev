@@ -58,7 +58,7 @@ class DownloadSettings():
 
 
     def __str__(self) -> str:
-        return f'\n[Download Settings] -> Base Directory: {self.base_dir}, Sub Directories: {self.sub_dirs}, Index Files: {self.index_files}, Verbose Setting: {self.verbose}, Max Attempts: {self.max_attempts}'
+        return f'\n[Download Settings] -> \nBase Directory: {self.base_dir}, \nSub Directories: {self.sub_dirs}, \nIndex Files: {self.index_files}, \nVerbose Setting: {self.verbose}, \nMax Attempts: {self.max_attempts}\n'
     
 
     def __repr__(self) -> str:
@@ -97,7 +97,7 @@ class AnalysisSettings():
 
 
     def __str__(self) -> str:
-        return f'\n[Analysis Settings] -> Temperature Threshold: {self.temp_thresh}, Density Threshold: {self.dens_thresh}, Interpolate Latitude and Longitude: {self.interp_lonlat}'
+        return f'\n[Analysis Settings] -> \nTemperature Threshold: {self.temp_thresh}, \nDensity Threshold: {self.dens_thresh}, \nInterpolate Latitude and Longitude: {self.interp_lonlat}\n'
     
 
     def __repr__(self) -> str:
@@ -146,7 +146,7 @@ class SourceSettings():
 
 
     def __str__(self) -> str:
-        return f'\n[Source Settings] -> Hosts: {self.hosts}, Available Variables: {self.avail_vars}, Data Assimilation Centers: {self.dacs}'
+        return f'\n[Source Settings] -> \nHosts: {self.hosts}, \nAvailable Variables: {self.avail_vars}, \nData Assimilation Centers: {self.dacs}\n'
     
 
     def __repr__(self) -> str:
