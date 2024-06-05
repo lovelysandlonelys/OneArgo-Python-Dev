@@ -15,8 +15,11 @@
 # 
 #
 # Imports
+
 # System
 from pathlib import Path
+import pandas as pd
+
 
 
 class DownloadSettings():
@@ -136,14 +139,14 @@ class SourceSettings():
     def set_avail_vars(self) -> None:
         """ A function to dynamically fill the avail_vars parameter from the
             source settings with variables from the argo_synthetic_profile_index.
-
-            :param:
         """
+        
         pass
 
 
     def set_dacs(self) -> None:
-        """
+        """ A function to dynamically fill the dacs parameter from the
+            source settings with variables from the argo_synthetic_profile_index.
         """
         pass
 
