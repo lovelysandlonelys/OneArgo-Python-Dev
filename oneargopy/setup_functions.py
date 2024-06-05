@@ -153,11 +153,22 @@ def try_download(file_name: str, update_status: bool, download_settings: Downloa
     if not success: 
         message = 'Update failed:' if update_status else 'Download failed:'
         raise Exception(f'{message} {file_name} could not be downloaded at this time.')
-    
 
+ #------------------------------------------------------------------------------
 def parse_settings(user_settings: str) -> tuple[str, str]:
     """ A function to parse a given user_settings file to initialize
-        the Settings classes based off of 
+        the Settings classes based off of a passed path to a json
+        file. 
+
+        :param: user_settings : str - A string that will be converted into
+            a path to parse a json from.
+
+        :returns: download_settings, source_settings : tuple[str, str] - We
+            return a tuple holding download settings and source settings.
+        
+        NOTE: In the function we also parse analysis settings, but we do not
+            pass these settings back to argo because at current implementation
+            we do not utilize the analysis settings inside of argo.py. 
     """
     path = Path(user_settings)
 
