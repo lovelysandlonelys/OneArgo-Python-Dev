@@ -21,6 +21,7 @@ from pathlib import Path
 import requests
 from datetime import datetime
 import shutil
+import gzip
 
 class argo():
     """ The argo class which contains functions for downloading and handling 
@@ -85,6 +86,7 @@ class argo():
         """
         # Get the expected filepath for the file
         file_path = self.index_directory.joinpath(file_name)
+        gz_file_path = self.index_directory.joinpath("".join([file_name, ".gz"]))
 
         # Check if the filepath exists
         if file_path.exists():
@@ -93,20 +95,25 @@ class argo():
             if self.download_settings.update == 0:
                 print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
             else: 
-                last_modified_time = Path(file_path).stat().st_mtime
-                print(f'The last modified time: {last_modified_time}')
+                txt_last_modified_time = Path(file_path).stat().st_mtime
+                print(f'The last modified time .txt: {txt_last_modified_time}')
+                gz_last_modified_time = Path(gz_file_path).stat().st_mtime
+                print(f'The last modified time .gx: {gz_last_modified_time}')
+                
                 current_time = datetime.now().timestamp()
                 print(f'The current time: {current_time}')
-                seconds_since_modified = current_time - last_modified_time
-                print(f'The seconds since modified: {seconds_since_modified}')
+                txt_seconds_since_modified = current_time - txt_last_modified_time
+                gz_seconds_since_modified = current_time - gz_last_modified_time
+                print(f'The seconds since modified txt: {txt_seconds_since_modified}')
+                print(f'The seconds since modified gz: {gz_seconds_since_modified}')
                 print(f'The download threshold: {self.download_settings.update}')
 
                 # Check if the file should be updated
-                if (seconds_since_modified > self.download_settings.update):
+                if (gz_seconds_since_modified > self.download_settings.update):
                     print(f'The file: {file_name} needs to be updated.')
                     self.try_download(file_name ,True)
                 else:
-                    print(f'The file: {file_name} does not need to be updated yet.')
+                    print(f'The file: {file_name} does not need to be updated yet.\n')
 
         # if the file doesn't exist then download it
         else: 
@@ -124,27 +131,33 @@ class argo():
         """
         success = False
         iterations = 0
-        save_path = self.index_directory.joinpath(file_name)
+        txt_save_path = self.index_directory.joinpath(file_name)
+        gz_save_path = self.index_directory.joinpath("".join([file_name, ".gz"]))
+
         while (not success) and (iterations < self.download_settings.max_attempts):
             # Try both hosts (perfered one is listed first in download settings)
             for host in self.source_settings.hosts:
 
-                url = "".join([host, file_name])
-
-                # We want to download the prof and synthetic files as gz and then unzip them
-                if (file_name == "ar_index_global_prof.txt") or (file_name == "argo_synthetic-profile_index.txt"):
-                    gz_url = "".join([url, ".gz"])
-                    ##################Finish implementation
+                url = "".join([host, file_name, ".gz"])
 
                 print(f'URL we are trying to download from: {url}')
-                print(f'WE are saving {file_name} to {save_path}')
+                print(f'WE are saving {file_name}.gz to {gz_save_path}')
+
                 try:
                     with requests.get(url, stream=True) as r:
                         r.raise_for_status()
-                        with open(save_path, 'wb') as f:
+                        with open(gz_save_path, 'wb') as f:
                             r.raw.decode_content = True
                             shutil.copyfileobj(r.raw, f)
+
+                    print(f'Unzipping {file_name}.gz...')
+                    with gzip.open(gz_save_path, 'rb') as gz_file:
+                        with open(txt_save_path, 'wb') as txt_file:
+                            shutil.copyfileobj(gz_file, txt_file)
+                    
                     success = True
+                    print(f'{file_name}.gz was successfully downloaded and unzipped to {file_name}')
+                    
                     # Exit the loop if download is successful so we don't try additional
                     # sources for no reason.
                     break 
