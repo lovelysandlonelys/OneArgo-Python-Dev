@@ -154,7 +154,7 @@ def try_download(file_name: str, update_status: bool, download_settings: Downloa
         message = 'Update failed:' if update_status else 'Download failed:'
         raise Exception(f'{message} {file_name} could not be downloaded at this time.')
 
- #------------------------------------------------------------------------------
+
 def parse_settings(user_settings: str) -> tuple[str, str]:
     """ A function to parse a given user_settings file to initialize
         the Settings classes based off of a passed path to a json
