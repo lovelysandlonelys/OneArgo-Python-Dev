@@ -15,7 +15,7 @@
 
 # Local
 from Settings import DownloadSettings, SourceSettings
-from setup_functions import initialize_subdirectories, download_index_files
+from setup_functions import initialize_subdirectories, download_index_files, parse_settings
 
 def initialize(user_settings: str = None) -> None:
     """ The initialize function downloads the index files form GDAC and 
@@ -23,12 +23,12 @@ def initialize(user_settings: str = None) -> None:
         DownloadSettings class. 
     """
     print(f'Starting initialize process...\n')
+     
+    download_settings = DownloadSettings()
+    source_settings = SourceSettings()
+
     if user_settings:
-        download_settings = DownloadSettings()
-        source_settings = SourceSettings()
-    else: 
-        download_settings = DownloadSettings()
-        source_settings = SourceSettings()
+        download_settings, source_settings = parse_settings(user_settings)
     
     print(f'Your current download settings are: {download_settings}')
     print(f'Your current source settings are: {source_settings}')
