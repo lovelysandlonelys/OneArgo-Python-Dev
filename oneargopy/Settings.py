@@ -123,9 +123,12 @@ class SourceSettings():
         :param: dacs : list - A list of Data Assimilation Centers, will be 
             fileld during evaluation of the index files. 
     """
-    def __init__(self, hosts: list = None, avail_vars: list = None, dacs: list = None) -> None:
+    def __init__(self, 
+                 hosts: list = None, 
+                 avail_vars: list = None, 
+                 dacs: list = None) -> None:
         self.hosts =  hosts if hosts is not None else ["https://data-argo.ifremer.fr/", 
-                       "https://usgodae.org/ftp/outgoing/argo/"]
+                                                       "https://usgodae.org/ftp/outgoing/argo/"]
         self.avail_vars =  avail_vars if avail_vars is not None else None
         self.dacs =  dacs if dacs is not None else None
 
