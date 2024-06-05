@@ -1,4 +1,3 @@
-from argo import argo
+import argo
 
-argo = argo()
 argo.initialize()
