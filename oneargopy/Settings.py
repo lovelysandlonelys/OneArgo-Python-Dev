@@ -136,7 +136,7 @@ class SourceSettings():
         self.dacs =  dacs if dacs is not None else None
 
 
-    def set_avail_vars(self) -> None:
+    def set_avail_vars(self, synthetic_index: pd) -> None:
         """ A function to dynamically fill the avail_vars parameter from the
             source settings with variables from the argo_synthetic_profile_index.
         """
@@ -144,7 +144,7 @@ class SourceSettings():
         pass
 
 
-    def set_dacs(self) -> None:
+    def set_dacs(self, synthetic_index: pd) -> None:
         """ A function to dynamically fill the dacs parameter from the
             source settings with variables from the argo_synthetic_profile_index.
         """

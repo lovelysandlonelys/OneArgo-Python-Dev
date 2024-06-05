@@ -22,6 +22,7 @@ from pathlib import Path
 from datetime import datetime
 import shutil
 import gzip
+import time
 import json
 
 def initialize_subdirectories(download_settings: DownloadSettings) -> None:
@@ -124,20 +125,31 @@ def try_download(file_name: str, update_status: bool, download_settings: Downloa
             print(f'URL we are trying to download from: {url}')
             print(f'WE are saving {file_name}.gz to {gz_save_path}')
 
+
+            start_time = time.time()
             try:
                 with requests.get(url, stream=True) as r:
                     r.raise_for_status()
                     with open(gz_save_path, 'wb') as f:
                         r.raw.decode_content = True
                         shutil.copyfileobj(r.raw, f)
+                
+                download_time = time.time() - start_time
+
+                unzip_time_start = time.time()
 
                 print(f'Unzipping {file_name}.gz...')
                 with gzip.open(gz_save_path, 'rb') as gz_file:
                     with open(txt_save_path, 'wb') as txt_file:
                         shutil.copyfileobj(gz_file, txt_file)
+
+                unzip_time = time.time() - unzip_time_start
                 
                 success = True
                 print(f'{file_name}.gz was successfully downloaded and unzipped to {file_name}')
+                print(f'Download took {download_time:.2f} seconds.\n')
+                print(f'Unzip took {unzip_time:.2f} seconds.\n')
+
                 
                 # Exit the loop if download is successful so we don't try additional
                 # sources for no reason.
