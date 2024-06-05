@@ -123,7 +123,7 @@ def try_download(file_name: str, update_status: bool, download_settings: Downloa
             url = "".join([host, file_name, ".gz"])
 
             print(f'URL we are trying to download from: {url}')
-            print(f'WE are saving {file_name}.gz to {gz_save_path}')
+            print(f'We are saving {file_name}.gz to {gz_save_path}')
 
 
             start_time = time.time()
@@ -147,9 +147,11 @@ def try_download(file_name: str, update_status: bool, download_settings: Downloa
                 
                 success = True
                 print(f'{file_name}.gz was successfully downloaded and unzipped to {file_name}')
-                print(f'Download took {download_time:.2f} seconds.\n')
+                print(f'Download took {download_time:.2f} seconds.')
                 print(f'Unzip took {unzip_time:.2f} seconds.\n')
 
+                # Remove extraneous .gz file
+                gz_save_path.unlink()
                 
                 # Exit the loop if download is successful so we don't try additional
                 # sources for no reason.
