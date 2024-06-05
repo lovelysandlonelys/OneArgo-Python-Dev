@@ -26,6 +26,10 @@ import gzip
 def initialize_subdirectories(download_settings: DownloadSettings) -> None:
     """ A function that checks for and creates the necessary folders as 
         listed in the download settings sub_dir list. 
+
+        :param: download_settings: DownloadSettings - An instance of the
+            DownloadSettings class containing the current download
+            settings when the function is called by argo.py.
     """
     
     print(f'Your current download settings are: {download_settings}')
@@ -45,6 +49,12 @@ def download_index_files(file_name: str, download_settings: DownloadSettings, so
     """ A function to download and save an index file from GDAC sources. 
 
         :param: filename : str - The name of the file we are downloading.
+        :param: download_settings : DownloadSettings - An instance of the
+            DownloadSettings class containing the current download
+            settings when the function is called by argo.py.
+        :param: source_settings : SourceSettings - An instance of the
+            SourceSettings class containing the current Source
+            settings when the function is called by argo.py.
     """
     index_directory = Path(download_settings.base_dir.joinpath("Index"))
 
@@ -92,6 +102,12 @@ def try_download(file_name: str, update_status: bool, download_settings: Downloa
         :param: update_status: bool - True if the file exists and we 
             are trying to update it. False if the file hasn't been 
             downloaded yet. 
+        :param: download_settings : DownloadSettings - An instance of the
+            DownloadSettings class containing the current download
+            settings when the function is called by argo.py.
+        :param: source_settings : SourceSettings - An instance of the
+            SourceSettings class containing the current Source
+            settings when the function is called by argo.py.
     """
     index_directory = Path(download_settings.base_dir.joinpath("Index"))
 
