@@ -14,7 +14,7 @@
 # Imports
 
 # Local
-from Settings import DownloadSettings, SourceSettings
+from Settings import DownloadSettings, SourceSettings, AnalysisSettings
 
 # System
 import requests
@@ -22,6 +22,7 @@ from pathlib import Path
 from datetime import datetime
 import shutil
 import gzip
+import json
 
 def initialize_subdirectories(download_settings: DownloadSettings) -> None:
     """ A function that checks for and creates the necessary folders as 
@@ -155,9 +156,39 @@ def try_download(file_name: str, update_status: bool, download_settings: Downloa
     
 
 def parse_settings(user_settings: str) -> tuple[str, str]:
+    """ A function to parse a given user_settings file to initialize
+        the Settings classes based off of 
+    """
+    path = Path(user_settings)
 
-    user_settings 
+    with path.open('r', encoding='utf-8') as file:
+        data = json.load(file)
 
+    # Parse DownloadSettings
+    ds_data = data['DownloadSettings']
+    download_settings = DownloadSettings(
+        base_dir=Path(ds_data['base_dir']),
+        sub_dirs=ds_data['sub_dirs'],
+        index_files=ds_data['index_files'],
+        verbose=ds_data['verbose'],
+        update=ds_data['update'],
+        max_attempts=ds_data['max_attempts']
+    )
     
+    # Parse AnalysisSettings
+    as_data = data['AnalysisSettings']
+    analysis_settings = AnalysisSettings(
+        temp_thresh=as_data['temp_thresh'],
+        dens_thresh=as_data['dens_thresh'],
+        interp_lonlat=as_data['interp_lonlat']
+    )
     
-    return download_settings, source_settigns
+    # Parse SourceSettings
+    ss_data = data['SourceSettings']
+    source_settings = SourceSettings(
+        hosts=ss_data['hosts'], 
+        avail_vars=ss_data['avail_vars'],
+        dacs=ss_data['dacs']
+    )
+        
+    return download_settings, source_settings

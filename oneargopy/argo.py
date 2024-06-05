@@ -21,6 +21,9 @@ def initialize(user_settings: str = None) -> None:
     """ The initialize function downloads the index files form GDAC and 
         stores them in the proper directories defined in the 
         DownloadSettings class. 
+
+        :param: user_settings : str - An optional parameter that will be used
+            to initialize the Settings classes if passed. Should be the 
     """
     print(f'Starting initialize process...\n')
      
