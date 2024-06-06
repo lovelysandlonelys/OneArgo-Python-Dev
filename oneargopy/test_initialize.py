@@ -1,3 +1,4 @@
-import argo
+from Argo import Argo
 
-argo.initialize("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
+argo = Argo()
+#argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
