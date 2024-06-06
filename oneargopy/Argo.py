@@ -107,8 +107,10 @@ class Argo:
                 
                 current_time = datetime.now().timestamp()
                 print(f'The current time: {current_time}')
+
                 txt_seconds_since_modified = current_time - txt_last_modified_time
                 print(f'The seconds since modified txt: {txt_seconds_since_modified}')
+
                 print(f'The download threshold: {self.download_settings.update}')
 
                 # Check if the file should be updated
@@ -207,7 +209,7 @@ class Argo:
         synthetic_index = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
                                 date_format='%Y%m%d%H%M%S')
         
-        # Parsing out variables in first colum file
+        # Parsing out variables in first column file
         dacs = synthetic_index['file'].str.split('/').str[0]
         synthetic_index.insert(0, "dacs", dacs, True)
 
@@ -217,6 +219,7 @@ class Argo:
         profile = synthetic_index['file'].str.split('_').str[1].str.replace('.nc', '')
         synthetic_index.insert(2, "profile", profile, True)
 
+        # Seperating the data_mode into seperate columns 
         synthetic_index['A'] = synthetic_index['parameter_data_mode'].str.contains('A').replace({True: 'A', False: pd.NA})
         synthetic_index['D'] = synthetic_index['parameter_data_mode'].str.contains('D').replace({True: 'D', False: pd.NA})
         synthetic_index['R'] = synthetic_index['parameter_data_mode'].str.contains('R').replace({True: 'R', False: pd.NA})
@@ -242,11 +245,13 @@ class Argo:
                 devoted to header information.
         """
         start_time = time.time()
+
         file_name = "ar_index_global_prof.txt"
         file_path = Path.joinpath(self.download_settings.base_dir, 'Index', file_name)
         prof_index = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
                                 date_format='%Y%m%d%H%M%S')
         
+        # Splitting up parts of the first column
         dacs = prof_index['file'].str.split('/').str[0]
         prof_index.insert(0, "dacs", dacs, True)
 
