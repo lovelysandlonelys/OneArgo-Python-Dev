@@ -226,15 +226,17 @@ class SourceSettings():
         """ A function to dynamically fill the avail_vars parameter from the
             source settings with variables from the argo_synthetic_profile_index.
         """
-        
-        pass
+        all_parameters = synthetic_index['parameters'].str.split().explode()
+        unique_parameters = all_parameters.unique()
+        self.avail_vars = unique_parameters.tolist()
 
 
     def set_dacs(self, synthetic_index: pd) -> None:
         """ A function to dynamically fill the dacs parameter from the
             source settings with variables from the argo_synthetic_profile_index.
         """
-        pass
+        unique_dacs = synthetic_index['file'].str.split('/').str[0].unique()
+        self.dacs = unique_dacs.tolist()
 
 
     def __str__(self) -> str:

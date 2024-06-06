@@ -63,6 +63,8 @@ class Argo:
         # Fill in dacs variable in the SourceSettings class
         self.source_settings.set_dacs(self.synthetic_index)
 
+        print(f'These are your updated source settings: {self.source_settings}')
+
         # Extract Unique floats from both data frames
             # There is some post processing that they do on unique floats in the initalize_argo.m
             # his any of that still relevant? 
