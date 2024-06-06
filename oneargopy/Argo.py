@@ -53,30 +53,15 @@ class Argo:
             self.__download_index_file(file)
 
         # Load the argo_synthetic-profile_index.txt file into a data frame
-        print(f'\n Transfering synthetic profile into dataframe...')
-        start_time = time.time()
-        synthetic_index_file_path = Path.joinpath(self.download_settings.base_dir, 'Index', 'argo_synthetic-profile_index.txt')
-        synthetic_index = pd.read_csv(synthetic_index_file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
-                                date_format='%Y%m%d%H%M%S')
-        print(synthetic_index)
-        transfer_time = time.time() - start_time
-        print(f'The transfer time was: {transfer_time}')
-
-        # Load the ar_index_global_prof.txt file into a data frame
-        print(f'\n Transfering prof profile into dataframe...')
-        start_time = time.time()
-        prof_index_file_path = Path.joinpath(self.download_settings.base_dir, 'Index', 'ar_index_global_prof.txt')
-        prof_index = pd.read_csv(prof_index_file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
-                                date_format='%Y%m%d%H%M%S')
-        print(prof_index)
-        transfer_time = time.time() - start_time
-        print(f'The transfer time was: {transfer_time}')
+        print(f'\n Transfering index files into data frames...')
+        self.synthetic_index = self.__load_dataframe('argo_synthetic-profile_index.txt')
+        self.prof_index = self.__load_dataframe('ar_index_global_prof.txt')
         
         # Fill in avail_vars variable in the SourceSettings class
-        self.source_settings.set_avail_vars(synthetic_index)
+        self.source_settings.set_avail_vars(self.synthetic_index)
 
         # Fill in dacs variable in the SourceSettings class
-        self.source_settings.set_dacs(synthetic_index)
+        self.source_settings.set_dacs(self.synthetic_index)
 
         # Extract Unique floats from both data frames
             # There is some post processing that they do on unique floats in the initalize_argo.m
@@ -147,12 +132,6 @@ class Argo:
             :param: update_status: bool - True if the file exists and we 
                 are trying to update it. False if the file hasn't been 
                 downloaded yet. 
-            :param: download_settings : DownloadSettings - An instance of the
-                DownloadSettings class containing the current download
-                settings when the function is called by argo.py.
-            :param: source_settings : SourceSettings - An instance of the
-                SourceSettings class containing the current Source
-                settings when the function is called by argo.py.
         """
         index_directory = Path(self.download_settings.base_dir.joinpath("Index"))
 
@@ -212,3 +191,22 @@ class Argo:
         if not success: 
             message = 'Update failed:' if update_status else 'Download failed:'
             raise Exception(f'{message} {file_name} could not be downloaded at this time.')
+        
+
+    def __load_dataframe(self, file_name: str) -> pd:
+        """ A function to load an index file into a data frame for easier refrence.
+
+            :param: file_name : str - The name of the file that we would like
+                to read into a dataframe.
+
+            Notes: the header is 8 here because there are 8 lines in both index fiels
+                devoted to header information.
+        """
+        start_time = time.time()
+        file_path = Path.joinpath(self.download_settings.base_dir, 'Index', file_name)
+        dataframe = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
+                                date_format='%Y%m%d%H%M%S')
+        print(dataframe)
+        transfer_time = time.time() - start_time
+        print(f'The transfer time for {file_name} was: {transfer_time}')
+        return dataframe
