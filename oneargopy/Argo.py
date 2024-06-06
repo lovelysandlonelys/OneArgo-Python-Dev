@@ -54,14 +54,14 @@ class Argo:
 
         # Load the argo_synthetic-profile_index.txt file into a data frame
         print(f'\n Transfering index files into data frames...')
-        self.synthetic_index = self.__load_dataframe('argo_synthetic-profile_index.txt')
-        self.prof_index = self.__load_dataframe('ar_index_global_prof.txt')
+        self.synthetic_index = self.__load_synthetic_dataframe()
+        self.prof_index = self.__load_prof_dataframe()
         
-        # Fill in avail_vars variable in the SourceSettings class
-        self.source_settings.set_avail_vars(self.synthetic_index)
+        # # Fill in avail_vars variable in the SourceSettings class
+        # self.source_settings.set_avail_vars(self.synthetic_index)
 
-        # Fill in dacs variable in the SourceSettings class
-        self.source_settings.set_dacs(self.synthetic_index)
+        # # Fill in dacs variable in the SourceSettings class
+        # self.source_settings.set_dacs(self.synthetic_index)
 
         print(f'These are your updated source settings: {self.source_settings}')
 
@@ -195,7 +195,7 @@ class Argo:
             raise Exception(f'{message} {file_name} could not be downloaded at this time.')
         
 
-    def __load_dataframe(self, file_name: str) -> pd:
+    def __load_synthetic_dataframe(self) -> pd:
         """ A function to load an index file into a data frame for easier refrence.
 
             :param: file_name : str - The name of the file that we would like
@@ -205,10 +205,67 @@ class Argo:
                 devoted to header information.
         """
         start_time = time.time()
+        file_name = "argo_synthetic-profile_index.txt"
         file_path = Path.joinpath(self.download_settings.base_dir, 'Index', file_name)
-        dataframe = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
+        synthetic_index = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
                                 date_format='%Y%m%d%H%M%S')
-        print(dataframe)
+        
+        # Parsing out variables in first colum file
+        dacs = synthetic_index['file'].str.split('/').str[0]
+        synthetic_index.insert(0, "dacs", dacs, True)
+
+        wmoid = synthetic_index['file'].str.split('/').str[1]
+        synthetic_index.insert(1, "wmoid", wmoid, True)
+
+        profile = synthetic_index['file'].str.split('_').str[1].str.replace('.nc', '')
+        synthetic_index.insert(2, "profile", profile, True)
+
+        synthetic_index['A'] = synthetic_index['parameter_data_mode'].str.contains('A').replace({True: 'A', False: pd.NA})
+        synthetic_index['D'] = synthetic_index['parameter_data_mode'].str.contains('D').replace({True: 'D', False: pd.NA})
+        synthetic_index['R'] = synthetic_index['parameter_data_mode'].str.contains('R').replace({True: 'R', False: pd.NA})
+
+        print(f'Memory usage for synthetic profile dataframe:')
+        print(synthetic_index.memory_usage(deep=True))
+        print(synthetic_index.info(memory_usage='deep'))
+
+        print(synthetic_index)
+
         transfer_time = time.time() - start_time
-        print(f'The transfer time for {file_name} was: {transfer_time}')
-        return dataframe
+        print(f'The transfer time for {file_name} was: {transfer_time}\n')
+        return synthetic_index
+    
+
+    def __load_prof_dataframe(self) -> pd:
+        """ A function to load an index file into a data frame for easier refrence.
+
+            :param: file_name : str - The name of the file that we would like
+                to read into a dataframe.
+
+            Notes: the header is 8 here because there are 8 lines in both index fiels
+                devoted to header information.
+        """
+        start_time = time.time()
+        file_name = "ar_index_global_prof.txt"
+        file_path = Path.joinpath(self.download_settings.base_dir, 'Index', file_name)
+        prof_index = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
+                                date_format='%Y%m%d%H%M%S')
+        
+        dacs = prof_index['file'].str.split('/').str[0]
+        prof_index.insert(0, "dacs", dacs, True)
+
+        wmoid = prof_index['file'].str.split('/').str[1]
+        prof_index.insert(1, "wmoid", wmoid, True)
+
+        data_mode = prof_index['file'].str.split('/').str[3].str[0]
+        prof_index.insert(2, "data_mode", data_mode, True)
+
+        print(f'Memory usage for prof profile dataframe: ')
+        print(prof_index.memory_usage(deep=True))
+        print(prof_index.info(memory_usage='deep'))
+
+        print(prof_index)
+
+        transfer_time = time.time() - start_time
+        print(f'The transfer time for {file_name} was: {transfer_time}\n')
+        return prof_index
+
