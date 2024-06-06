@@ -56,10 +56,7 @@ class Argo:
         self.synthetic_index = self.__load_synthetic_dataframe()
         self.prof_index = self.__load_prof_dataframe()
         
-        # Fill in source_settings information based off of synthetic file
-        print(f'Filling in source settings information...')
-        self.source_settings.set_avail_vars(self.synthetic_index)
-        self.source_settings.set_dacs(self.synthetic_index)
+        
         print(f'These are your updated source settings: {self.source_settings}')
 
         # Extract Unique floats from both data frames
@@ -200,8 +197,10 @@ class Argo:
             :param: file_name : str - The name of the file that we would like
                 to read into a dataframe.
 
-            Notes: the header is 8 here because there are 8 lines in both index fiels
+            NOTE: the header is 8 here because there are 8 lines in both index fiels
                 devoted to header information.
+            NOTE: R: raw data, A: adjusted mode (real-time adjusted), D: delayed mode quality controlled
+
         """
         start_time = time.time()
         file_name = "argo_synthetic-profile_index.txt"
@@ -219,20 +218,7 @@ class Argo:
         profile = synthetic_index['file'].str.split('_').str[1].str.replace('.nc', '')
         synthetic_index.insert(2, "profile", profile, True)
 
-        # # Seperating the paramater's data modes into seperate columns 
-        # all_parameters = synthetic_index['parameters'].str.split().explode()
-        # unique_parameters = all_parameters.unique()
-        # for parameter in unique_parameters: 
-        #     synthetic_index[parameter] = None
-
-        # for index, row in synthetic_index.iterrows():
-        #     param_list = row['parameters'].split()
-        #     data_type_list = list(row['parameter_data_mode'])
-
-        #     for param, dtype in zip(param_list, data_type_list):
-        #         synthetic_index.at[index, param] = dtype
-
-        # Split the 'parameters' and 'parameter_data_mode' columns into separate lists
+        # Splitting the parameters into their own collumns
         parameters_split = synthetic_index['parameters'].str.split()
         data_types_split = synthetic_index['parameter_data_mode'].apply(list)
 
@@ -246,8 +232,14 @@ class Argo:
         # Pivot the expanded DataFrame to get parameters as columns
         result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type')
 
+        # Fill in parameters and dacs before removing rows
+        # Fill in source_settings information based off of synthetic file
+        print(f'Filling in source settings information...')
+        self.source_settings.set_avail_vars(synthetic_index)
+        self.source_settings.set_dacs(synthetic_index)
+
         # Merge the pivoted DataFrame back with the original DataFrame (if needed)
-        # synthetic_index = synthetic_index.drop(columns=['parameters', 'parameter_data_mode'])
+        synthetic_index = synthetic_index.drop(columns=['parameters', 'parameter_data_mode'])
         synthetic_index = synthetic_index.join(result_df)
                     
 
@@ -256,12 +248,7 @@ class Argo:
         print(synthetic_index.info(memory_usage='deep'))
 
         print(synthetic_index)
-        
-        # determining the name of the file
-        file_name = 'testing_split.csv'
 
-        # saving the excel
-        synthetic_index.to_csv(file_name)
 
         transfer_time = time.time() - start_time
         print(f'The transfer time for {file_name} was: {transfer_time}\n')
