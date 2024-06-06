@@ -36,7 +36,6 @@ class Argo:
                 to initialize the Settings classes if passed. Should be the 
         """
         print(f'Starting initialize process...\n')
-        
         self.download_settings = DownloadSettings(user_settings)
         self.source_settings = SourceSettings(user_settings)
         
@@ -53,21 +52,19 @@ class Argo:
             self.__download_index_file(file)
 
         # Load the argo_synthetic-profile_index.txt file into a data frame
-        print(f'\n Transfering index files into data frames...')
+        print(f'\nTransfering index files into data frames...')
         self.synthetic_index = self.__load_synthetic_dataframe()
         self.prof_index = self.__load_prof_dataframe()
         
-        # Fill in avail_vars variable in the SourceSettings class
+        # Fill in source_settings information based off of synthetic file
+        print(f'Filling in source settings information...')
         self.source_settings.set_avail_vars(self.synthetic_index)
-
-        # Fill in dacs variable in the SourceSettings class
         self.source_settings.set_dacs(self.synthetic_index)
-
         print(f'These are your updated source settings: {self.source_settings}')
 
         # Extract Unique floats from both data frames
-            # There is some post processing that they do on unique floats in the initalize_argo.m
-            # his any of that still relevant? 
+        print(f'Extracting Unique Floats...')
+        self.extract_unique_floats() 
 
         print(f'Initialize is finished!')
 
@@ -269,3 +266,5 @@ class Argo:
         print(f'The transfer time for {file_name} was: {transfer_time}\n')
         return prof_index
 
+    def extract_unique_floats() -> None:
+        pass
