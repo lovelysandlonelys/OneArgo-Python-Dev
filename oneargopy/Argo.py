@@ -5,7 +5,7 @@
 # Creation Date: 05/30/2024
 # Version: 1.0
 #------------------------------------------------------------------------------
-""" The argo class contains the primary functions for downloading and handling
+""" The Argo class contains the primary functions for downloading and handling
     data gathered from GDAC.
 """
 #------------------------------------------------------------------------------
