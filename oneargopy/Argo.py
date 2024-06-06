@@ -196,7 +196,7 @@ class Argo:
         
 
     def __load_synthetic_dataframe(self) -> pd:
-        """ A function to load an index file into a data frame for easier refrence.
+        """ A function to load an index file into a data frame for easier reference.
 
             :param: file_name : str - The name of the file that we would like
                 to read into a dataframe.
