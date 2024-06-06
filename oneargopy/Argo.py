@@ -63,8 +63,8 @@ class Argo:
         print(f'These are your updated source settings: {self.source_settings}')
 
         # Extract Unique floats from both data frames
-        print(f'Extracting Unique Floats...')
-        self.extract_unique_floats() 
+        # print(f'Extracting Unique Floats...')
+        # self.extract_unique_floats() 
 
         print(f'Initialize is finished!')
 
@@ -219,21 +219,54 @@ class Argo:
         profile = synthetic_index['file'].str.split('_').str[1].str.replace('.nc', '')
         synthetic_index.insert(2, "profile", profile, True)
 
-        # Seperating the data_mode into seperate columns 
-        synthetic_index['A'] = synthetic_index['parameter_data_mode'].str.contains('A').replace({True: 'A', False: pd.NA})
-        synthetic_index['D'] = synthetic_index['parameter_data_mode'].str.contains('D').replace({True: 'D', False: pd.NA})
-        synthetic_index['R'] = synthetic_index['parameter_data_mode'].str.contains('R').replace({True: 'R', False: pd.NA})
+        # # Seperating the paramater's data modes into seperate columns 
+        # all_parameters = synthetic_index['parameters'].str.split().explode()
+        # unique_parameters = all_parameters.unique()
+        # for parameter in unique_parameters: 
+        #     synthetic_index[parameter] = None
+
+        # for index, row in synthetic_index.iterrows():
+        #     param_list = row['parameters'].split()
+        #     data_type_list = list(row['parameter_data_mode'])
+
+        #     for param, dtype in zip(param_list, data_type_list):
+        #         synthetic_index.at[index, param] = dtype
+
+        # Split the 'parameters' and 'parameter_data_mode' columns into separate lists
+        parameters_split = synthetic_index['parameters'].str.split()
+        data_types_split = synthetic_index['parameter_data_mode'].apply(list)
+
+        # Create a new DataFrame from the split lists
+        expanded_df = pd.DataFrame({
+            'index': synthetic_index.index.repeat(parameters_split.str.len()),
+            'parameter': parameters_split.explode(),
+            'data_type': data_types_split.explode()
+        })
+
+        # Pivot the expanded DataFrame to get parameters as columns
+        result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type')
+
+        # Merge the pivoted DataFrame back with the original DataFrame (if needed)
+        # synthetic_index = synthetic_index.drop(columns=['parameters', 'parameter_data_mode'])
+        synthetic_index = synthetic_index.join(result_df)
+                    
 
         print(f'Memory usage for synthetic profile dataframe:')
         print(synthetic_index.memory_usage(deep=True))
         print(synthetic_index.info(memory_usage='deep'))
 
         print(synthetic_index)
+        
+        # determining the name of the file
+        file_name = 'testing_split.csv'
+
+        # saving the excel
+        synthetic_index.to_csv(file_name)
 
         transfer_time = time.time() - start_time
         print(f'The transfer time for {file_name} was: {transfer_time}\n')
         return synthetic_index
-    
+        
 
     def __load_prof_dataframe(self) -> pd:
         """ A function to load an index file into a data frame for easier refrence.
@@ -258,8 +291,8 @@ class Argo:
         wmoid = prof_index['file'].str.split('/').str[1]
         prof_index.insert(1, "wmoid", wmoid, True)
 
-        data_mode = prof_index['file'].str.split('/').str[3].str[0]
-        prof_index.insert(2, "data_mode", data_mode, True)
+        file_type = prof_index['file'].str.split('/').str[3].str[0]
+        prof_index.insert(2, "file_type", file_type, True)
 
         print(f'Memory usage for prof profile dataframe: ')
         print(prof_index.memory_usage(deep=True))
