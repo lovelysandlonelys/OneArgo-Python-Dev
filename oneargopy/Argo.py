@@ -57,11 +57,11 @@ class Argo:
         self.synthetic_index = self.__load_synthetic_dataframe()
         self.prof_index = self.__load_prof_dataframe()
         
-        # # Fill in avail_vars variable in the SourceSettings class
-        # self.source_settings.set_avail_vars(self.synthetic_index)
+        # Fill in avail_vars variable in the SourceSettings class
+        self.source_settings.set_avail_vars(self.synthetic_index)
 
-        # # Fill in dacs variable in the SourceSettings class
-        # self.source_settings.set_dacs(self.synthetic_index)
+        # Fill in dacs variable in the SourceSettings class
+        self.source_settings.set_dacs(self.synthetic_index)
 
         print(f'These are your updated source settings: {self.source_settings}')
 

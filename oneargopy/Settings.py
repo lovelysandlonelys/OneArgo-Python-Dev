@@ -235,7 +235,7 @@ class SourceSettings():
         """ A function to dynamically fill the dacs parameter from the
             source settings with variables from the argo_synthetic_profile_index.
         """
-        unique_dacs = synthetic_index['file'].str.split('/').str[0].unique()
+        unique_dacs = synthetic_index['dacs'].unique()
         self.dacs = unique_dacs.tolist()
 
 
