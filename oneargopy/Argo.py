@@ -24,6 +24,7 @@ import requests
 from datetime import datetime
 import shutil
 import gzip
+import numpy as np
 
 class Argo:
     
@@ -222,15 +223,19 @@ class Argo:
         parameters_split = synthetic_index['parameters'].str.split()
         data_types_split = synthetic_index['parameter_data_mode'].apply(list)
 
+        data_type_mapping = {np.nan: 0, 'R':1, 'A':2, 'D':3 }
+        mapped_data_types_split = data_types_split.apply(lambda lst: [data_type_mapping.get(x, 0) if pd.notna(x) else 0 for x in lst])
+
         # Create a new DataFrame from the split lists
         expanded_df = pd.DataFrame({
             'index': synthetic_index.index.repeat(parameters_split.str.len()),
             'parameter': parameters_split.explode(),
-            'data_type': data_types_split.explode()
+            'data_type': mapped_data_types_split.explode().astype('int8')
         })
 
+
         # Pivot the expanded DataFrame to get parameters as columns
-        result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type')
+        result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).astype('int8')
 
         # Fill in parameters and dacs before removing rows
         # Fill in source_settings information based off of synthetic file
@@ -278,8 +283,8 @@ class Argo:
         wmoid = prof_index['file'].str.split('/').str[1]
         prof_index.insert(1, "wmoid", wmoid, True)
 
-        file_type = prof_index['file'].str.split('/').str[3].str[0]
-        prof_index.insert(2, "file_type", file_type, True)
+        R_file = prof_index['file'].str.split('/').str[3].str.startswith('R')
+        prof_index.insert(2, "R_file", R_file, True)
 
         print(f'Memory usage for prof profile dataframe: ')
         print(prof_index.memory_usage(deep=True))
