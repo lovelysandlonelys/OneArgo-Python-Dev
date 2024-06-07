@@ -281,7 +281,17 @@ class Argo:
 
         print(prof_index)
 
+        profiler_types = prof_index['profiler_type'].unique()
+        print(f'Unique Profiler Types: {profiler_types}')
+
         return prof_index
 
     def __display_floats(self) -> None:
-        unique_synthetic_floats = self.synthetic_index['wmoid'].unique() 
+        floats = self.prof_index['wmoid'].unique()
+        print(f"{len(floats)} floats found.")
+
+        bgc_floats = self.synthetic_index['wmoid'].unique()
+        profiles = self.synthetic_index['profile'].unique()
+        print(f"{len(bgc_floats)} BGC floats with {len(profiles)} profiles found.\n")
+
+        
