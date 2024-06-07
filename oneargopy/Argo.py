@@ -222,7 +222,8 @@ class Argo:
         })
 
         # Pivot the expanded DataFrame to get parameters as columns
-        result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).astype('int8')
+        with pd.option_context('future.no_silent_downcasting', True):
+            result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).astype('int8')
 
         # Fill in parameters and dacs before removing rows
         # Fill in source_settings information based off of synthetic file
@@ -261,19 +262,16 @@ class Argo:
         R_file = prof_index['file'].str.split('/').str[3].str.startswith('R')
         prof_index.insert(2, "R_file", R_file, True)
 
-        profiler_types = prof_index['profiler_type'].unique()
-        print(f'Unique Profiler Types: {profiler_types}')
-
         return prof_index
 
     def __display_floats(self) -> None:
         """ A function to display information about the number of floats.
         """
         floats = self.prof_index['wmoid'].unique()
-        print(f"{len(floats)} floats found.")
+        print(f"\n{len(floats)} floats found.")
 
         bgc_floats = self.synthetic_index['wmoid'].unique()
-        profiles = self.synthetic_index['profile'].unique()
+        profiles = self.synthetic_index['file'].unique()
         print(f"{len(bgc_floats)} BGC floats with {len(profiles)} profiles found.\n")
 
         
