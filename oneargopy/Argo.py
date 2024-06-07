@@ -270,7 +270,7 @@ class Argo:
         """
         floats = self.prof_index['wmoid'].unique()
         profiles = self.prof_index['file'].unique()
-        print(f"{len(floats)} floats with {len(profiles)} profiles found.\n")
+        print(f"\n{len(floats)} floats with {len(profiles)} profiles found.\n")
 
         bgc_floats = self.synthetic_index['wmoid'].unique()
         profiles = self.synthetic_index['file'].unique()
