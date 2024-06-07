@@ -25,6 +25,7 @@ from datetime import datetime
 import shutil
 import gzip
 import numpy as np
+import logging
 
 class Argo:
     
@@ -56,16 +57,13 @@ class Argo:
         print(f'\nTransfering index files into data frames...')
         self.synthetic_index = self.__load_synthetic_dataframe()
         self.prof_index = self.__load_prof_dataframe()
-        
-        
-        print(f'These are your updated source settings: {self.source_settings}')
 
         # Print number of floats
         self.__display_floats() 
 
         print(f'Initialize is finished!')
 
-        if self.download_settings.keep_index_in_memory is False:
+        if not self.download_settings.keep_index_in_memory:
             print('Removing dataframes from memory...')
             del self.synthetic_index
             del self.prof_index
@@ -105,26 +103,22 @@ class Argo:
                 print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
             else: 
                 txt_last_modified_time = Path(file_path).stat().st_mtime
-                print(f'The last modified time .txt: {txt_last_modified_time}')
-                
                 current_time = datetime.now().timestamp()
-                print(f'The current time: {current_time}')
-
                 txt_seconds_since_modified = current_time - txt_last_modified_time
-                print(f'The seconds since modified txt: {txt_seconds_since_modified}')
 
-                print(f'The download threshold: {self.download_settings.update}')
+                print(f'It has been {txt_seconds_since_modified}s since {file_name} was modified.')
+                print(f'The download threshold is {self.download_settings.update}')
 
                 # Check if the file should be updated
                 if (txt_seconds_since_modified > self.download_settings.update):
-                    print(f'The file: {file_name} needs to be updated.')
+                    print(f'Updating {file_name}...')
                     self.__try_download(file_name ,True)
                 else:
-                    print(f'The file: {file_name} does not need to be updated yet.\n')
+                    print(f'{file_name} does not need to be updated yet.\n')
 
         # if the file doesn't exist then download it
         else: 
-            print(f'The file: {file_name} needs to be downloaded.')
+            print(f'{file_name} needs to be downloaded.')
             self.__try_download(file_name, False)
 
 
@@ -149,33 +143,22 @@ class Argo:
 
                 url = "".join([host, file_name, ".gz"])
 
-                print(f'URL we are trying to download from: {url}')
-                print(f'We are saving {file_name}.gz to {gz_save_path}')
+                print(f'Downloading {file_name} from {url}...')
 
-
-                start_time = time.time()
                 try:
                     with requests.get(url, stream=True) as r:
                         r.raise_for_status()
                         with open(gz_save_path, 'wb') as f:
                             r.raw.decode_content = True
                             shutil.copyfileobj(r.raw, f)
-                    
-                    download_time = time.time() - start_time
-
-                    unzip_time_start = time.time()
 
                     print(f'Unzipping {file_name}.gz...')
                     with gzip.open(gz_save_path, 'rb') as gz_file:
                         with open(txt_save_path, 'wb') as txt_file:
                             shutil.copyfileobj(gz_file, txt_file)
-
-                    unzip_time = time.time() - unzip_time_start
                     
                     success = True
-                    print(f'{file_name}.gz was successfully downloaded and unzipped to {file_name}')
-                    print(f'Download took {download_time:.2f} seconds.')
-                    print(f'Unzip took {unzip_time:.2f} seconds.\n')
+                    print(f'Success!')
 
                     # Remove extraneous .gz file
                     gz_save_path.unlink()
@@ -192,8 +175,10 @@ class Argo:
 
         # If ultimately nothing could be downloaded
         if not success: 
-            message = 'Update failed:' if update_status else 'Download failed:'
-            raise Exception(f'{message} {file_name} could not be downloaded at this time.')
+            if update_status:
+                print(f'WARNING: Update for {file_name} failed, you are working with out of date data.')
+            else:
+             raise Exception(f'Download failed! {file_name} could not be downloaded at this time.')
         
 
     def __load_synthetic_dataframe(self) -> pd:
@@ -233,9 +218,8 @@ class Argo:
         expanded_df = pd.DataFrame({
             'index': synthetic_index.index.repeat(parameters_split.str.len()),
             'parameter': parameters_split.explode(),
-            'data_type': mapped_data_types_split.explode().astype('int8')
+            'data_type': mapped_data_types_split.explode()
         })
-
 
         # Pivot the expanded DataFrame to get parameters as columns
         result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).astype('int8')
@@ -249,8 +233,6 @@ class Argo:
         # Merge the pivoted DataFrame back with the original DataFrame and drop split rows
         synthetic_index = synthetic_index.drop(columns=['parameters', 'parameter_data_mode'])
         synthetic_index = synthetic_index.join(result_df)
-
-        print(synthetic_index)
 
         return synthetic_index
         
@@ -279,14 +261,14 @@ class Argo:
         R_file = prof_index['file'].str.split('/').str[3].str.startswith('R')
         prof_index.insert(2, "R_file", R_file, True)
 
-        print(prof_index)
-
         profiler_types = prof_index['profiler_type'].unique()
         print(f'Unique Profiler Types: {profiler_types}')
 
         return prof_index
 
     def __display_floats(self) -> None:
+        """ A function to display information about the number of floats.
+        """
         floats = self.prof_index['wmoid'].unique()
         print(f"{len(floats)} floats found.")
 
