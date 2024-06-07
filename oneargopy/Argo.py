@@ -203,7 +203,6 @@ class Argo:
             NOTE: R: raw data, A: adjusted mode (real-time adjusted), D: delayed mode quality controlled
 
         """
-        start_time = time.time()
         file_name = "argo_synthetic-profile_index.txt"
         file_path = Path.joinpath(self.download_settings.base_dir, 'Index', file_name)
         synthetic_index = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
@@ -243,20 +242,12 @@ class Argo:
         self.source_settings.set_avail_vars(synthetic_index)
         self.source_settings.set_dacs(synthetic_index)
 
-        # Merge the pivoted DataFrame back with the original DataFrame (if needed)
+        # Merge the pivoted DataFrame back with the original DataFrame and drop split rows
         synthetic_index = synthetic_index.drop(columns=['parameters', 'parameter_data_mode'])
         synthetic_index = synthetic_index.join(result_df)
-                    
-
-        print(f'Memory usage for synthetic profile dataframe:')
-        print(synthetic_index.memory_usage(deep=True))
-        print(synthetic_index.info(memory_usage='deep'))
 
         print(synthetic_index)
 
-
-        transfer_time = time.time() - start_time
-        print(f'The transfer time for {file_name} was: {transfer_time}\n')
         return synthetic_index
         
 
@@ -269,8 +260,6 @@ class Argo:
             Notes: the header is 8 here because there are 8 lines in both index fiels
                 devoted to header information.
         """
-        start_time = time.time()
-
         file_name = "ar_index_global_prof.txt"
         file_path = Path.joinpath(self.download_settings.base_dir, 'Index', file_name)
         prof_index = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
@@ -286,14 +275,8 @@ class Argo:
         R_file = prof_index['file'].str.split('/').str[3].str.startswith('R')
         prof_index.insert(2, "R_file", R_file, True)
 
-        print(f'Memory usage for prof profile dataframe: ')
-        print(prof_index.memory_usage(deep=True))
-        print(prof_index.info(memory_usage='deep'))
-
         print(prof_index)
 
-        transfer_time = time.time() - start_time
-        print(f'The transfer time for {file_name} was: {transfer_time}\n')
         return prof_index
 
     def extract_unique_floats() -> None:
