@@ -5,7 +5,8 @@
       "index_files": ["ar_index_global_traj.txt", "ar_index_global_tech.txt", "ar_index_global_meta.txt", "ar_index_global_prof.txt", "argo_synthetic-profile_index.txt"],
       "verbose": true,
       "update": 3600,
-      "max_attempts": 5
+      "max_attempts": 5,
+      "keep_index_in_memory": false
     },
     "AnalysisSettings": {
       "temp_thresh": 0.2,

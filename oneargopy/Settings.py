@@ -47,6 +47,9 @@ class DownloadSettings():
         max_attempts : int - An integer value that determines the 
             number of times argo tries to download the same file before 
             raising an exception.
+        keep_index_in_memory : bool - True by default, a value to 
+            determine if the dataframes from the index files should be 
+            kept in working memory or not.
     """
     def __init__(self, user_settings: str = None) -> None:
         if user_settings is not None:
@@ -57,6 +60,7 @@ class DownloadSettings():
             self.verbose = ds_data['verbose']
             self.update = ds_data['update']
             self.max_attempts = ds_data['max_attempts']
+            self.keep_index_in_memory = ds_data['keep_index_in_memory']
         else: 
             self.base_dir =  Path(__file__).resolve().parent
             self.sub_dirs =  ["Index", "Meta", "Tech", "Traj", "Profiles"]
@@ -65,6 +69,7 @@ class DownloadSettings():
             self.verbose = True
             self.update = 3600
             self.max_attempts = 10
+            self.keep_index_in_memory = True
 
     
     def __parse_download_settings(self, user_settings: Path) -> dict:
@@ -90,11 +95,11 @@ class DownloadSettings():
 
 
     def __str__(self) -> str:
-        return f'\n[Download Settings] -> \nBase Directory: {self.base_dir}, \nSub Directories: {self.sub_dirs}, \nIndex Files: {self.index_files}, \nVerbose Setting: {self.verbose}, \nMax Attempts: {self.max_attempts}\n'
+        return f'\n[Download Settings] -> \nBase Directory: {self.base_dir}, \nSub Directories: {self.sub_dirs}, \nIndex Files: {self.index_files}, \nVerbose Setting: {self.verbose}, \nMax Attempts: {self.max_attempts}, \nKeep Index In Memory: {self.keep_index_in_memory}\n'
     
 
     def __repr__(self) -> str:
-        return f'\nDownloadSettings({self.base_dir}, {self.sub_dirs}, {self.index_files}, {self.verbose}, {self.update}, {self.max_attempts})'
+        return f'\nDownloadSettings(PATH TO USER SETTINGS FILE)'
     
 
     def __eq__(self, __value: object) -> bool:
@@ -103,7 +108,8 @@ class DownloadSettings():
             self.index_files == __value.index_files and
             self.verbose == __value.verbose and
             self.update == __value.update and
-            self.max_attempts == __value.max_attempts):
+            self.max_attempts == __value.max_attempts and
+            self.keep_index_in_memory == __value.keep_index_in_memory):
             return True
         else: return False
 
@@ -162,7 +168,7 @@ class AnalysisSettings():
     
 
     def __repr__(self) -> str:
-        return f'\nAnalysisSettings({self.temp_thresh}, {self.dens_thresh}, {self.verbose}, {self.interp_lonlat})'
+        return f'\nAnalysisSettings(PATH TO USER SETTINGS FILE)'
     
 
     def __eq__(self, __value: object) -> bool:
@@ -244,7 +250,7 @@ class SourceSettings():
     
 
     def __repr__(self) -> str:
-        return f'\nSourceSettings()'
+        return f'\nSourceSettings(PATH TO USER SETTINGS FILE)'
     
 
     def __eq__(self, __value: object) -> bool:

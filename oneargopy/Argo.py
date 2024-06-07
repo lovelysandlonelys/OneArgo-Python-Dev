@@ -60,11 +60,15 @@ class Argo:
         
         print(f'These are your updated source settings: {self.source_settings}')
 
-        # Extract Unique floats from both data frames
-        # print(f'Extracting Unique Floats...')
-        # self.extract_unique_floats() 
+        # Print number of floats
+        self.__display_floats() 
 
         print(f'Initialize is finished!')
+
+        if self.download_settings.keep_index_in_memory is False:
+            print('Removing dataframes from memory...')
+            del self.synthetic_index
+            del self.prof_index
 
 
     def __initialize_subdirectories(self) -> None:
@@ -279,5 +283,5 @@ class Argo:
 
         return prof_index
 
-    def extract_unique_floats() -> None:
-        pass
+    def __display_floats(self) -> None:
+        unique_synthetic_floats = self.synthetic_index['wmoid'].unique() 
