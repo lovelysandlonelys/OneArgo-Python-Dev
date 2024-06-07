@@ -37,34 +37,34 @@ class Argo:
             :param: user_settings : str - An optional parameter that will be used
                 to initialize the Settings classes if passed. Should be the 
         """
-        print(f'Starting initialize process...\n')
         self.download_settings = DownloadSettings(user_settings)
         self.source_settings = SourceSettings(user_settings)
+        if self.download_settings.verbose: print(f'Starting initialize process...\n')
         
-        print(f'Your current download settings are: {self.download_settings}')
-        print(f'Your current source settings are: {self.source_settings}')
+        if self.download_settings.verbose: print(f'Your current download settings are: {self.download_settings}')
+        if self.download_settings.verbose: print(f'Your current source settings are: {self.source_settings}')
 
         # Check for and create subdirectories if needed
-        print(f'Checking for subdirectories...\n')
+        if self.download_settings.verbose: print(f'Checking for subdirectories...\n')
         self.__initialize_subdirectories()
 
         # Download files from GDAC to Index directory
-        print(f'\nDownloading index files...\n')
+        if self.download_settings.verbose: print(f'\nDownloading index files...\n')
         for file in self.download_settings.index_files:
             self.__download_index_file(file)
 
         # Load the argo_synthetic-profile_index.txt file into a data frame
-        print(f'\nTransfering index files into data frames...')
+        if self.download_settings.verbose: print(f'\nTransfering index files into data frames...')
         self.synthetic_index = self.__load_synthetic_dataframe()
         self.prof_index = self.__load_prof_dataframe()
 
         # Print number of floats
-        self.__display_floats() 
+        if self.download_settings.verbose: self.__display_floats() 
 
-        print(f'Initialize is finished!')
+        if self.download_settings.verbose: print(f'Initialize is finished!')
 
         if not self.download_settings.keep_index_in_memory:
-            print('Removing dataframes from memory...')
+            if self.download_settings.verbose: print('Removing dataframes from memory...')
             del self.synthetic_index
             del self.prof_index
 
@@ -76,13 +76,13 @@ class Argo:
         for directory in self.download_settings.sub_dirs:
             directory_path = self.download_settings.base_dir.joinpath(directory)
             if directory_path.exists():
-                print(f'The {directory_path} directory already exists!')
+                if self.download_settings.verbose: print(f'The {directory_path} directory already exists!')
             else:
                 try:
-                    print(f'Creating the {directory} directory!')
+                    if self.download_settings.verbose: print(f'Creating the {directory} directory!')
                     directory_path.mkdir()
                 except Exception as e:
-                    print(f'Failed to create the {directory} directory: {e}')
+                    if self.download_settings.verbose: print(f'Failed to create the {directory} directory: {e}')
 
 
     def __download_index_file(self, file_name: str) -> None:
@@ -100,25 +100,26 @@ class Argo:
 
             # Check if the settings allow  for updates
             if self.download_settings.update == 0:
-                print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
+                if self.download_settings.verbose: 
+                    print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
             else: 
                 txt_last_modified_time = Path(file_path).stat().st_mtime
                 current_time = datetime.now().timestamp()
                 txt_seconds_since_modified = current_time - txt_last_modified_time
 
-                print(f'It has been {txt_seconds_since_modified}s since {file_name} was modified.')
-                print(f'The download threshold is {self.download_settings.update}')
+                if self.download_settings.verbose: print(f'It has been {txt_seconds_since_modified}s since {file_name} was modified.')
+                if self.download_settings.verbose: print(f'The download threshold is {self.download_settings.update}')
 
                 # Check if the file should be updated
                 if (txt_seconds_since_modified > self.download_settings.update):
-                    print(f'Updating {file_name}...')
+                    if self.download_settings.verbose: print(f'Updating {file_name}...')
                     self.__try_download(file_name ,True)
                 else:
-                    print(f'{file_name} does not need to be updated yet.\n')
+                    if self.download_settings.verbose: print(f'{file_name} does not need to be updated yet.\n')
 
         # if the file doesn't exist then download it
         else: 
-            print(f'{file_name} needs to be downloaded.')
+            if self.download_settings.verbose: print(f'{file_name} needs to be downloaded.')
             self.__try_download(file_name, False)
 
 
@@ -143,7 +144,7 @@ class Argo:
 
                 url = "".join([host, file_name, ".gz"])
 
-                print(f'Downloading {file_name} from {url}...')
+                if self.download_settings.verbose: print(f'Downloading {file_name} from {url}...')
 
                 try:
                     with requests.get(url, stream=True) as r:
@@ -152,13 +153,13 @@ class Argo:
                             r.raw.decode_content = True
                             shutil.copyfileobj(r.raw, f)
 
-                    print(f'Unzipping {file_name}.gz...')
+                    if self.download_settings.verbose: print(f'Unzipping {file_name}.gz...')
                     with gzip.open(gz_save_path, 'rb') as gz_file:
                         with open(txt_save_path, 'wb') as txt_file:
                             shutil.copyfileobj(gz_file, txt_file)
                     
                     success = True
-                    print(f'Success!')
+                    if self.download_settings.verbose: print(f'Success!')
 
                     # Remove extraneous .gz file
                     gz_save_path.unlink()
@@ -227,7 +228,7 @@ class Argo:
 
         # Fill in parameters and dacs before removing rows
         # Fill in source_settings information based off of synthetic file
-        print(f'Filling in source settings information...')
+        if self.download_settings.verbose: print(f'Filling in source settings information...')
         self.source_settings.set_avail_vars(synthetic_index)
         self.source_settings.set_dacs(synthetic_index)
 

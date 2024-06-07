@@ -3,7 +3,7 @@
       "base_dir": "C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy",
       "sub_dirs": ["Index", "Meta", "Tech", "Traj", "Profiles"],
       "index_files": ["ar_index_global_traj.txt", "ar_index_global_tech.txt", "ar_index_global_meta.txt", "ar_index_global_prof.txt", "argo_synthetic-profile_index.txt"],
-      "verbose": true,
+      "verbose": false,
       "update": 3600,
       "max_attempts": 5,
       "keep_index_in_memory": false
