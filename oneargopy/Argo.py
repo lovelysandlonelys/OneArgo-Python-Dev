@@ -269,7 +269,8 @@ class Argo:
         """ A function to display information about the number of floats.
         """
         floats = self.prof_index['wmoid'].unique()
-        print(f"\n{len(floats)} floats found.")
+        profiles = self.prof_index['file'].unique()
+        print(f"{len(floats)} floats with {len(profiles)} profiles found.\n")
 
         bgc_floats = self.synthetic_index['wmoid'].unique()
         profiles = self.synthetic_index['file'].unique()
