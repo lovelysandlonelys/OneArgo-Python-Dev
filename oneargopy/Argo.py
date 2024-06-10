@@ -54,8 +54,8 @@ class Argo:
             self.__download_index_file(file)
 
         # Load the argo_synthetic-profile_index.txt file into a data frame
-        if self.download_settings.verbose: print(f'\nTransfering index files into data frames...')
-        self.synthetic_index = self.__load_synthetic_dataframe()
+        if self.download_settings.verbose: print(f'\Transferring index files into data frames...')
+        self.sprof_index  = self.__load_sprof_dataframe()
         self.prof_index = self.__load_prof_dataframe()
 
         # Print number of floats
@@ -65,7 +65,7 @@ class Argo:
 
         if not self.download_settings.keep_index_in_memory:
             if self.download_settings.verbose: print('Removing dataframes from memory...')
-            del self.synthetic_index
+            del self.sprof_index 
             del self.prof_index
 
 
@@ -98,7 +98,7 @@ class Argo:
         # Check if the filepath exists
         if file_path.exists():
 
-            # Check if the settings allow  for updates
+            # Check if the settings allow for updates
             if self.download_settings.update == 0:
                 if self.download_settings.verbose: 
                     print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
@@ -139,7 +139,7 @@ class Argo:
         gz_save_path = index_directory.joinpath("".join([file_name, ".gz"]))
 
         while (not success) and (iterations < self.download_settings.max_attempts):
-            # Try both hosts (perfered one is listed first in download settings)
+            # Try both hosts (preferred one is listed first in download settings)
             for host in self.source_settings.hosts:
 
                 url = "".join([host, file_name, ".gz"])
@@ -179,45 +179,45 @@ class Argo:
             if update_status:
                 print(f'WARNING: Update for {file_name} failed, you are working with out of date data.')
             else:
-             raise Exception(f'Download failed! {file_name} could not be downloaded at this time.')
+                raise Exception(f'Download failed! {file_name} could not be downloaded at this time.')
         
 
-    def __load_synthetic_dataframe(self) -> pd:
+    def __load_sprof_dataframe(self) -> pd:
         """ A function to load an index file into a data frame for easier reference.
 
             :param: file_name : str - The name of the file that we would like
                 to read into a dataframe.
 
-            NOTE: the header is 8 here because there are 8 lines in both index fiels
+            NOTE: the header is 8 here because there are 8 lines in both index files
                 devoted to header information.
             NOTE: R: raw data, A: adjusted mode (real-time adjusted), D: delayed mode quality controlled
 
         """
         file_name = "argo_synthetic-profile_index.txt"
         file_path = Path.joinpath(self.download_settings.base_dir, 'Index', file_name)
-        synthetic_index = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
+        sprof_index  = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
                                 date_format='%Y%m%d%H%M%S')
         
         # Parsing out variables in first column file
-        dacs = synthetic_index['file'].str.split('/').str[0]
-        synthetic_index.insert(0, "dacs", dacs, True)
+        dacs = sprof_index ['file'].str.split('/').str[0]
+        sprof_index .insert(0, "dacs", dacs, True)
 
-        wmoid = synthetic_index['file'].str.split('/').str[1]
-        synthetic_index.insert(1, "wmoid", wmoid, True)
+        wmoid = sprof_index ['file'].str.split('/').str[1]
+        sprof_index .insert(1, "wmoid", wmoid, True)
 
-        profile = synthetic_index['file'].str.split('_').str[1].str.replace('.nc', '')
-        synthetic_index.insert(2, "profile", profile, True)
+        profile = sprof_index ['file'].str.split('_').str[1].str.replace('.nc', '')
+        sprof_index .insert(2, "profile", profile, True)
 
         # Splitting the parameters into their own collumns
-        parameters_split = synthetic_index['parameters'].str.split()
-        data_types_split = synthetic_index['parameter_data_mode'].apply(list)
+        parameters_split = sprof_index ['parameters'].str.split()
+        data_types_split = sprof_index ['parameter_data_mode'].apply(list)
 
         data_type_mapping = {np.nan: 0, 'R':1, 'A':2, 'D':3 }
         mapped_data_types_split = data_types_split.apply(lambda lst: [data_type_mapping.get(x, 0) if pd.notna(x) else 0 for x in lst])
 
         # Create a new DataFrame from the split lists
         expanded_df = pd.DataFrame({
-            'index': synthetic_index.index.repeat(parameters_split.str.len()),
+            'index': sprof_index .index.repeat(parameters_split.str.len()),
             'parameter': parameters_split.explode(),
             'data_type': mapped_data_types_split.explode()
         })
@@ -229,14 +229,14 @@ class Argo:
         # Fill in parameters and dacs before removing rows
         # Fill in source_settings information based off of synthetic file
         if self.download_settings.verbose: print(f'Filling in source settings information...')
-        self.source_settings.set_avail_vars(synthetic_index)
-        self.source_settings.set_dacs(synthetic_index)
+        self.source_settings.set_avail_vars(sprof_index )
+        self.source_settings.set_dacs(sprof_index )
 
         # Merge the pivoted DataFrame back with the original DataFrame and drop split rows
-        synthetic_index = synthetic_index.drop(columns=['parameters', 'parameter_data_mode'])
-        synthetic_index = synthetic_index.join(result_df)
+        sprof_index  = sprof_index .drop(columns=['parameters', 'parameter_data_mode'])
+        sprof_index  = sprof_index .join(result_df)
 
-        return synthetic_index
+        return sprof_index 
         
 
     def __load_prof_dataframe(self) -> pd:
@@ -245,7 +245,7 @@ class Argo:
             :param: file_name : str - The name of the file that we would like
                 to read into a dataframe.
 
-            Notes: the header is 8 here because there are 8 lines in both index fiels
+            Notes: the header is 8 here because there are 8 lines in both index files
                 devoted to header information.
         """
         file_name = "ar_index_global_prof.txt"
@@ -272,8 +272,8 @@ class Argo:
         profiles = self.prof_index['file'].unique()
         print(f"\n{len(floats)} floats with {len(profiles)} profiles found.\n")
 
-        bgc_floats = self.synthetic_index['wmoid'].unique()
-        profiles = self.synthetic_index['file'].unique()
+        bgc_floats = self.sprof_index['wmoid'].unique()
+        profiles = self.sprof_index['file'].unique()
         print(f"{len(bgc_floats)} BGC floats with {len(profiles)} profiles found.\n")
 
         
