@@ -7,7 +7,7 @@ setup(
     version="1.0",
     author="Savannah Stephenson",
     author_email="savannah.stephenson@noaa.gov",
-    description="A package for downloading and handling data from GDAC",
+    description="A package for downloading and handling data from the Argo GDAC",
     packages=find_packages(),
     install_requires=[
         "requests",
