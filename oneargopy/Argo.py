@@ -55,7 +55,7 @@ class Argo:
 
         # Load the argo_synthetic-profile_index.txt file into a data frame
         if self.download_settings.verbose: print(f'\Transferring index files into data frames...')
-        self.sprof_index  = self.__load_synthetic_dataframe()
+        self.sprof_index  = self.__load_sprof_dataframe()
         self.prof_index = self.__load_prof_dataframe()
 
         # Print number of floats
@@ -182,7 +182,7 @@ class Argo:
              raise Exception(f'Download failed! {file_name} could not be downloaded at this time.')
         
 
-    def __load_synthetic_dataframe(self) -> pd:
+    def __load_sprof_dataframe(self) -> pd:
         """ A function to load an index file into a data frame for easier reference.
 
             :param: file_name : str - The name of the file that we would like
@@ -272,8 +272,8 @@ class Argo:
         profiles = self.prof_index['file'].unique()
         print(f"\n{len(floats)} floats with {len(profiles)} profiles found.\n")
 
-        bgc_floats = self.synthetic_index['wmoid'].unique()
-        profiles = self.synthetic_index['file'].unique()
+        bgc_floats = self.sprof_index['wmoid'].unique()
+        profiles = self.sprof_index['file'].unique()
         print(f"{len(bgc_floats)} BGC floats with {len(profiles)} profiles found.\n")
 
         
