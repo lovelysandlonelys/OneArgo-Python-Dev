@@ -50,6 +50,9 @@ class DownloadSettings():
         keep_index_in_memory : bool - True by default, a value to 
             determine if the dataframes from the index files should be 
             kept in working memory or not.
+        float_type : str - "all" by default, a string indicating the type
+            of floats that the researcher would like to handle. Valid options
+            are 'bgc', 'phys', and 'all'.
     """
     def __init__(self, user_settings: str = None) -> None:
         if user_settings is not None:
@@ -61,6 +64,7 @@ class DownloadSettings():
             self.update = ds_data['update']
             self.max_attempts = ds_data['max_attempts']
             self.keep_index_in_memory = ds_data['keep_index_in_memory']
+            self.float_type = ds_data['float_type']
         else: 
             self.base_dir =  Path(__file__).resolve().parent
             self.sub_dirs =  ["Index", "Meta", "Tech", "Traj", "Profiles"]
@@ -70,6 +74,7 @@ class DownloadSettings():
             self.update = 3600
             self.max_attempts = 10
             self.keep_index_in_memory = True
+            self.float_type = "all"
 
     
     def __parse_download_settings(self, user_settings: Path) -> dict:
@@ -95,7 +100,7 @@ class DownloadSettings():
 
 
     def __str__(self) -> str:
-        return f'\n[Download Settings] -> \nBase Directory: {self.base_dir}, \nSub Directories: {self.sub_dirs}, \nIndex Files: {self.index_files}, \nVerbose Setting: {self.verbose}, \nMax Attempts: {self.max_attempts}, \nKeep Index In Memory: {self.keep_index_in_memory}\n'
+        return f'\n[Download Settings] -> \nBase Directory: {self.base_dir}, \nSub Directories: {self.sub_dirs}, \nIndex Files: {self.index_files}, \nVerbose Setting: {self.verbose}, \nMax Attempts: {self.max_attempts}, \nKeep Index In Memory: {self.keep_index_in_memory}, \nFloat Type: {self.float_type}\n'
     
 
     def __repr__(self) -> str:
@@ -109,7 +114,8 @@ class DownloadSettings():
             self.verbose == __value.verbose and
             self.update == __value.update and
             self.max_attempts == __value.max_attempts and
-            self.keep_index_in_memory == __value.keep_index_in_memory):
+            self.keep_index_in_memory == __value.keep_index_in_memory and
+            self.float_type == __value.float_type):
             return True
         else: return False
 
