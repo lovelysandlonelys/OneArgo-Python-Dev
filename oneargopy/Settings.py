@@ -148,7 +148,7 @@ class AnalysisSettings():
 
             :param: user_settings : Path - The path to the user's settings file
 
-            :returns: ds_data : ___ - The parsed json string to assign to AnalysisdSettings
+            :returns: ds_data : ___ - The parsed json string to assign to AnalysisSettings
                 parameters. 
         """
         if not user_settings.exists():
@@ -192,7 +192,7 @@ class SourceSettings():
         avail_vars : list - The full set of available variables, 
             will be filled during evaluation of the index files.
         dacs : list - A list of Data Assimilation Centers, will be 
-            fileld during evaluation of the index files. 
+            filled during evaluation of the index files. 
     """
     def __init__(self, user_settings: str = None) -> None:
         if user_settings is not None:
