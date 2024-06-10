@@ -223,8 +223,9 @@ class Argo:
         })
 
         # Pivot the expanded DataFrame to get parameters as columns
-        with pd.option_context('future.no_silent_downcasting', True):
-            result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).astype('int8')
+            # Line here to suppress warning about fillna() being depreciated in future versions of pandas: 
+            # with pd.option_context('future.no_silent_downcasting', True):
+        result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).astype('int8')
 
         # Fill in parameters and dacs before removing rows
         # Fill in source_settings information based off of synthetic file
