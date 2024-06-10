@@ -139,7 +139,7 @@ class Argo:
         gz_save_path = index_directory.joinpath("".join([file_name, ".gz"]))
 
         while (not success) and (iterations < self.download_settings.max_attempts):
-            # Try both hosts (perfered one is listed first in download settings)
+            # Try both hosts (preferred one is listed first in download settings)
             for host in self.source_settings.hosts:
 
                 url = "".join([host, file_name, ".gz"])
