@@ -188,7 +188,7 @@ class Argo:
             :param: file_name : str - The name of the file that we would like
                 to read into a dataframe.
 
-            NOTE: the header is 8 here because there are 8 lines in both index fiels
+            NOTE: the header is 8 here because there are 8 lines in both index files
                 devoted to header information.
             NOTE: R: raw data, A: adjusted mode (real-time adjusted), D: delayed mode quality controlled
 
@@ -245,7 +245,7 @@ class Argo:
             :param: file_name : str - The name of the file that we would like
                 to read into a dataframe.
 
-            Notes: the header is 8 here because there are 8 lines in both index fiels
+            Notes: the header is 8 here because there are 8 lines in both index files
                 devoted to header information.
         """
         file_name = "ar_index_global_prof.txt"
