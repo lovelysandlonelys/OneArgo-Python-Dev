@@ -69,6 +69,28 @@ class Argo:
             del self.prof_index
 
 
+    def select_profiles(self, lon_lim = [-180, 180], Lat_lim = [-90, 90], start_date: datetime = datetime(1995, 1, 1), end_date: datetime = datetime(2023, 1, 19), **kargs):
+        """ select_profiles is a public function that...
+
+            :param:
+
+            :returns: 
+        """
+        # Validate passed arguments
+        ## 
+
+        # Parse optional arguments
+
+        # If keep_index_in_memory is set to false then we'll want to load
+        # the dataframes back into memory, we don't have to worry about initialize
+        # being called because Argo is an object and the constructor is called on 
+        # creation
+
+        # Checks for optional arguments
+
+        pass
+
+
     def __initialize_subdirectories(self) -> None:
         """ A function that checks for and creates the necessary folders as 
             listed in the download settings sub_dir list. 
@@ -200,13 +222,13 @@ class Argo:
         
         # Parsing out variables in first column file
         dacs = sprof_index ['file'].str.split('/').str[0]
-        sprof_index .insert(0, "dacs", dacs, True)
+        sprof_index .insert(0, "dacs", dacs)
 
         wmoid = sprof_index ['file'].str.split('/').str[1]
-        sprof_index .insert(1, "wmoid", wmoid, True)
+        sprof_index .insert(1, "wmoid", wmoid)
 
         profile = sprof_index ['file'].str.split('_').str[1].str.replace('.nc', '')
-        sprof_index .insert(2, "profile", profile, True)
+        sprof_index .insert(2, "profile", profile)
 
         # Splitting the parameters into their own columns
         parameters_split = sprof_index ['parameters'].str.split()
@@ -255,13 +277,13 @@ class Argo:
         
         # Splitting up parts of the first column
         dacs = prof_index['file'].str.split('/').str[0]
-        prof_index.insert(0, "dacs", dacs, True)
+        prof_index.insert(0, "dacs", dacs)
 
         wmoid = prof_index['file'].str.split('/').str[1]
-        prof_index.insert(1, "wmoid", wmoid, True)
+        prof_index.insert(1, "wmoid", wmoid)
 
         R_file = prof_index['file'].str.split('/').str[3].str.startswith('R')
-        prof_index.insert(2, "R_file", R_file, True)
+        prof_index.insert(2, "R_file", R_file)
 
         return prof_index
 
