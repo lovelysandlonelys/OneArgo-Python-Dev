@@ -148,7 +148,7 @@ class AnalysisSettings():
 
             :param: user_settings : Path - The path to the user's settings file
 
-            :returns: ds_data : ___ - The parsed json string to assign to AnalysisSettings
+            :returns: as_data : ___ - The parsed json string to assign to AnalysisSettings
                 parameters. 
         """
         if not user_settings.exists():
@@ -213,7 +213,7 @@ class SourceSettings():
 
             :param: user_settings : Path - The path to the user's settings file
 
-            :returns: ds_data : ___ - The parsed json string to assign to SourceSettings
+            :returns: ss_data : ___ - The parsed json string to assign to SourceSettings
                 parameters. 
         """
         if not user_settings.exists():
