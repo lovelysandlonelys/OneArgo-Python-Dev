@@ -54,7 +54,7 @@ class Argo:
             self.__download_index_file(file)
 
         # Load the argo_synthetic-profile_index.txt file into a data frame
-        if self.download_settings.verbose: print(f'\Transferring index files into data frames...')
+        if self.download_settings.verbose: print(f'\nTransferring index files into data frames...')
         self.sprof_index  = self.__load_sprof_dataframe()
         self.prof_index = self.__load_prof_dataframe()
 
