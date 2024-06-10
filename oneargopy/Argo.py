@@ -53,8 +53,8 @@ class Argo:
         for file in self.download_settings.index_files:
             self.__download_index_file(file)
 
-        # Load the argo_synthetic-profile_index.txt file into a data frame
-        if self.download_settings.verbose: print(f'\nTransferring index files into data frames...')
+        # Load the argo_synthetic-profile_index.txt file into a dataframe
+        if self.download_settings.verbose: print(f'\nTransferring index files into dataframes...')
         self.sprof_index  = self.__load_sprof_dataframe()
         self.prof_index = self.__load_prof_dataframe()
 
@@ -183,7 +183,7 @@ class Argo:
         
 
     def __load_sprof_dataframe(self) -> pd:
-        """ A function to load an index file into a data frame for easier reference.
+        """ A function to load an index file into a dataframe for easier reference.
 
             :param: file_name : str - The name of the file that we would like
                 to read into a dataframe.
@@ -241,7 +241,7 @@ class Argo:
         
 
     def __load_prof_dataframe(self) -> pd:
-        """ A function to load an index file into a data frame for easier reference.
+        """ A function to load an index file into a dataframe for easier reference.
 
             :param: file_name : str - The name of the file that we would like
                 to read into a dataframe.
