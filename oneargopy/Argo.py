@@ -208,7 +208,7 @@ class Argo:
         profile = sprof_index ['file'].str.split('_').str[1].str.replace('.nc', '')
         sprof_index .insert(2, "profile", profile, True)
 
-        # Splitting the parameters into their own collumns
+        # Splitting the parameters into their own columns
         parameters_split = sprof_index ['parameters'].str.split()
         data_types_split = sprof_index ['parameter_data_mode'].apply(list)
 
@@ -240,7 +240,7 @@ class Argo:
         
 
     def __load_prof_dataframe(self) -> pd:
-        """ A function to load an index file into a data frame for easier refrence.
+        """ A function to load an index file into a data frame for easier reference.
 
             :param: file_name : str - The name of the file that we would like
                 to read into a dataframe.
