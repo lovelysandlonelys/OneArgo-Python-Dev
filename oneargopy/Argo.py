@@ -179,7 +179,7 @@ class Argo:
             if update_status:
                 print(f'WARNING: Update for {file_name} failed, you are working with out of date data.')
             else:
-             raise Exception(f'Download failed! {file_name} could not be downloaded at this time.')
+                raise Exception(f'Download failed! {file_name} could not be downloaded at this time.')
         
 
     def __load_sprof_dataframe(self) -> pd:
