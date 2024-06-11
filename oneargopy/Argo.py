@@ -401,12 +401,23 @@ class Argo:
         profiles = self.sprof_index['file'].unique()
         print(f"{len(bgc_floats)} BGC floats with {len(profiles)} profiles found.\n")
 
-    def __get_in_geographic_range():
+    def __get_in_geographic_range(self):
         """ A function to compile floats within a certain geographic range.
         """
+        # The longitudes in the dataframe are standardized to fall within -180 and 180
+        # but our longitudes only have a standard minimum value of 180. 
+        if max(self.lon_lim) > 180:
+            sprof_adjusted_lons
+            prof_adjusted_lons
+
+
+        # Create list of points from dataframes
+        
+        # Create polygon or box using lat_lim and lon_lim 
+
 
         pass
 
 
-    def __get_in_date_range():
+    def __get_in_date_range(self):
         pass
