@@ -21,7 +21,7 @@ from pathlib import Path
 import pandas as pd
 import time
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import shutil
 import gzip
 import numpy as np
@@ -54,7 +54,7 @@ class Argo:
             self.__download_index_file(file)
 
         # Load the argo_synthetic-profile_index.txt file into a data frame
-        if self.download_settings.verbose: print(f'\Transferring index files into data frames...')
+        if self.download_settings.verbose: print(f'\nTransferring index files into data frames...')
         self.sprof_index  = self.__load_sprof_dataframe()
         self.prof_index = self.__load_prof_dataframe()
 
@@ -69,7 +69,7 @@ class Argo:
             del self.prof_index
 
 
-    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: datetime = datetime(1995, 1, 1), end_date: datetime = datetime.date.today() + datetime.timedelta(days=1), **kargs):
+    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: datetime = datetime(1995, 1, 1), end_date: datetime = datetime.today() + timedelta(days=1), **kargs):
         """ select_profiles is a public function that...
 
             :param: long_lim : list -
@@ -151,12 +151,12 @@ class Argo:
         self.end_date = end_date
 
         ## Validate lists
-        if lon_lim.len() != lat_lim.len():
+        if len(lon_lim) != len(lat_lim):
             raise Exception(f'The length of the longitude and latitude lists must be equal.')
-        if lon_lim.len() == 2:
+        if len(lon_lim) == 2:
             if (lon_lim[1] <= lon_lim[0]) or (lat_lim[1] <= lat_lim[0]):
-                print(f'Longitude Limits: min={lon_lim[0]} max={lon_lim[1]}')
-                print(f'Latitude Limits: min={lat_lim[0]} max={lat_lim[1]}')
+                if self.download_settings.verbose: print(f'Longitude Limits: min={lon_lim[0]} max={lon_lim[1]}')
+                if self.download_settings.verbose: print(f'Latitude Limits: min={lat_lim[0]} max={lat_lim[1]}')
                 raise Exception(f'When passing longitude and latitude lists using the [min, max] format the max value must be greater than the min value.')
             
         ## Validate latitudes
@@ -191,7 +191,11 @@ class Argo:
         profiles_in_date_range = self.__get_in_date_range()
         # other key argument checks would go here
 
-        pass
+
+        float_ids = [] # List with the IDs of all matching floats
+        float_profs = [] # List of indices of matching profiles, do we still need this one?
+
+        return float_ids, float_profs
 
 
     def __initialize_subdirectories(self) -> None:
@@ -411,22 +415,24 @@ class Argo:
         # but our longitudes only have a standard minimum value of -180. Because we validate
         # that the minimum and maximum lons are within a 360 range, to 
         if max(self.lon_lim) > 180:
-            print(f'The max value ')
-            print(f'Adjusting longitude value')
+            if self.download_settings.verbose: print(f'The max value in lon_lim is {max(self.lon_lim)}')
+            if self.download_settings.verbose: print(f'Adjusting longitude values...')
             prof_lons = self.prof_index['longitude'] + 360
         else:
             prof_lons = self.prof_index['longitude'] 
         
+        # Latitudes in the dataframe should be good to go
         prof_lats = self.prof_index['latitude'] 
 
         # Make points out of profile lat and lons
         profile_points =[]
+        if self.download_settings.verbose: print(f'Creating point list from profiles.')
         for lat, lon in zip(prof_lats, prof_lons):
             point = Point(lat, lon)
             profile_points.append(point)
         
         # Create polygon or box using lat_lim and lon_lim 
-        if self.lat_lim.len() == 2:
+        if len(self.lat_lim) == 2:
             shape = box(min(self.lon_lim), min(self.lat_lim), 
                         max(self.lon_lim), max(self.lat_lim))
         else:
@@ -435,12 +441,19 @@ class Argo:
                 coordinates.append([lat, lon])
             shape = Polygon(coordinates)
 
-        # Create list of in
+        # Create list of float ids if their corresponding coordinates
+        # are within the shape made using the lat and lon limits.
+        if self.download_settings.verbose: print(f'The geographic limits were: lat: {self.lat_lim} lon: {self.lon_lim}')
+        if self.download_settings.verbose: print(f'The following points fall inside of the shape defined by these limits:')
         floats_in_geographic_range =[]
         for point in profile_points: 
             if shape.contains(point):
                 index = profile_points.index([point])
-                floats_in_geographic_range.append(self.prof_index.at[index, 'wmoid'])
+                floats_in_geographic_range.append(self.prof_index.at[index, 'wmoid'])   
+                if self.download_settings.verbose: 
+                    print(f'Point: {point}')
+                    print(f'Index: {index}')
+                    print(f'ID: {self.prof_index.at[index, "wmoid"]}')    
 
         return floats_in_geographic_range
         
