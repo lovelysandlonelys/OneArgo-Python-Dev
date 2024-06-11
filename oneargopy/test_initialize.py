@@ -1,4 +1,6 @@
 from Argo import Argo
+from shapely.geometry import Point, Polygon, box
+
 
 # argo = Argo()
 # #argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
