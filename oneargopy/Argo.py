@@ -25,7 +25,7 @@ from datetime import datetime
 import shutil
 import gzip
 import numpy as np
-import logging
+from shapely.geometry import Point, Polygon, box
 
 class Argo:
     
@@ -401,22 +401,49 @@ class Argo:
         profiles = self.sprof_index['file'].unique()
         print(f"{len(bgc_floats)} BGC floats with {len(profiles)} profiles found.\n")
 
-    def __get_in_geographic_range(self):
+    def __get_in_geographic_range(self) -> list:
         """ A function to compile floats within a certain geographic range.
+
+            :returns: floats_in_geographic_range : list - A list of float IDs of floats
+                that fall within the longitude and latitude limits. 
         """
         # The longitudes in the dataframe are standardized to fall within -180 and 180
-        # but our longitudes only have a standard minimum value of 180. 
+        # but our longitudes only have a standard minimum value of -180. Because we validate
+        # that the minimum and maximum lons are within a 360 range, to 
         if max(self.lon_lim) > 180:
-            sprof_adjusted_lons
-            prof_adjusted_lons
+            print(f'The max value ')
+            print(f'Adjusting longitude value')
+            prof_lons = self.prof_index['longitude'] + 360
+        else:
+            prof_lons = self.prof_index['longitude'] 
+        
+        prof_lats = self.prof_index['latitude'] 
 
-
-        # Create list of points from dataframes
+        # Make points out of profile lat and lons
+        profile_points =[]
+        for lat, lon in zip(prof_lats, prof_lons):
+            point = Point(lat, lon)
+            profile_points.append(point)
         
         # Create polygon or box using lat_lim and lon_lim 
+        if self.lat_lim.len() == 2:
+            shape = box(min(self.lon_lim), min(self.lat_lim), 
+                        max(self.lon_lim), max(self.lat_lim))
+        else:
+            coordinates = []
+            for lat, lon in zip(self.lat_lim, self.lon_lim):
+                coordinates.append([lat, lon])
+            shape = Polygon(coordinates)
 
+        # Create list of in
+        floats_in_geographic_range =[]
+        for point in profile_points: 
+            if shape.contains(point):
+                index = profile_points.index([point])
+                floats_in_geographic_range.append(self.prof_index.at[index, 'wmoid'])
 
-        pass
+        return floats_in_geographic_range
+        
 
 
     def __get_in_date_range(self):
