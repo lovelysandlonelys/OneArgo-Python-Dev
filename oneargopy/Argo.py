@@ -452,14 +452,13 @@ class Argo:
         floats_in_geographic_range =[]
         for i, point in enumerate(profile_points): 
             if shape.contains(point):
-                # print(f'Saving Point: {point}')
+                with open('testing.txt', 'a') as file: 
+                    file.write(f'Saving point {i}: {point}\n')
                 floats_in_geographic_range.append(self.prof_index.at[i, 'wmoid'])   
         
         if self.download_settings.verbose: print(f'{len(floats_in_geographic_range)}/{len(profile_points)} points were within the shape')
 
-
-        return floats_in_geographic_range
-        
+        return floats_in_geographic_range        
 
 
     def __get_in_date_range(self):
