@@ -435,9 +435,11 @@ class Argo:
         
         # Create polygon or box using lat_lim and lon_lim 
         if len(self.lat_lim) == 2:
+            if self.download_settings.verbose: print(f'We are making a box because the length is {len(self.lat_lim)}')
             shape = box(min(self.lon_lim), min(self.lat_lim), 
                         max(self.lon_lim), max(self.lat_lim))
         else:
+            if self.download_settings.verbose: print(f'We are making a polygon because the length is {len(self.lat_lim)}')
             coordinates = []
             for lat, lon in zip(self.lat_lim, self.lon_lim):
                 coordinates.append([lon, lat])
@@ -450,6 +452,7 @@ class Argo:
         floats_in_geographic_range =[]
         for i, point in enumerate(profile_points): 
             if shape.contains(point):
+                print(f'Saving Point: {point}')
                 floats_in_geographic_range.append(self.prof_index.at[i, 'wmoid'])   
         
         if self.download_settings.verbose: print(f'{len(floats_in_geographic_range)}/{len(profile_points)} points were within the shape')
