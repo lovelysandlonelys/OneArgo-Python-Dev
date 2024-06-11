@@ -69,24 +69,127 @@ class Argo:
             del self.prof_index
 
 
-    def select_profiles(self, lon_lim = [-180, 180], Lat_lim = [-90, 90], start_date: datetime = datetime(1995, 1, 1), end_date: datetime = datetime(2023, 1, 19), **kargs):
+    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: datetime = datetime(1995, 1, 1), end_date: datetime = datetime.date.today() + datetime.timedelta(days=1), **kargs):
         """ select_profiles is a public function that...
 
-            :param:
+            :param: long_lim : list -
+            :param: lat_lim : list -
+            :param: start_date : datetime -
+            :param: end_date : datetime - 
+            NOTE: have to fix the formatting of these a bit 
+            :param: kargs : keyvalue arguments:
+                cycles=cycles: Select profiles by their CYCLE_NUMBER values. cycles can
+                        be a scalar or an array. Only floats that have at least one
+                        of the specified cycles will be returned.
+                dac=dac: Select by Data Assimilation Center reponsible for the floats.
+                        A single DAC can be entered as a string (e.g.: 'aoml'),
+                        multiple DACs can be entered as a cell array (e.g.:
+                        {'meds';'incois'}.
+                        Valid values are any of: {'aoml'; 'bodc'; 'coriolis'; ...
+                        'csio'; 'csiro'; 'incois'; 'jma'; 'kma'; 'kordi'; 'meds'}
+                depth=depth: Select profiles that reach at least this depth
+                        (positive downwards; in db)
+                direction=dir: Select profiles by direction ('a' for ascending,
+                        'd' for descending, '' for both directions)
+                floats=floats: Select profiles only from these floats that must
+                        match all other criteria
+                interp_lonlat=intp : if intp is 'yes' (default), missing lon/lat
+                        values (e.g., under ice) will be interpolated;
+                        set intp to 'no' to suppress interpolation;
+                        the default is taken from Settings.interp_lonlat (defined
+                        in initialize_argo.m)
+                min_num_prof=num_prof: Select only floats that have at least
+                        num_prof profiles that meet all other criteria
+                mode=mode: Valid modes are 'R' (real-time), 'A' (adjusted), and
+                        'D', in any combination. Only profiles with the selected
+                        mode(s) will be listed in float_profs.
+                        Default is 'RAD' (all modes).
+                        If multiple sensors are specified, all of them must be in
+                        the selected mode(s).
+                        If 'sensor' option is not used, the 'mode' option is ignored,
+                        unless 'type','phys' is specified (for non-BGC floats,
+                        pressure, temperature, and salinity are always in the same
+                        mode).
+                ocean=ocean: Valid choices are 'A' (Atlantic), 'P' (Pacific), and
+                        'I' (Indian). This selection is in addition to the specified
+                        longitude and latitude limits. (To select all floats and
+                        profiles from one ocean basin, leave lon_lim and lat_lim
+                        empty.)
+                outside='none' or 'time' or 'space' or'both': By default, only float profiles
+                        that are within both the temporal and spatial constraints are
+                        returned ('none'); specify to also maintain profiles outside
+                        the temporal constraints ('time'), spatial constraints
+                        ('space'), or both constraints ('both')
+                profiler',profiler: Select floats of the given profiler type (integer,
+                        e.g., 846 is an APEX BGC float)
+                sensor', SENSOR_TYPE: This option allows the selection by
+                        sensor type. Available are: PRES, PSAL, TEMP, DOXY, BBP,
+                        BBP470, BBP532, BBP700, TURBIDITY, CP, CP660, CHLA, CDOM,
+                        NITRATE, BISULFIDE, PH_IN_SITU_TOTAL, DOWN_IRRADIANCE,
+                        DOWN_IRRADIANCE380, DOWN_IRRADIANCE412, DOWN_IRRADIANCE443,
+                        DOWN_IRRADIANCE490, DOWN_IRRADIANCE555, DOWN_IRRADIANCE670,
+                        UP_RADIANCE, UP_RADIANCE412, UP_RADIANCE443, UP_RADIANCE490,
+                        UP_RADIANCE555, DOWNWELLING_PAR, CNDC, DOXY2, DOXY3, BBP700_2
+                        (Full list can be displayed with the list_sensors function.)
+                        Multiple sensors can be entered as a cell array, e.g.:
+                        {'DOXY';'NITRATE'}
+                type', type: Valid choices are 'bgc' (select BGC floats only),
+                        'phys' (select core and deep floats only),
+                        and 'all' (select all floats that match other criteria).
+                        If type is not specified, but sensors are, then the type will
+                        be set to 'bgc' if sensors other than PRES, PSAL, TEMP, or CNDC
+                        are specified.
+                        In all other cases the default type is Settings.default_type,
+                        which is set in initialize_argo.
 
             :returns: 
         """
         # Validate passed arguments
-        ## 
+        self.lon_lim = lon_lim
+        self.lat_lim = lat_lim
+        self.start_date = start_date
+        self.end_date = end_date
 
-        # Parse optional arguments
+        ## Validate lists
+        if lon_lim.len() != lat_lim.len():
+            raise Exception(f'The length of the longitude and latitude lists must be equal.')
+        if lon_lim.len() == 2:
+            if (lon_lim[1] <= lon_lim[0]) or (lat_lim[1] <= lat_lim[0]):
+                print(f'Longitude Limits: min={lon_lim[0]} max={lon_lim[1]}')
+                print(f'Latitude Limits: min={lat_lim[0]} max={lat_lim[1]}')
+                raise Exception(f'When passing longitude and latitude lists using the [min, max] format the max value must be greater than the min value.')
+            
+        ## Validate latitudes
+        if not all(-90 <= lat <= 90 for lat in lat_lim):
+            print(f'Latitudes: {lat_lim}')
+            raise Exception(f'Latitude values should be between -90 and 90.')
+        
+        ## Validate Longitudes
+        print(f'Original Longitudes {lon_lim}')
+        ### Checking range of longitude values
+        lon_range = max(lon_lim) - min(lon_lim)
+        if lon_range > 360 or lon_range <= 0:
+            print(f'Current longitude range: {lon_range}')
+            raise Exception(f'The range between the maximum and minimum longitude values must be between 1 and 360.')
+        ### Adjusting values to fit between -180 and 360
+        while min(lon_lim) < -180:
+            lon_lim = [lon + 360 for lon in lon_lim]
+        print(f'Adjusted Longitudes {lon_lim}')
+
+        # Parse Optional Arguments
 
         # If keep_index_in_memory is set to false then we'll want to load
         # the dataframes back into memory, we don't have to worry about initialize
         # being called because Argo is an object and the constructor is called on 
         # creation
+        if not self.download_settings.keep_index_in_memory:
+            self.sprof_index = self.__load_sprof_dataframe()
+            self.prof_index = self.__load_prof_dataframe()
 
-        # Checks for optional arguments
+        # Narrow down profiles
+        profiles_in_geographic_range = self.__get_in_geographic_range()
+        profiles_in_date_range = self.__get_in_date_range()
+        # other key argument checks would go here
 
         pass
 
@@ -298,4 +401,12 @@ class Argo:
         profiles = self.sprof_index['file'].unique()
         print(f"{len(bgc_floats)} BGC floats with {len(profiles)} profiles found.\n")
 
-        
+    def __get_in_geographic_range():
+        """ A function to compile floats within a certain geographic range.
+        """
+
+        pass
+
+
+    def __get_in_date_range():
+        pass
