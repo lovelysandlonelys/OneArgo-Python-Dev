@@ -36,6 +36,7 @@ for lon_lim in long_lim_tests:
             longitudes = [lon + 360 for lon in longitudes]
 
     
+    #I think that beyond this point we're sound the issue is that some of the adjustments are wrong. 
     # Make points out of profile lat and lons
     points =[]
     print(f'Creating point list from profiles.')
