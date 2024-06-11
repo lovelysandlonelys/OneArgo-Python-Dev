@@ -42,8 +42,6 @@ for lon_lim in long_lim_tests:
     for lat, lon in zip(latitudes, longitudes):
         point = Point(lon, lat)
         points.append(point)
-
-    print(f'These are the points: {points}')
     
     # Create polygon or box using lat_lim and lon_lim 
     if len(lat_lim) == 2:
