@@ -428,7 +428,7 @@ class Argo:
         profile_points =[]
         if self.download_settings.verbose: print(f'Creating point list from profiles.')
         for lat, lon in zip(prof_lats, prof_lons):
-            point = Point(lat, lon)
+            point = Point(lon, lat)
             profile_points.append(point)
         
         # Create polygon or box using lat_lim and lon_lim 
@@ -438,22 +438,21 @@ class Argo:
         else:
             coordinates = []
             for lat, lon in zip(self.lat_lim, self.lon_lim):
-                coordinates.append([lat, lon])
+                coordinates.append([lon, lat])
             shape = Polygon(coordinates)
 
         # Create list of float ids if their corresponding coordinates
         # are within the shape made using the lat and lon limits.
-        if self.download_settings.verbose: print(f'The geographic limits were: lat: {self.lat_lim} lon: {self.lon_lim}')
+        if self.download_settings.verbose: print(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
         if self.download_settings.verbose: print(f'The following points fall inside of the shape defined by these limits:')
         floats_in_geographic_range =[]
-        for point in profile_points: 
+        for i, point in enumerate(profile_points): 
             if shape.contains(point):
-                index = profile_points.index([point])
-                floats_in_geographic_range.append(self.prof_index.at[index, 'wmoid'])   
+                floats_in_geographic_range.append(self.prof_index.at[i, 'wmoid'])   
                 if self.download_settings.verbose: 
                     print(f'Point: {point}')
-                    print(f'Index: {index}')
-                    print(f'ID: {self.prof_index.at[index, "wmoid"]}')    
+                    print(f'Index: {i}')
+                    print(f'ID: {self.prof_index.at[i, "wmoid"]}')    
 
         return floats_in_geographic_range
         
