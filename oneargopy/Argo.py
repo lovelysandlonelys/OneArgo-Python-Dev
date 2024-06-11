@@ -19,6 +19,8 @@ from Settings import DownloadSettings, SourceSettings
 # System
 from pathlib import Path
 import pandas as pd
+import geopandas as gpd
+import matplotlib.pyplot as plt
 import time
 import requests
 from datetime import datetime, timedelta
@@ -154,27 +156,27 @@ class Argo:
         if len(lon_lim) != len(lat_lim):
             raise Exception(f'The length of the longitude and latitude lists must be equal.')
         if len(lon_lim) == 2:
-            if (lon_lim[1] <= lon_lim[0]) or (lat_lim[1] <= lat_lim[0]):
-                if self.download_settings.verbose: print(f'Longitude Limits: min={lon_lim[0]} max={lon_lim[1]}')
-                if self.download_settings.verbose: print(f'Latitude Limits: min={lat_lim[0]} max={lat_lim[1]}')
+            if (self.lon_lim[1] <= self.lon_lim[0]) or (self.lat_lim[1] <= self.lat_lim[0]):
+                if self.download_settings.verbose: print(f'Longitude Limits: min={self.lon_lim[0]} max={self.lon_lim[1]}')
+                if self.download_settings.verbose: print(f'Latitude Limits: min={self.lat_lim[0]} max={self.lat_lim[1]}')
                 raise Exception(f'When passing longitude and latitude lists using the [min, max] format the max value must be greater than the min value.')
             
         ## Validate latitudes
-        if not all(-90 <= lat <= 90 for lat in lat_lim):
-            print(f'Latitudes: {lat_lim}')
+        if not all(-90 <= lat <= 90 for lat in self.lat_lim):
+            print(f'Latitudes: {self.lat_lim}')
             raise Exception(f'Latitude values should be between -90 and 90.')
         
         ## Validate Longitudes
-        print(f'Original Longitudes {lon_lim}')
+        print(f'Original Longitudes {self.lon_lim}')
         ### Checking range of longitude values
-        lon_range = max(lon_lim) - min(lon_lim)
+        lon_range = max(self.lon_lim) - min(self.lon_lim)
         if lon_range > 360 or lon_range <= 0:
             print(f'Current longitude range: {lon_range}')
             raise Exception(f'The range between the maximum and minimum longitude values must be between 1 and 360.')
         ### Adjusting values to fit between -180 and 360
-        while min(lon_lim) < -180:
-            lon_lim = [lon + 360 for lon in lon_lim]
-        print(f'Adjusted Longitudes {lon_lim}')
+        while min(self.lon_lim) < -180:
+            self.lon_lim = [lon + 360 for lon in lon_lim]
+        print(f'Adjusted Longitudes {self.lon_lim}')
 
         # Parse Optional Arguments
 
@@ -440,19 +442,18 @@ class Argo:
             for lat, lon in zip(self.lat_lim, self.lon_lim):
                 coordinates.append([lon, lat])
             shape = Polygon(coordinates)
+        if self.download_settings.verbose: print(f'The shape: {shape}')
 
         # Create list of float ids if their corresponding coordinates
         # are within the shape made using the lat and lon limits.
         if self.download_settings.verbose: print(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
-        if self.download_settings.verbose: print(f'The following points fall inside of the shape defined by these limits:')
         floats_in_geographic_range =[]
         for i, point in enumerate(profile_points): 
             if shape.contains(point):
                 floats_in_geographic_range.append(self.prof_index.at[i, 'wmoid'])   
-                if self.download_settings.verbose: 
-                    print(f'Point: {point}')
-                    print(f'Index: {i}')
-                    print(f'ID: {self.prof_index.at[i, "wmoid"]}')    
+        
+        if self.download_settings.verbose: print(f'{len(floats_in_geographic_range)}/{len(profile_points)} points were within the shape')
+
 
         return floats_in_geographic_range
         
