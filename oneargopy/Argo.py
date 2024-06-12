@@ -25,7 +25,6 @@ import shutil
 import gzip
 import numpy as np
 from shapely.geometry import Point, Polygon, box
-import time
 
 class Argo:
     
@@ -181,12 +180,12 @@ class Argo:
             lon_lim = [lon + 360.00 for lon in lon_lim]
         print(f'Adjusted Longitudes {self.lon_lim}')
 
-        # Parse Optional Arguments
+        # Parse/Validate Optional Arguments
 
         # If keep_index_in_memory is set to false then we'll want to load
         # the dataframes back into memory, we don't have to worry about initialize
         # being called because Argo is an object and the constructor is called on 
-        # creation
+        # creation.
         if self.download_settings.float_type == 'phys':
             if not self.download_settings.keep_index_in_memory:
                 self.prof_index = self.__load_prof_dataframe()
@@ -206,19 +205,35 @@ class Argo:
             if not self.download_settings.keep_index_in_memory:
                 self.sprof_index = self.__load_sprof_dataframe()
                 self.prof_index = self.__load_prof_dataframe()
-                self.selection_frame = [self.prof_index, self.sprof_index]
+                self.selection_frame = 'all'
             else:
-                self.selection_frame = [self.prof_index, self.sprof_index]
+                self.selection_frame = 'all'
         
-
         # Narrow down profiles
-        profiles_in_geographic_range = self.__get_in_geographic_range()
-        profiles_in_date_range = self.__get_in_date_range()
+        if self.selection_frame == 'all':
+            self.selection_frame = self.sprof_index
+            floats_in_geographic_range = self.__get_in_geographic_range()
+            # floats_in_date_range = self.__get_in_date_range()
+
+            self.selection_frame = self.prof_index
+            floats_in_geographic_range.extend(self.__get_in_geographic_range())
+            # floats_in_date_range.extend(self.__get_in_date_range())
+
+        else:
+            floats_in_geographic_range = self.__get_in_geographic_range()
+            # floats_in_date_range = self.__get_in_date_range()
         # other key argument checks would go here
 
+        print(f'IDs of floats in geographic range: {floats_in_geographic_range}')
 
         float_ids = [] # List with the IDs of all matching floats
-        float_profs = [] # List of indices of matching profiles, do we still need this one?
+        float_profs = [] # List of indices of matching profiles
+
+        if not self.download_settings.keep_index_in_memory:
+            if self.download_settings.verbose: print('Removing dataframes from memory...')
+            del self.sprof_index 
+            del self.prof_index
+            del self.selection_frame
 
         return float_ids, float_profs
 
@@ -452,23 +467,19 @@ class Argo:
         if max(self.lon_lim) > 180:
             if self.download_settings.verbose: print(f'The max value in lon_lim is {max(self.lon_lim)}')
             if self.download_settings.verbose: print(f'Adjusting longitude values...')
-            prof_lons = self.prof_index['longitude'].apply(lambda x: x + 360 if -180 < x < min(self.lon_lim) else x)
+            lons = self.selection_frame['longitude'].apply(lambda x: x + 360 if -180 < x < min(self.lon_lim) else x)
         else:
-            prof_lons = self.prof_index['longitude'] 
+            lons = self.selection_frame['longitude'] 
         
         # Latitudes in the dataframe should be good to go
-        prof_lats = self.prof_index['latitude'] 
+        lats = self.selection_frame['latitude'] 
 
         # Make points out of profile lat and lons
-        start_time = time.time()
         profile_points =[]
         if self.download_settings.verbose: print(f'Creating point list from profiles.')
-        for lat, lon in zip(prof_lats, prof_lons):
+        for lat, lon in zip(lats, lons):
             point = Point(lon, lat)
             profile_points.append(point)
-
-        elapsed_time = time.time() - start_time
-        print(f'Time to make points list: {elapsed_time}')
         
         # Create polygon or box using lat_lim and lon_lim 
         if len(self.lat_lim) == 2:
@@ -485,16 +496,19 @@ class Argo:
 
         # Create list of float ids if their corresponding coordinates
         # are within the shape made using the lat and lon limits.
-        start_time = time.time()
         if self.download_settings.verbose: print(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
         floats_in_geographic_range =[]
         for i, point in enumerate(profile_points): 
             if shape.contains(point) or shape.intersects(point):
-                floats_in_geographic_range.append(self.prof_index.at[i, 'wmoid'])   
+                if (self.download_settings.float_type == 'all') and hasattr(self.selection_frame, 'is_bgc'):
+                    if not self.selection_frame.at[i, 'is_bgc']:
+                        floats_in_geographic_range.append(self.selection_frame.at[i, 'wmoid'])
+                else: 
+                    floats_in_geographic_range.append(self.selection_frame.at[i, 'wmoid'])   
         
         if self.download_settings.verbose: print(f'{len(floats_in_geographic_range)}/{len(profile_points)} points were within the shape')
-        elapsed_time = time.time() - start_time
-        print(f'Time to make points list: {elapsed_time}')
+
+        print(f"List of floats in range: {floats_in_geographic_range}")
 
         return floats_in_geographic_range        
 
