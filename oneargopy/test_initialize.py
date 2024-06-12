@@ -37,7 +37,7 @@ for lon_lim in long_lim_tests:
         print(f'Current longitude range: {lon_range}')
         raise Exception(f'The range between the maximum and minimum longitude values must be between 1 and 360.')
    
-    ### Adjusting values to 1 -180 to 180 range
+    
     # Adjusting values to -180 to 180 range
     if max(lon_lim) > 180:
         print(f'in first if')
@@ -45,6 +45,8 @@ for lon_lim in long_lim_tests:
     elif min(lon_lim) < -180:
         print(f'in else if')
         lon_lim = [(val - 180) % 360 + 180 for val in lon_lim]
+
+    # should we somehow detect what direction we're adjusting in... because this way inverses some of the ranges i think
 
     # if max(lon_lim) > min(lon_lim) + 360:
     #     print(f'in first if')
