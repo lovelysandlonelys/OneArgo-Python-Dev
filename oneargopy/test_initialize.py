@@ -5,8 +5,8 @@ from Argo import Argo
 argo = Argo()
 # argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
-argo.select_profiles([-170, 185])
-argo.select_profiles([-270.7, 40.009])
+# argo.select_profiles([-170, 185])
+# argo.select_profiles([-270.7, 40.009])
 ############################################################################################################################
 
 ############################################################################################################################

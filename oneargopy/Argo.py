@@ -58,6 +58,10 @@ class Argo:
         self.sprof_index  = self.__load_sprof_dataframe()
         self.prof_index = self.__load_prof_dataframe()
 
+        # Add column noting if a float is also in the sprof_index, meaning that it is a bgc float
+        if self.download_settings.verbose: print(f'\nMarking bgc floats in prof_index...')
+        self.__mark_bgcs_in_prof()
+
         # Print number of floats
         if self.download_settings.verbose: self.__display_floats() 
 
@@ -183,9 +187,29 @@ class Argo:
         # the dataframes back into memory, we don't have to worry about initialize
         # being called because Argo is an object and the constructor is called on 
         # creation
-        if not self.download_settings.keep_index_in_memory:
-            self.sprof_index = self.__load_sprof_dataframe()
-            self.prof_index = self.__load_prof_dataframe()
+        if self.download_settings.float_type == 'phys':
+            if not self.download_settings.keep_index_in_memory:
+                self.prof_index = self.__load_prof_dataframe()
+                self.selection_frame = self.prof_index
+            else:
+                self.selection_frame = self.prof_index
+        elif self.download_settings.float_type == 'bgc':
+            if not self.download_settings.keep_index_in_memory:
+                self.sprof_index = self.__load_sprof_dataframe()
+                self.selection_frame = self.sprof_index
+            else:
+                self.selection_frame = self.sprof_index
+        elif self.download_settings.float_type == 'all':
+            #If type is ‘all’, both dfs are used, the one from argo_synthetic-profile_index.txt for
+            # floats that are in it and match the criteria, the df(ar_index_global_prof.txt) for all 
+            # floats that are not listed in argo_synthetic-profile_index.txt
+            if not self.download_settings.keep_index_in_memory:
+                self.sprof_index = self.__load_sprof_dataframe()
+                self.prof_index = self.__load_prof_dataframe()
+                self.selection_frame = [self.prof_index, self.sprof_index]
+            else:
+                self.selection_frame = [self.prof_index, self.sprof_index]
+        
 
         # Narrow down profiles
         profiles_in_geographic_range = self.__get_in_geographic_range()
@@ -394,6 +418,16 @@ class Argo:
         prof_index.insert(2, "R_file", R_file)
 
         return prof_index
+    
+
+    def __mark_bgcs_in_prof(self):
+        """ A function to mark weather the floats listed in prof_index are 
+            biogeochemical floats or not. 
+        """
+        bgc_floats = self.sprof_index['wmoid'].unique()
+        is_bgc = self.prof_index['wmoid'].isin(bgc_floats)
+        self.prof_index.insert(0, "is_bgc", is_bgc)
+
 
     def __display_floats(self) -> None:
         """ A function to display information about the number of floats.
@@ -405,6 +439,7 @@ class Argo:
         bgc_floats = self.sprof_index['wmoid'].unique()
         profiles = self.sprof_index['file'].unique()
         print(f"{len(bgc_floats)} BGC floats with {len(profiles)} profiles found.\n")
+
 
     def __get_in_geographic_range(self) -> list:
         """ A function to compile floats within a certain geographic range.
@@ -424,15 +459,16 @@ class Argo:
         # Latitudes in the dataframe should be good to go
         prof_lats = self.prof_index['latitude'] 
 
+        # Make points out of profile lat and lons
         start_time = time.time()
-
+        profile_points =[]
         if self.download_settings.verbose: print(f'Creating point list from profiles.')
-        profile_points = pd.DataFrame({'latitude': prof_lats, 'longitude': prof_lons})
-        profile_points['point'] = profile_points.apply(lambda row: Point(row['longitude'], row['latitude']), axis=1)
-        profile_points.drop(columns=['latitude', 'longitude'], inplace=True)
+        for lat, lon in zip(prof_lats, prof_lons):
+            point = Point(lon, lat)
+            profile_points.append(point)
 
         elapsed_time = time.time() - start_time
-        print(f'Making list of points took: {elapsed_time}')
+        print(f'Time to make points list: {elapsed_time}')
         
         # Create polygon or box using lat_lim and lon_lim 
         if len(self.lat_lim) == 2:
@@ -449,18 +485,16 @@ class Argo:
 
         # Create list of float ids if their corresponding coordinates
         # are within the shape made using the lat and lon limits.
-        if self.download_settings.verbose: print(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
         start_time = time.time()
+        if self.download_settings.verbose: print(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
         floats_in_geographic_range =[]
-        for i, row in profile_points.iterrows(): 
-            point = row['point']
+        for i, point in enumerate(profile_points): 
             if shape.contains(point) or shape.intersects(point):
                 floats_in_geographic_range.append(self.prof_index.at[i, 'wmoid'])   
         
         if self.download_settings.verbose: print(f'{len(floats_in_geographic_range)}/{len(profile_points)} points were within the shape')
-
         elapsed_time = time.time() - start_time
-        print(f'Parsing points to save took: {elapsed_time}')
+        print(f'Time to make points list: {elapsed_time}')
 
         return floats_in_geographic_range        
 
