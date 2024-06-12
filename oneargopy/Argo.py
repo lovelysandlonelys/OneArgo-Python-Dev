@@ -224,7 +224,7 @@ class Argo:
             # floats_in_date_range = self.__get_in_date_range()
         # other key argument checks would go here
 
-        print(f'IDs of floats in geographic range: {floats_in_geographic_range}')
+        print(f'IDs of floats in geographic range: {floats_in_geographic_range[:5]}...{floats_in_geographic_range[-5:]}')
 
         float_ids = [] # List with the IDs of all matching floats
         float_profs = [] # List of indices of matching profiles
@@ -507,8 +507,6 @@ class Argo:
                     floats_in_geographic_range.append(self.selection_frame.at[i, 'wmoid'])   
         
         if self.download_settings.verbose: print(f'{len(floats_in_geographic_range)}/{len(profile_points)} points were within the shape')
-
-        print(f"List of floats in range: {floats_in_geographic_range}")
 
         return floats_in_geographic_range        
 
