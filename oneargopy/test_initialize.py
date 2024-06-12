@@ -1,89 +1,97 @@
+############################################################################################################################
+# Argo Functions
 from Argo import Argo
-from shapely.geometry import Point, Polygon, box
 
+argo = Argo()
+# argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
-# argo = Argo()
-# #argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
+argo.select_profiles([-170, 185])
+argo.select_profiles([-270.7, 40.009])
+############################################################################################################################
 
-# argo.select_profiles([160, 180])
+############################################################################################################################
+# Testing Longitudinal Logic
 
-long_lim_tests = [[160.5, 180.7], [-170.03, 185.1], [-270.45, 40], [90, 400], [-180.7, -160.003], [-20.003, 200.5]] 
-lat_lim = [-90, 90]
+#from shapely.geometry import Point, Polygon, box
 
-for lon_lim in long_lim_tests:
+# long_lim_tests = [[160.5, 180.7], [-170.03, 185.1], [-270.45, 40], [90, 400], [-180.7, -160.003], [-20.003, 200.5]] 
+# lat_lim = [-90, 90]
 
-    # Test longitude values.
-    longitudes = [-180 + i * 0.2 for i in range(int((180 - (-180)) / 0.2))]
-    latitudes = [1] * 361
-    print(f'Length of lon_lim: {len(lon_lim)}')
+# for lon_lim in long_lim_tests:
 
-    if len(lon_lim) == 2:
-        print(f'lon_lim[0]: {lon_lim[0]}')
-        print(f'lon_lim[1]: {lon_lim[1]}')
-        if (lon_lim[1] <= lon_lim[0]) or (lat_lim[1] <= lat_lim[0]):
-            print(f'Longitude Limits: min={lon_lim[0]} max={lon_lim[1]}')
-            print(f'Latitude Limits: min={lat_lim[0]} max={lat_lim[1]}')
-            raise Exception(f'When passing longitude and latitude lists using the [min, max] format the max value must be greater than the min value.')
+#     # Test longitude values.
+#     longitudes = [-180 + i * 0.2 for i in range(int((180 - (-180)) / 0.2))]
+#     latitudes = [1] * 361
+#     print(f'Length of lon_lim: {len(lon_lim)}')
+
+#     if len(lon_lim) == 2:
+#         print(f'lon_lim[0]: {lon_lim[0]}')
+#         print(f'lon_lim[1]: {lon_lim[1]}')
+#         if (lon_lim[1] <= lon_lim[0]) or (lat_lim[1] <= lat_lim[0]):
+#             print(f'Longitude Limits: min={lon_lim[0]} max={lon_lim[1]}')
+#             print(f'Latitude Limits: min={lat_lim[0]} max={lat_lim[1]}')
+#             raise Exception(f'When passing longitude and latitude lists using the [min, max] format the max value must be greater than the min value.')
             
-    # Printing base information
-    print(f'We have {len(longitudes)} longitudes')
-    print(f'We have {len(latitudes)} latitudes')
-    print(f'Original Longitude Limits: {lon_lim}')
+#     # Printing base information
+#     print(f'We have {len(longitudes)} longitudes')
+#     print(f'We have {len(latitudes)} latitudes')
+#     print(f'Original Longitude Limits: {lon_lim}')
     
-    ## Validate Longitudes
-    ### Checking range of longitude values
-    lon_range = max(lon_lim) - min(lon_lim)
-    if lon_range > 360 or lon_range <= 0:
-        print(f'Current longitude range: {lon_range}')
-        raise Exception(f'The range between the maximum and minimum longitude values must be between 1 and 360.')
+#     ## Validate Longitudes
+#     ### Checking range of longitude values
+#     lon_range = max(lon_lim) - min(lon_lim)
+#     if lon_range > 360 or lon_range <= 0:
+#         print(f'Current longitude range: {lon_range}')
+#         raise Exception(f'The range between the maximum and minimum longitude values must be between 1 and 360.')
    
     
-    # Adjusting values within -180 and 
-    if  min(lon_lim) < -180:
-        print(f'Adjusting within -180')
-        lon_lim = [lon + 360.00 for lon in lon_lim]
-    print(f'Adjusted lon_lim: {lon_lim}')
+#     # Adjusting values within -180 and 
+#     if  min(lon_lim) < -180:
+#         print(f'Adjusting within -180')
+#         lon_lim = [lon + 360.00 for lon in lon_lim]
+#     print(f'Adjusted lon_lim: {lon_lim}')
     
-    # Adjusting Dataframe Values
-    adjusted_longitudes = []
-    if max(lon_lim) > 180:
-        print(f'The max value in lon_lim is {max(lon_lim)}')
-        print(f'Adjusting longitude values...')
-        for lon in longitudes:
-            if lon > -180 and lon < min(lon_lim):
-                adjs_lon = lon + 360
-                adjusted_longitudes.append(adjs_lon)
-            else:
-                adjusted_longitudes.append(lon)
-    else:
-        adjusted_longitudes = longitudes 
+#     # Adjusting Dataframe Values
+#     adjusted_longitudes = []
+#     if max(lon_lim) > 180:
+#         print(f'The max value in lon_lim is {max(lon_lim)}')
+#         print(f'Adjusting longitude values...')
+#         for lon in longitudes:
+#             if lon > -180 and lon < min(lon_lim):
+#                 adjs_lon = lon + 360
+#                 adjusted_longitudes.append(adjs_lon)
+#             else:
+#                 adjusted_longitudes.append(lon)
+#     else:
+#         adjusted_longitudes = longitudes 
 
-    points =[]
-    print(f'Creating point list from profiles.')
-    for lat, lon in zip(latitudes, adjusted_longitudes):
-        point = Point(lon, lat)
-        points.append(point)
+#     points =[]
+#     print(f'Creating point list from profiles.')
+#     for lat, lon in zip(latitudes, adjusted_longitudes):
+#         point = Point(lon, lat)
+#         points.append(point)
     
-    # Create polygon or box using lat_lim and lon_lim 
-    if len(lat_lim) == 2:
-        print(f'We are making a box because the length is {len(lat_lim)}')
-        shape = box(min(lon_lim), min(lat_lim), 
-                    max(lon_lim), max(lat_lim))
-    else:
-        print(f'We are making a polygon because the length is {len(lat_lim)}')
-        coordinates = []
-        for lat, lon in zip(lat_lim, lon_lim):
-            coordinates.append([lon, lat])
-        shape = Polygon(coordinates)
-    print(f'The shape: {shape}')
+#     # Create polygon or box using lat_lim and lon_lim 
+#     if len(lat_lim) == 2:
+#         print(f'We are making a box because the length is {len(lat_lim)}')
+#         shape = box(min(lon_lim), min(lat_lim), 
+#                     max(lon_lim), max(lat_lim))
+#     else:
+#         print(f'We are making a polygon because the length is {len(lat_lim)}')
+#         coordinates = []
+#         for lat, lon in zip(lat_lim, lon_lim):
+#             coordinates.append([lon, lat])
+#         shape = Polygon(coordinates)
+#     print(f'The shape: {shape}')
 
-    # Create list of float ids if their corresponding coordinates
-    # are within the shape made using the lat and lon limits.
-    points_saved =[]
-    for i, point in enumerate(points): 
-        if shape.contains(point) or shape.intersects(point):
-            points_saved.append(point)   
+#     # Create list of float ids if their corresponding coordinates
+#     # are within the shape made using the lat and lon limits.
+#     points_saved =[]
+#     for i, point in enumerate(points): 
+#         if shape.contains(point) or shape.intersects(point):
+#             points_saved.append(point)   
     
-    print(f'{len(points_saved)}/{len(points)} points were within the shape')
-    print(f'The geographic limits were: lon: {lon_lim} lat: {lat_lim}')
-    print(f'The points: {points_saved}\n')
+#     print(f'{len(points_saved)}/{len(points)} points were within the shape')
+#     print(f'The geographic limits were: lon: {lon_lim} lat: {lat_lim}')
+#     print(f'The points: {points_saved}\n')
+############################################################################################################################

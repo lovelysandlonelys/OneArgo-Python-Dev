@@ -25,6 +25,7 @@ import shutil
 import gzip
 import numpy as np
 from shapely.geometry import Point, Polygon, box
+import time
 
 class Argo:
     
@@ -171,8 +172,9 @@ class Argo:
             print(f'Current longitude range: {lon_range}')
             raise Exception(f'The range between the maximum and minimum longitude values must be between 1 and 360.')
         ### Adjusting values to fit between -180 and 360
-        while min(self.lon_lim) < -180:
-            self.lon_lim = [lon + 360 for lon in lon_lim]
+        if  min(lon_lim) < -180:
+            print(f'Adjusting within -180')
+            lon_lim = [lon + 360.00 for lon in lon_lim]
         print(f'Adjusted Longitudes {self.lon_lim}')
 
         # Parse Optional Arguments
@@ -411,24 +413,26 @@ class Argo:
                 that fall within the longitude and latitude limits. 
         """
         # The longitudes in the dataframe are standardized to fall within -180 and 180
-        # but our longitudes only have a standard minimum value of -180. Because we validate
-        # that the minimum and maximum lons are within a 360 range, to 
+        # but our longitudes only have a standard minimum value of -180. 
         if max(self.lon_lim) > 180:
             if self.download_settings.verbose: print(f'The max value in lon_lim is {max(self.lon_lim)}')
             if self.download_settings.verbose: print(f'Adjusting longitude values...')
-            prof_lons = self.prof_index['longitude'] + 360
+            prof_lons = self.prof_index['longitude'].apply(lambda x: x + 360 if -180 < x < min(self.lon_lim) else x)
         else:
             prof_lons = self.prof_index['longitude'] 
         
         # Latitudes in the dataframe should be good to go
         prof_lats = self.prof_index['latitude'] 
 
-        # Make points out of profile lat and lons
-        profile_points =[]
+        start_time = time.time()
+
         if self.download_settings.verbose: print(f'Creating point list from profiles.')
-        for lat, lon in zip(prof_lats, prof_lons):
-            point = Point(lon, lat)
-            profile_points.append(point)
+        profile_points = pd.DataFrame({'latitude': prof_lats, 'longitude': prof_lons})
+        profile_points['point'] = profile_points.apply(lambda row: Point(row['longitude'], row['latitude']), axis=1)
+        profile_points.drop(columns=['latitude', 'longitude'], inplace=True)
+
+        elapsed_time = time.time() - start_time
+        print(f'Making list of points took: {elapsed_time}')
         
         # Create polygon or box using lat_lim and lon_lim 
         if len(self.lat_lim) == 2:
@@ -446,14 +450,17 @@ class Argo:
         # Create list of float ids if their corresponding coordinates
         # are within the shape made using the lat and lon limits.
         if self.download_settings.verbose: print(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
+        start_time = time.time()
         floats_in_geographic_range =[]
-        for i, point in enumerate(profile_points): 
-            if shape.contains(point):
-                with open('testing.txt', 'a') as file: 
-                    file.write(f'Saving point {i}: {point}\n')
+        for i, row in profile_points.iterrows(): 
+            point = row['point']
+            if shape.contains(point) or shape.intersects(point):
                 floats_in_geographic_range.append(self.prof_index.at[i, 'wmoid'])   
         
         if self.download_settings.verbose: print(f'{len(floats_in_geographic_range)}/{len(profile_points)} points were within the shape')
+
+        elapsed_time = time.time() - start_time
+        print(f'Parsing points to save took: {elapsed_time}')
 
         return floats_in_geographic_range        
 
