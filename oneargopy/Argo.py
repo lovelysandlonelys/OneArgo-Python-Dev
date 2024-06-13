@@ -73,7 +73,7 @@ class Argo:
             del self.prof_index
 
 
-    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: str = '1995-01-01', end_date: str = 'None', **kargs):
+    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: str = '1995-01-01', end_date: str = 'None', **kargs)-> dict:
         """ select_profiles is a public function that...
 
             :param: long_lim : list - 
@@ -146,7 +146,8 @@ class Argo:
                         In all other cases the default type is Settings.default_type,
                         which is set in initialize_argo.
 
-            :returns: 
+            :return: narrowed_profiles : dict - A dictionary with float ID
+                keys corresponding to a list of profiles that match criteria.
         """
         if self.download_settings.verbose: print(f'Starting select_profiles...')
         self.lon_lim = lon_lim
@@ -157,64 +158,22 @@ class Argo:
         if self.download_settings.verbose: print(f'Validating parameters...')
         self.__validate_lon_lat_limits()
         self.__validate_start_end_dates()
-
         # Parse/Validate Optional Arguments
 
-        # If keep_index_in_memory is set to false then we'll want to load
-        # the dataframes back into memory, we don't have to worry about initialize
-        # being called because Argo is an object and the constructor is called on 
-        # creation.
-        if self.download_settings.float_type == 'phys':
-            if not self.download_settings.keep_index_in_memory:
-                self.prof_index = self.__load_prof_dataframe()
-                self.selection_frame = self.prof_index
-            else:
-                self.selection_frame = self.prof_index
-        elif self.download_settings.float_type == 'bgc':
-            if not self.download_settings.keep_index_in_memory:
-                self.sprof_index = self.__load_sprof_dataframe()
-                self.selection_frame = self.sprof_index
-            else:
-                self.selection_frame = self.sprof_index
-        elif self.download_settings.float_type == 'all':
-            #If type is ‘all’, both dfs are used, the one from argo_synthetic-profile_index.txt for
-            # floats that are in it and match the criteria, the df(ar_index_global_prof.txt) for all 
-            # floats that are not listed in argo_synthetic-profile_index.txt
-            if not self.download_settings.keep_index_in_memory:
-                self.sprof_index = self.__load_sprof_dataframe()
-                self.prof_index = self.__load_prof_dataframe()
-
-                self.selection_frame = pd.DataFrame()
-            else:
-                self.selection_frame = pd.DataFrame()
+        # Load correct dataframes according to float_type
+        self.__select_frame()
         
-        # Narrow down profiles
-        if self.selection_frame.empty:
-            self.selection_frame = self.sprof_index
-            floats_in_geographic_range = self.__get_in_geographic_range()
-            # floats_in_date_range = self.__get_in_date_range()
+        # Narrow down float profiles and save in dictionary
+        narrowed_profiles = self.__narrow_profiles_by_criteria()
 
-            self.selection_frame = self.prof_index
-            floats_in_geographic_range.extend(self.__get_in_geographic_range())
-            # floats_in_date_range.extend(self.__get_in_date_range())
-
-        else:
-            floats_in_geographic_range = self.__get_in_geographic_range()
-            # floats_in_date_range = self.__get_in_date_range()
-        # other key argument checks would go here
-
-        print(f'IDs of floats in geographic range: {floats_in_geographic_range[:5]}...{floats_in_geographic_range[-5:]}')
-
-        float_ids = [] # List with the IDs of all matching floats
-        float_profs = [] # List of indices of matching profiles
-
+        # Remove dataframes from memory if needed
         if not self.download_settings.keep_index_in_memory:
             if self.download_settings.verbose: print('Removing dataframes from memory...')
             del self.sprof_index 
             del self.prof_index
             del self.selection_frame
 
-        return float_ids, float_profs
+        return narrowed_profiles
 
 
     def __initialize_subdirectories(self) -> None:
@@ -491,7 +450,7 @@ class Argo:
             self.start_date = datetime.strptime(self.start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
             # end_date is optional and should be set to tomorrow if not provided
             if self.end_date != None:
-                self.end_date = datetime.strptime(self.end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc) + timedelta(days=1)
+                self.end_date = datetime.strptime(self.end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
                 # TESTING TESTING
                 print(f'The end date with a day added is: {self.end_date}')
             else:
@@ -507,6 +466,70 @@ class Argo:
         if self.start_date < datetime(1995, 1, 1, tzinfo=timezone.utc):
             if self.download_settings.verbose: print(f'Current start date: {self.start_date}')
             raise Exception(f'Start date must be after at least: {datetime(1995, 1, 1, tzinfo=timezone.utc)} for any floats to be active.')
+        
+
+    def __select_frame(self):
+        """ A function that determines what frames will be loaded/used when selecting floats. 
+
+            If type is 'phys', the df based on ar_index_global_prof.txt will be used.
+            If type is 'bgc', the df based on argo_synthetic-profile_index.txt will be used.
+            If type is 'all', both dfs are used, the one from argo_synthetic-profile_index.txt 
+            for floats that are in it and match the criteria, the df from ar_index_global_prof.txt
+            for all floats that are not listed in argo_synthetic-profile_index.txt. In this 
+            function we assign the selection_frame to an empty placeholder dataframe 
+            because we have custom logic for the 'all' selection.
+
+            If keep_index_in_memory is set to false the dataframes created during Argo's 
+            constructor are deleated. In this function we only reload the necessary
+            dataframes into memory and assign them to the selection frame. 
+        """
+        if self.download_settings.float_type == 'phys':
+            if not self.download_settings.keep_index_in_memory:
+                self.prof_index = self.__load_prof_dataframe()
+                self.selection_frame = self.prof_index
+            else:
+                self.selection_frame = self.prof_index
+        elif self.download_settings.float_type == 'bgc':
+            if not self.download_settings.keep_index_in_memory:
+                self.sprof_index = self.__load_sprof_dataframe()
+                self.selection_frame = self.sprof_index
+            else:
+                self.selection_frame = self.sprof_index
+        elif self.download_settings.float_type == 'all':
+            #If type is ‘all’, both dfs are used, the one from argo_synthetic-profile_index.txt for
+            # floats that are in it and match the criteria, the df(ar_index_global_prof.txt) for all 
+            # floats that are not listed in argo_synthetic-profile_index.txt
+            if not self.download_settings.keep_index_in_memory:
+                self.sprof_index = self.__load_sprof_dataframe()
+                self.prof_index = self.__load_prof_dataframe()
+
+                self.selection_frame = pd.DataFrame()
+            else:
+                self.selection_frame = pd.DataFrame()
+
+    
+    def __narrow_profiles_by_criteria(self)-> dict:
+        """ A function to narrow down the available profiles only to those
+            that meet the criteria passed to select_profiles.
+
+            :return: narrowed_profiles : dict - A dictionary with float ID
+                keys corresponding to a list of profiles that match criteria.
+        """
+        if self.selection_frame.empty:
+            self.selection_frame = self.sprof_index
+            floats_in_geographic_range = self.__get_in_geographic_range()
+            # floats_in_date_range = self.__get_in_date_range()
+
+            self.selection_frame = self.prof_index
+            floats_in_geographic_range.extend(self.__get_in_geographic_range())
+            # floats_in_date_range.extend(self.__get_in_date_range())
+
+        else:
+            floats_in_geographic_range = self.__get_in_geographic_range()
+            # floats_in_date_range = self.__get_in_date_range()
+        # other key argument checks would go here
+
+        print(f'IDs of floats in geographic range: {floats_in_geographic_range[:5]}...{floats_in_geographic_range[-5:]}')
 
 
     def __get_in_geographic_range(self) -> list:
