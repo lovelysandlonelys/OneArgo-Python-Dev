@@ -1,7 +1,6 @@
 ############################################################################################################################
 # Argo Functions
 from Argo import Argo
-from datetime import datetime, timezone, timedelta
 
 # argo = Argo()
 argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
@@ -11,7 +10,7 @@ argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
 ############################################################################################################################
 
-############################################################################################################################
+################################################################################################
 # # Testing Longitudinal Logic
 
 # from shapely.geometry import Point, Polygon, box
@@ -108,4 +107,70 @@ argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 #     print(f'Last ten points saved: {points_saved[-10:]}\n')
 #     print(f'The geographic limits were: lon: {lon_lim} lat: {lat_lim}\n')
 #     print(f'{len(points_saved)}/{len(points)} points were within the shape\n')
+###########################################################################################################################
+
+###########################################################################################################################
+# Testing resorting dataframes
+# import pandas as pd
+# from Settings import DownloadSettings, SourceSettings
+# from pathlib import Path
+# import numpy as np
+
+# download_settings = DownloadSettings()
+# source_settings = SourceSettings()
+
+# file_name = "argo_synthetic-profile_index.txt"
+# file_path = Path.joinpath(download_settings.base_dir, 'Index', file_name)
+# sprof_index  = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
+#                         date_format='%Y%m%d%H%M%S')
+
+# # Parsing out variables in first column file
+# dacs = sprof_index ['file'].str.split('/').str[0]
+# sprof_index.insert(1, "dacs", dacs)
+
+# wmoid = sprof_index ['file'].str.split('/').str[1]
+# sprof_index.insert(0, "wmoid", wmoid)
+
+# profile = sprof_index ['file'].str.split('_').str[1].str.replace('.nc', '')
+# sprof_index.insert(2, "profile", profile)
+
+# # Splitting the parameters into their own columns
+# parameters_split = sprof_index ['parameters'].str.split()
+# data_types_split = sprof_index ['parameter_data_mode'].apply(list)
+
+# data_type_mapping = {np.nan: 0, 'R':1, 'A':2, 'D':3 }
+# mapped_data_types_split = data_types_split.apply(lambda lst: [data_type_mapping.get(x, 0) if pd.notna(x) else 0 for x in lst])
+
+# # Create a new DataFrame from the split lists
+# expanded_df = pd.DataFrame({
+#     'index': sprof_index .index.repeat(parameters_split.str.len()),
+#     'parameter': parameters_split.explode(),
+#     'data_type': mapped_data_types_split.explode()
+# })
+
+# # Pivot the expanded DataFrame to get parameters as columns
+# with pd.option_context('future.no_silent_downcasting', True):
+#     result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).astype('int8')
+
+# # Fill in parameters and dacs before removing rows
+# # Fill in source_settings information based off of synthetic file
+# if download_settings.verbose: print(f'Filling in source settings information...')
+# source_settings.set_avail_vars(sprof_index )
+# source_settings.set_dacs(sprof_index )
+
+# # Merge the pivoted DataFrame back with the original DataFrame and drop split rows
+# sprof_index = sprof_index .drop(columns=['parameters', 'parameter_data_mode'])
+# sprof_index = sprof_index .join(result_df)
+
+# # Add profile_index column which counts the number of times that the same float_id is attached to 
+# # a new profile file. 
+# sprof_index.sort_values(by=['wmoid', 'date'], inplace=True)
+# sprof_index.insert(0, "profile_index", 0)
+# sprof_index['profile_index'] = sprof_index.groupby('wmoid')['date'].cumcount() + 1
+
+# sprof_index.to_csv('output.csv', index=False)
+
+# print(sprof_index)
+###########################################################################################################################
+
 ###########################################################################################################################

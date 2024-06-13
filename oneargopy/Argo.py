@@ -55,32 +55,13 @@ class Argo:
 
         # Load the argo_synthetic-profile_index.txt file into a data frame
         if self.download_settings.verbose: print(f'\nTransferring index files into data frames...')
-        start_time = time.time()
         self.sprof_index  = self.__load_sprof_dataframe()
-        elapsed_time = time.time() - start_time
-        print(f'\nElapsed Time for sprof: {elapsed_time}')
-        start_time = time.time()
         self.prof_index = self.__load_prof_dataframe()
-
-        # Testing Print Statments
-        print(f'Sprof Index Frame:\n')
-        print(self.sprof_index)
-        print(self.sprof_index.info())
-        print(f'Total Memory Usage: {self.sprof_index.memory_usage(deep=True).sum()}')
-        print('\n')
 
         # Add column noting if a float is also in the sprof_index, meaning that it is a bgc float
         if self.download_settings.verbose: print(f'\nMarking bgc floats in prof_index...')
         self.__mark_bgcs_in_prof()
-        elapsed_time = time.time() - start_time
-        print(f'\nElapsed Time for prof: {elapsed_time}')
-
-        # Testing Print Statments
-        print(f'\nProf Index Frame:\n')
-        print(self.prof_index)
-        print(self.prof_index.info())
-        print(f'Total Memory Usage: {self.prof_index.memory_usage(deep=True).sum()}')
-
+        
         # Print number of floats
         if self.download_settings.verbose: self.__display_floats() 
 
@@ -92,7 +73,7 @@ class Argo:
             del self.prof_index
 
 
-    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: str = '1995-01-01', end_date: str = None, **kargs):
+    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: str = '1995-01-01', end_date: str = 'None', **kargs):
         """ select_profiles is a public function that...
 
             :param: long_lim : list - 
@@ -367,13 +348,13 @@ class Argo:
         
         # Parsing out variables in first column file
         dacs = sprof_index ['file'].str.split('/').str[0]
-        sprof_index .insert(1, "dacs", dacs)
+        sprof_index.insert(1, "dacs", dacs)
 
         wmoid = sprof_index ['file'].str.split('/').str[1]
-        sprof_index .insert(0, "wmoid", wmoid)
+        sprof_index.insert(0, "wmoid", wmoid)
 
         profile = sprof_index ['file'].str.split('_').str[1].str.replace('.nc', '')
-        sprof_index .insert(2, "profile", profile)
+        sprof_index.insert(2, "profile", profile)
 
         # Splitting the parameters into their own columns
         parameters_split = sprof_index ['parameters'].str.split()
@@ -400,8 +381,13 @@ class Argo:
         self.source_settings.set_dacs(sprof_index )
 
         # Merge the pivoted DataFrame back with the original DataFrame and drop split rows
-        sprof_index  = sprof_index .drop(columns=['parameters', 'parameter_data_mode'])
-        sprof_index  = sprof_index .join(result_df)
+        sprof_index = sprof_index .drop(columns=['parameters', 'parameter_data_mode'])
+        sprof_index = sprof_index .join(result_df)
+
+        # Add profile_index column
+        sprof_index.sort_values(by=['wmoid', 'date'], inplace=True)
+        sprof_index.insert(0, "profile_index", 0)
+        sprof_index['profile_index'] = sprof_index.groupby('wmoid')['date'].cumcount() + 1
 
         return sprof_index 
         
@@ -430,6 +416,11 @@ class Argo:
         R_file = prof_index['file'].str.split('/').str[3].str.startswith('R')
         prof_index.insert(2, "R_file", R_file)
 
+        # Add profile_index column
+        prof_index.sort_values(by=['wmoid', 'date'], inplace=True)
+        prof_index.insert(0, "profile_index", 0)
+        prof_index['profile_index'] = prof_index.groupby('wmoid')['date'].cumcount() + 1
+
         return prof_index
     
 
@@ -439,7 +430,7 @@ class Argo:
         """
         bgc_floats = self.sprof_index['wmoid'].unique()
         is_bgc = self.prof_index['wmoid'].isin(bgc_floats)
-        self.prof_index.insert(0, "is_bgc", is_bgc)
+        self.prof_index.insert(1, "is_bgc", is_bgc)
 
 
     def __display_floats(self) -> None:
@@ -500,7 +491,9 @@ class Argo:
             self.start_date = datetime.strptime(self.start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
             # end_date is optional and should be set to tomorrow if not provided
             if self.end_date != None:
-                self.end_date = datetime.strptime(self.end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                self.end_date = datetime.strptime(self.end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc) + timedelta(days=1)
+                # TESTING TESTING
+                print(f'The end date with a day added is: {self.end_date}')
             else:
                 self.end_date = datetime.now(timezone.utc) + timedelta(days=1)
         except ValueError:
