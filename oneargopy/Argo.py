@@ -183,12 +183,13 @@ class Argo:
             if not self.download_settings.keep_index_in_memory:
                 self.sprof_index = self.__load_sprof_dataframe()
                 self.prof_index = self.__load_prof_dataframe()
-                self.selection_frame = 'all'
+
+                self.selection_frame = pd.DataFrame()
             else:
-                self.selection_frame = 'all'
+                self.selection_frame = pd.DataFrame()
         
         # Narrow down profiles
-        if self.selection_frame == 'all':
+        if self.selection_frame.empty:
             self.selection_frame = self.sprof_index
             floats_in_geographic_range = self.__get_in_geographic_range()
             # floats_in_date_range = self.__get_in_date_range()

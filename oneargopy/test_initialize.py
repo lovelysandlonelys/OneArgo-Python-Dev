@@ -7,7 +7,7 @@ from datetime import datetime, timezone, timedelta
 argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
 # argo.select_profiles([-170, 185])
-argo.select_profiles([-270.7, 40.009], [-90, 90], datetime(2003, 11, 21, tzinfo=timezone.utc))
+# argo.select_profiles([-270.7, 40.009], [-90, 90], datetime(2003, 11, 21, tzinfo=timezone.utc))
 
 ############################################################################################################################
 
