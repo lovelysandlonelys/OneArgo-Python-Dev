@@ -55,12 +55,31 @@ class Argo:
 
         # Load the argo_synthetic-profile_index.txt file into a data frame
         if self.download_settings.verbose: print(f'\nTransferring index files into data frames...')
+        start_time = time.time()
         self.sprof_index  = self.__load_sprof_dataframe()
+        elapsed_time = time.time() - start_time
+        print(f'\nElapsed Time for sprof: {elapsed_time}')
+        start_time = time.time()
         self.prof_index = self.__load_prof_dataframe()
+
+        # Testing Print Statments
+        print(f'Sprof Index Frame:\n')
+        print(self.sprof_index)
+        print(self.sprof_index.info())
+        print(f'Total Memory Usage: {self.sprof_index.memory_usage(deep=True).sum()}')
+        print('\n')
 
         # Add column noting if a float is also in the sprof_index, meaning that it is a bgc float
         if self.download_settings.verbose: print(f'\nMarking bgc floats in prof_index...')
         self.__mark_bgcs_in_prof()
+        elapsed_time = time.time() - start_time
+        print(f'\nElapsed Time for prof: {elapsed_time}')
+
+        # Testing Print Statments
+        print(f'\nProf Index Frame:\n')
+        print(self.prof_index)
+        print(self.prof_index.info())
+        print(f'Total Memory Usage: {self.prof_index.memory_usage(deep=True).sum()}')
 
         # Print number of floats
         if self.download_settings.verbose: self.__display_floats() 
@@ -73,13 +92,13 @@ class Argo:
             del self.prof_index
 
 
-    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: datetime = datetime(1995, 1, 1, tzinfo=timezone.utc), end_date: datetime = datetime.now(timezone.utc) + timedelta(days=1), **kargs):
+    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: str = '1995-01-01', end_date: str = None, **kargs):
         """ select_profiles is a public function that...
 
-            :param: long_lim : list -
+            :param: long_lim : list - 
             :param: lat_lim : list -
-            :param: start_date : datetime -
-            :param: end_date : datetime - 
+            :param: start_date : str - A UTC date in YYYY-MM-DD format.
+            :param: end_date : str - An optional UTC date in YYYY-MM-DD format.
             NOTE: have to fix the formatting of these a bit 
             :param: kargs : keyvalue arguments:
                 cycles=cycles: Select profiles by their CYCLE_NUMBER values. cycles can
@@ -348,10 +367,10 @@ class Argo:
         
         # Parsing out variables in first column file
         dacs = sprof_index ['file'].str.split('/').str[0]
-        sprof_index .insert(0, "dacs", dacs)
+        sprof_index .insert(1, "dacs", dacs)
 
         wmoid = sprof_index ['file'].str.split('/').str[1]
-        sprof_index .insert(1, "wmoid", wmoid)
+        sprof_index .insert(0, "wmoid", wmoid)
 
         profile = sprof_index ['file'].str.split('_').str[1].str.replace('.nc', '')
         sprof_index .insert(2, "profile", profile)
@@ -470,9 +489,24 @@ class Argo:
 
 
     def __validate_start_end_dates(self):
-        """ A function to validate the start and end datetimes passed to select_profiles.
+        """ A function to validate the start and end strings passed to select_profiles and
+            converts them to datetimes for easier comparison to dataframe values later on.
         """
         if self.download_settings.verbose: print(f'Validating start and end dates...')
+        
+        # Parse Strings to Datetime Objects
+        try:
+            # Check if the string matches the expected format
+            self.start_date = datetime.strptime(self.start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            # end_date is optional and should be set to tomorrow if not provided
+            if self.end_date != None:
+                self.end_date = datetime.strptime(self.end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            else:
+                self.end_date = datetime.now(timezone.utc) + timedelta(days=1)
+        except ValueError:
+            print(f" Start date: {self.start_date} or end date: {self.end_date} is not in the expected format 'yyyy-mm-dd'")
+        
+        # Validate datetimes
         if self.start_date > self.end_date:
             if self.download_settings.verbose: print(f'Current start date: {self.start_date}')
             if self.download_settings.verbose: print(f'Current end date: {self.end_date}')
