@@ -20,11 +20,12 @@ from Settings import DownloadSettings, SourceSettings
 from pathlib import Path
 import pandas as pd
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import shutil
 import gzip
 import numpy as np
 from shapely.geometry import Point, Polygon, box
+import time
 
 class Argo:
     
@@ -72,7 +73,7 @@ class Argo:
             del self.prof_index
 
 
-    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: datetime = datetime(1995, 1, 1), end_date: datetime = datetime.today() + timedelta(days=1), **kargs):
+    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: datetime = datetime(1995, 1, 1, tzinfo=timezone.utc), end_date: datetime = datetime.now(timezone.utc) + timedelta(days=1), **kargs):
         """ select_profiles is a public function that...
 
             :param: long_lim : list -
@@ -147,38 +148,15 @@ class Argo:
 
             :returns: 
         """
-        # Validate passed arguments
+        if self.download_settings.verbose: print(f'Starting select_profiles...')
         self.lon_lim = lon_lim
         self.lat_lim = lat_lim
         self.start_date = start_date
         self.end_date = end_date
 
-        ## Validate lists
-        if len(lon_lim) != len(lat_lim):
-            raise Exception(f'The length of the longitude and latitude lists must be equal.')
-        if len(lon_lim) == 2:
-            if (self.lon_lim[1] <= self.lon_lim[0]) or (self.lat_lim[1] <= self.lat_lim[0]):
-                if self.download_settings.verbose: print(f'Longitude Limits: min={self.lon_lim[0]} max={self.lon_lim[1]}')
-                if self.download_settings.verbose: print(f'Latitude Limits: min={self.lat_lim[0]} max={self.lat_lim[1]}')
-                raise Exception(f'When passing longitude and latitude lists using the [min, max] format the max value must be greater than the min value.')
-            
-        ## Validate latitudes
-        if not all(-90 <= lat <= 90 for lat in self.lat_lim):
-            print(f'Latitudes: {self.lat_lim}')
-            raise Exception(f'Latitude values should be between -90 and 90.')
-        
-        ## Validate Longitudes
-        print(f'Original Longitudes {self.lon_lim}')
-        ### Checking range of longitude values
-        lon_range = max(self.lon_lim) - min(self.lon_lim)
-        if lon_range > 360 or lon_range <= 0:
-            print(f'Current longitude range: {lon_range}')
-            raise Exception(f'The range between the maximum and minimum longitude values must be between 1 and 360.')
-        ### Adjusting values to fit between -180 and 360
-        if  min(lon_lim) < -180:
-            print(f'Adjusting within -180')
-            lon_lim = [lon + 360.00 for lon in lon_lim]
-        print(f'Adjusted Longitudes {self.lon_lim}')
+        if self.download_settings.verbose: print(f'Validating parameters...')
+        self.__validate_lon_lat_limits()
+        self.__validate_start_end_dates()
 
         # Parse/Validate Optional Arguments
 
@@ -456,6 +434,53 @@ class Argo:
         print(f"{len(bgc_floats)} BGC floats with {len(profiles)} profiles found.\n")
 
 
+    def __validate_lon_lat_limits(self)-> None:
+        """ Function to validate the length, order, and contents of longitude and latitude limits passed 
+            to select_profiles.
+        """
+        if self.download_settings.verbose: print(f'Validating longitude and latitude limits...')
+
+        # Validating Lists
+        if len(self.lon_lim) != len(self.lat_lim):
+            raise Exception(f'The length of the longitude and latitude lists must be equal.')
+        if len(self.lon_lim) == 2:
+            if (self.lon_lim[1] <= self.lon_lim[0]) or (self.lat_lim[1] <= self.lat_lim[0]):
+                if self.download_settings.verbose: print(f'Longitude Limits: min={self.lon_lim[0]} max={self.lon_lim[1]}')
+                if self.download_settings.verbose: print(f'Latitude Limits: min={self.lat_lim[0]} max={self.lat_lim[1]}')
+                raise Exception(f'When passing longitude and latitude lists using the [min, max] format the max value must be greater than the min value.')
+        
+        # Validating latitudes
+        if not all(-90 <= lat <= 90 for lat in self.lat_lim):
+            print(f'Latitudes: {self.lat_lim}')
+            raise Exception(f'Latitude values should be between -90 and 90.')
+        
+        # Validate Longitudes
+        print(f'Original Longitudes {self.lon_lim}')
+        ## Checking range of longitude values
+        lon_range = max(self.lon_lim) - min(self.lon_lim)
+        if lon_range > 360 or lon_range <= 0:
+            if self.download_settings.verbose: print(f'Current longitude range: {lon_range}')
+            raise Exception(f'The range between the maximum and minimum longitude values must be between 1 and 360.')
+        ## Adjusting values to fit between -180 and 360
+        if  min(self.lon_lim) < -180:
+            if self.download_settings.verbose: print(f'Adjusting within -180')
+            self.lon_lim = [lon + 360.00 for lon in self.lon_lim]
+        if self.download_settings.verbose: print(f'Adjusted Longitudes {self.lon_lim}')
+
+
+    def __validate_start_end_dates(self):
+        """ A function to validate the start and end datetimes passed to select_profiles.
+        """
+        if self.download_settings.verbose: print(f'Validating start and end dates...')
+        if self.start_date > self.end_date:
+            if self.download_settings.verbose: print(f'Current start date: {self.start_date}')
+            if self.download_settings.verbose: print(f'Current end date: {self.end_date}')
+            raise Exception(f'The start date must be in the past when compared to the end date.')
+        if self.start_date < datetime(1995, 1, 1, tzinfo=timezone.utc):
+            if self.download_settings.verbose: print(f'Current start date: {self.start_date}')
+            raise Exception(f'Start date must be after at least: {datetime(1995, 1, 1, tzinfo=timezone.utc)} for any floats to be active.')
+
+
     def __get_in_geographic_range(self) -> list:
         """ A function to compile floats within a certain geographic range.
 
@@ -499,7 +524,7 @@ class Argo:
         if self.download_settings.verbose: print(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
         floats_in_geographic_range =[]
         for i, point in enumerate(profile_points): 
-            if shape.contains(point) or shape.intersects(point):
+            if shape.contains(point):
                 if (self.download_settings.float_type == 'all') and hasattr(self.selection_frame, 'is_bgc'):
                     if not self.selection_frame.at[i, 'is_bgc']:
                         floats_in_geographic_range.append(self.selection_frame.at[i, 'wmoid'])
