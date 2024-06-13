@@ -73,7 +73,7 @@ class Argo:
             del self.prof_index
 
 
-    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: str = '1995-01-01', end_date: str = 'None', **kargs)-> dict:
+    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: str = '1995-01-01', end_date: str = None, **kargs)-> dict:
         """ select_profiles is a public function that...
 
             :param: long_lim : list - 
@@ -517,26 +517,34 @@ class Argo:
         """
         if self.selection_frame.empty:
             self.selection_frame = self.sprof_index
-            floats_in_geographic_range = self.__get_in_geographic_range()
+            profiles_in_geographic_range = self.__get_in_geographic_range()
             # floats_in_date_range = self.__get_in_date_range()
 
             self.selection_frame = self.prof_index
-            floats_in_geographic_range.extend(self.__get_in_geographic_range())
+            profiles_in_geographic_range.update(self.__get_in_geographic_range())
             # floats_in_date_range.extend(self.__get_in_date_range())
 
         else:
-            floats_in_geographic_range = self.__get_in_geographic_range()
+            profiles_in_geographic_range = self.__get_in_geographic_range()
             # floats_in_date_range = self.__get_in_date_range()
         # other key argument checks would go here
 
-        print(f'IDs of floats in geographic range: {floats_in_geographic_range[:5]}...{floats_in_geographic_range[-5:]}')
+        #  TESTING PRINTS 
+        # Get the first key-value pair
+        first_key, first_value = next(iter(profiles_in_geographic_range.items()))
+        # Get the last key-value pair
+        last_key, last_value = next(iter(reversed(profiles_in_geographic_range.items())))
+        # Print the first and last key-value pairs
+        print(f'First key-value pair: {first_key}: {first_value}')
+        print(f'Last key-value pair: {last_key}: {last_value}')
 
 
-    def __get_in_geographic_range(self) -> list:
+    def __get_in_geographic_range(self) -> dict:
         """ A function to compile floats within a certain geographic range.
 
-            :returns: floats_in_geographic_range : list - A list of float IDs of floats
-                that fall within the longitude and latitude limits. 
+            :return: narrowed_profiles : dict - A dictionary with float ID
+                keys corresponding to a list of profiles that match 
+                latitude and longitude criteria.
         """
         # The longitudes in the dataframe are standardized to fall within -180 and 180
         # but our longitudes only have a standard minimum value of -180. 
@@ -570,21 +578,29 @@ class Argo:
             shape = Polygon(coordinates)
         if self.download_settings.verbose: print(f'The shape: {shape}')
 
-        # Create list of float ids if their corresponding coordinates
-        # are within the shape made using the lat and lon limits.
-        if self.download_settings.verbose: print(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
-        floats_in_geographic_range =[]
+        # Create a dictionary of floats and their profiles that fall inside of the polygon
+        if self.download_settings.verbose: print(f'Sorting through floats for those inside of the polygon...')
+        profiles_in_geographic_range = {}
         for i, point in enumerate(profile_points): 
             if shape.contains(point):
-                if (self.download_settings.float_type == 'all') and hasattr(self.selection_frame, 'is_bgc'):
-                    if not self.selection_frame.at[i, 'is_bgc']:
-                        floats_in_geographic_range.append(self.selection_frame.at[i, 'wmoid'])
-                else: 
-                    floats_in_geographic_range.append(self.selection_frame.at[i, 'wmoid'])   
+                if (self.download_settings.float_type == 'all') and (hasattr(self.selection_frame, 'is_bgc')):
+                    if self.selection_frame.at[i, 'is_bgc']:
+                        # If we are are dealing with both frames ('all' setting) and we are on the prof frame (has 'is_bgc')
+                        # then if the 'is_bgc' value for this row is true we don't want to add this point to our dict
+                        # because it will have already been added from the sprof file. So we are going to skip the remaining code 
+                        # inside of the loop for the current iteration only by using a continue statement. 
+                        continue 
+                wmoid = self.selection_frame.at[i, 'wmoid']
+                profile_index = self.selection_frame.at[i, 'profile_index']
+                if wmoid not in profiles_in_geographic_range:
+                    profiles_in_geographic_range[wmoid] = [profile_index]
+                else:
+                    profiles_in_geographic_range[wmoid].append(profile_index)
         
-        if self.download_settings.verbose: print(f'{len(floats_in_geographic_range)}/{len(profile_points)} points were within the shape')
+        if self.download_settings.verbose: print(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
+        if self.download_settings.verbose: print(f'{len(profiles_in_geographic_range)}/{len(profile_points)} points were within the shape')
 
-        return floats_in_geographic_range        
+        return profiles_in_geographic_range        
 
 
     def __get_in_date_range(self):
