@@ -3,13 +3,10 @@
 from Argo import Argo
 from datetime import datetime, timezone, timedelta
 
-argo = Argo()
-# argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
+# argo = Argo()
+argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
 # argo.select_profiles([-170, 185])
-argo.select_profiles([-270.7, 40.009], [-90, 90], datetime(2003, 11, 21, tzinfo=timezone.utc), datetime(2004, 11, 21, tzinfo=timezone.utc))
-argo.select_profiles([-270.7, 40.009], [-90, 90], datetime(2003, 11, 21, tzinfo=timezone.utc), datetime(2002, 11, 21, tzinfo=timezone.utc))
-argo.select_profiles([-270.7, 40.009], [-90, 90], datetime(1800, 11, 21, tzinfo=timezone.utc), datetime(2004, 11, 21, tzinfo=timezone.utc))
 argo.select_profiles([-270.7, 40.009], [-90, 90], datetime(2003, 11, 21, tzinfo=timezone.utc))
 
 ############################################################################################################################
