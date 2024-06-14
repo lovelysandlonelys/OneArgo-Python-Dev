@@ -31,7 +31,7 @@ class DownloadSettings():
         :param: user_settings : str - An optional path to user defined 
             settings.
 
-        Settings: 
+        SETTINGS: 
         base_dir : str - The base directory that all sub directories 
             should be created at.
         sub_dirs : list - A list of folders to that will store 
@@ -50,7 +50,7 @@ class DownloadSettings():
         keep_index_in_memory : bool - True by default, a value to 
             determine if the dataframes from the index files should be 
             kept in working memory or not.
-        float_type : str - "all" by default, a string indicating the type
+        float_type : str - 'all' by default, a string indicating the type
             of floats that the researcher would like to handle. Valid options
             are 'bgc', 'phys', and 'all'.
     """
@@ -154,7 +154,7 @@ class AnalysisSettings():
 
             :param: user_settings : Path - The path to the user's settings file
 
-            :returns: ds_data : ___ - The parsed json string to assign to AnalysisdSettings
+            :returns: ds_data : dict - The parsed json string to assign to AnalysisSettings
                 parameters. 
         """
         if not user_settings.exists():
@@ -219,7 +219,7 @@ class SourceSettings():
 
             :param: user_settings : Path - The path to the user's settings file
 
-            :returns: ds_data : ___ - The parsed json string to assign to SourceSettings
+            :returns: ds_data : dict - The parsed json string to assign to SourceSettings
                 parameters. 
         """
         if not user_settings.exists():
