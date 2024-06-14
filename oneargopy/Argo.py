@@ -312,7 +312,7 @@ class Argo:
         dacs = sprof_index ['file'].str.split('/').str[0]
         sprof_index.insert(1, "dacs", dacs)
 
-        wmoid = sprof_index ['file'].str.split('/').str[1]
+        wmoid = sprof_index ['file'].str.split('/').str[1].astype('int')
         sprof_index.insert(0, "wmoid", wmoid)
 
         profile = sprof_index ['file'].str.split('_').str[1].str.replace('.nc', '')
@@ -372,7 +372,7 @@ class Argo:
         dacs = prof_index['file'].str.split('/').str[0]
         prof_index.insert(0, "dacs", dacs)
 
-        wmoid = prof_index['file'].str.split('/').str[1]
+        wmoid = prof_index['file'].str.split('/').str[1].astype('int')
         prof_index.insert(1, "wmoid", wmoid)
 
         R_file = prof_index['file'].str.split('/').str[3].str.startswith('R')
@@ -532,14 +532,10 @@ class Argo:
             # floats_in_date_range = self.__get_in_date_range()
         # other key argument checks would go here
 
-        #  TESTING PRINTS 
-        self.sprof_index.to_csv('SprofProfiles.csv', index=False)
-        self.prof_index.to_csv('ProfProfiles.csv', index=False)
-        # Open the txt file for writing
-        with open('output.txt', 'w') as file:
-            # Write each key-value pair
-            for key, value in profiles_in_geographic_range.items():
-                file.write(f'{key}: {value}\n')
+        # TESTING PRINTS 
+        print(f'Here is the dictionary after filtering:')
+        for key, value in profiles_in_geographic_range.items():
+            print(f'{key}: {value}')
         
 
 
@@ -593,45 +589,17 @@ class Argo:
         for i, point in enumerate(profile_points): 
             if shape.contains(point):
                 if (self.download_settings.float_type == 'all') and (hasattr(self.selection_frame, 'is_bgc')):
-                    if self.selection_frame.at[i, 'is_bgc']:
+                    if self.selection_frame.iloc[i]['is_bgc']:
                         # If we are are dealing with both frames ('all' setting) and we are on the prof frame (has 'is_bgc')
                         # then if the 'is_bgc' value for this row is true we don't want to add this point to our dict
                         # because it will have already been added from the sprof file. So we are going to skip the remaining code 
                         # inside of the loop for the current iteration only by using a continue statement. 
                         continue 
-                wmoid = self.selection_frame.at[i, 'wmoid']
-                profile_index = self.selection_frame.at[i, 'profile_index']
+                wmoid = self.selection_frame.iloc[i]['wmoid']
+                profile_index = self.selection_frame.iloc[i]['profile_index']
                 if wmoid not in profiles_in_geographic_range:
-                    with open('testing.log', 'a') as file:
-                        file.write(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
-                        file.write('\n')
-                        file.write(f'This is a point we are saving: {point}')
-                        file.write('\n')
-                        file.write(f'This is a its row in the frame we are saving:')
-                        file.write('\n')
-                        file.write(self.selection_frame.iloc[i].to_string())
-                        file.write('\n')  
-                        file.write(f"This is the id: {wmoid} = {self.selection_frame.iloc[i]['wmoid']}")
-                        file.write('\n')
-                        file.write(f"This is the profile_index: {profile_index} = {self.selection_frame.iloc[i]['profile_index']}")
-                        file.write('\n')
-                        file.write('\n')
                     profiles_in_geographic_range[wmoid] = [profile_index]
                 else:
-                    with open('testing.log', 'a') as file:
-                        file.write(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
-                        file.write('\n')
-                        file.write(f'This is a point we are saving: {point}')
-                        file.write('\n')
-                        file.write(f'This is a its row in the frame we are saving:')
-                        file.write('\n')
-                        file.write(self.selection_frame.iloc[i].to_string())
-                        file.write('\n')  
-                        file.write(f"This is the id: {wmoid} = {self.selection_frame.at[i, 'wmoid']}")
-                        file.write('\n')
-                        file.write(f"This is the profile_index: {profile_index} = {self.selection_frame.at[i, 'profile_index']}")
-                        file.write('\n')
-                        file.write('\n')
                     profiles_in_geographic_range[wmoid].append(profile_index)
         
         if self.download_settings.verbose: print(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
