@@ -25,7 +25,10 @@ import shutil
 import gzip
 import numpy as np
 from shapely.geometry import Point, Polygon, box
+
+# Testing Imports 
 import time
+import csv
 
 class Argo:
     
@@ -530,13 +533,14 @@ class Argo:
         # other key argument checks would go here
 
         #  TESTING PRINTS 
-        # Get the first key-value pair
-        first_key, first_value = next(iter(profiles_in_geographic_range.items()))
-        # Get the last key-value pair
-        last_key, last_value = next(iter(reversed(profiles_in_geographic_range.items())))
-        # Print the first and last key-value pairs
-        print(f'First key-value pair: {first_key}: {first_value}')
-        print(f'Last key-value pair: {last_key}: {last_value}')
+        self.sprof_index.to_csv('SprofProfiles.csv', index=False)
+        self.prof_index.to_csv('ProfProfiles.csv', index=False)
+        # Open the txt file for writing
+        with open('output.txt', 'w') as file:
+            # Write each key-value pair
+            for key, value in profiles_in_geographic_range.items():
+                file.write(f'{key}: {value}\n')
+        
 
 
     def __get_in_geographic_range(self) -> dict:
@@ -564,7 +568,12 @@ class Argo:
         for lat, lon in zip(lats, lons):
             point = Point(lon, lat)
             profile_points.append(point)
-        
+
+        # Check that there is a (long, lat) point for every row in the dataframe
+        print(f'Poitns: {len(profile_points)}, Dataframe: {len(self.selection_frame)}')
+        if len(profile_points) != len(self.selection_frame):
+            print(f'The length of the points list and the length of the dataframe do not match up.')
+
         # Create polygon or box using lat_lim and lon_lim 
         if len(self.lat_lim) == 2:
             if self.download_settings.verbose: print(f'We are making a box because the length is {len(self.lat_lim)}')
@@ -593,12 +602,40 @@ class Argo:
                 wmoid = self.selection_frame.at[i, 'wmoid']
                 profile_index = self.selection_frame.at[i, 'profile_index']
                 if wmoid not in profiles_in_geographic_range:
+                    with open('testing.log', 'a') as file:
+                        file.write(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
+                        file.write('\n')
+                        file.write(f'This is a point we are saving: {point}')
+                        file.write('\n')
+                        file.write(f'This is a its row in the frame we are saving:')
+                        file.write('\n')
+                        file.write(self.selection_frame.iloc[i].to_string())
+                        file.write('\n')  
+                        file.write(f"This is the id: {wmoid} = {self.selection_frame.iloc[i]['wmoid']}")
+                        file.write('\n')
+                        file.write(f"This is the profile_index: {profile_index} = {self.selection_frame.iloc[i]['profile_index']}")
+                        file.write('\n')
+                        file.write('\n')
                     profiles_in_geographic_range[wmoid] = [profile_index]
                 else:
+                    with open('testing.log', 'a') as file:
+                        file.write(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
+                        file.write('\n')
+                        file.write(f'This is a point we are saving: {point}')
+                        file.write('\n')
+                        file.write(f'This is a its row in the frame we are saving:')
+                        file.write('\n')
+                        file.write(self.selection_frame.iloc[i].to_string())
+                        file.write('\n')  
+                        file.write(f"This is the id: {wmoid} = {self.selection_frame.at[i, 'wmoid']}")
+                        file.write('\n')
+                        file.write(f"This is the profile_index: {profile_index} = {self.selection_frame.at[i, 'profile_index']}")
+                        file.write('\n')
+                        file.write('\n')
                     profiles_in_geographic_range[wmoid].append(profile_index)
         
         if self.download_settings.verbose: print(f'The geographic limits were: lon: {self.lon_lim} lat: {self.lat_lim}')
-        if self.download_settings.verbose: print(f'{len(profiles_in_geographic_range)}/{len(profile_points)} points were within the shape')
+        if self.download_settings.verbose: print(f'{len(profiles_in_geographic_range)} floats had profiles within the shape')
 
         return profiles_in_geographic_range        
 
