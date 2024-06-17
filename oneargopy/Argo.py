@@ -573,16 +573,16 @@ class Argo:
                 coordinates.append([lon, lat])
             shape = Polygon(coordinates)
 
-        # Drop any rows from the working dataframe who's points are not inside of the polygon
+        # Make a list of profies outside of the polygon
+        remove_indexes = []
         if self.download_settings.verbose: print(f'Sorting floats for those inside of the polygon...')
         for i, point in enumerate(profile_points): 
             if not shape.contains(point):
-                print(f'removing point: {point}')
-                self.selection_frame.drop(i, inplace=True)
-            else: 
-                print(f'keeping point: {point}')
+                remove_indexes.extend([self.selection_frame.iloc[i].name])
+        # Drop all of the indexes at once
+        self.selection_frame = self.selection_frame.drop(remove_indexes)
         
-        if self.download_settings.verbose: print(f'{len(self.selection_frame)} floats have profiles within the shape!')   
+        if self.download_settings.verbose: print(f'{len(self.selection_frame)} profiles fall within the shape!')   
         print(self.selection_frame)     
 
 
