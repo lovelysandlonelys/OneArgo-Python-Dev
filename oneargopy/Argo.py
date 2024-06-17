@@ -169,6 +169,7 @@ class Argo:
                     as a different value if passing a configuration file to the Argo constructor.
         """
         if self.download_settings.verbose: print(f'Starting select_profiles...')
+        self.epsilon = 1e-3
         self.lon_lim = lon_lim
         self.lat_lim = lat_lim
         self.start_date = start_date
@@ -192,6 +193,7 @@ class Argo:
             del self.selection_frame
 
         if self.download_settings.verbose: print(f'Profiles Selected!\n\n')
+
         return narrowed_profiles
 
 
@@ -422,7 +424,10 @@ class Argo:
                 if self.download_settings.verbose: print(f'Longitude Limits: min={self.lon_lim[0]} max={self.lon_lim[1]}')
                 if self.download_settings.verbose: print(f'Latitude Limits: min={self.lat_lim[0]} max={self.lat_lim[1]}')
                 raise Exception(f'When passing longitude and latitude lists using the [min, max] format the max value must be greater than the min value.')
-        
+            if (abs(self.lon_lim[1]) - self.lon_lim[0] < self.epsilon) and (abs(self.lat_lim[1]) - self.lat_lim[0] < self.epsilon): 
+                self.keep_full_geographic = True
+            else: 
+                self.keep_full_geographic = False
         # Validating latitudes
         if not all(-90 <= lat <= 90 for lat in self.lat_lim):
             print(f'Latitudes: {self.lat_lim}')
@@ -453,8 +458,6 @@ class Argo:
             # end_date is optional and should be set to tomorrow if not provided
             if self.end_date != None:
                 self.end_date = datetime.strptime(self.end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-                # TESTING TESTING
-                print(f'The end date with a day added is: {self.end_date}')
             else:
                 self.end_date = datetime.now(timezone.utc) + timedelta(days=1)
         except ValueError:
@@ -478,33 +481,33 @@ class Argo:
             If type is 'all', both dataframes are used, the one from argo_synthetic-profile_index.txt 
             for floats that are in it and match the criteria, the dataframe from ar_index_global_prof.txt
             for all floats that are not listed in argo_synthetic-profile_index.txt. In this 
-            function we assign the selection_frame to an empty placeholder dataframe 
-            because we have custom logic for the 'all' case in the __get_in_geographic_range
-            function. 
+            function combine the two dataframes and drop any duplicate bgc floats. 
 
             If keep_index_in_memory is set to false the dataframes created during Argo's 
             constructor are deleted. In this function we only reload the necessary
-            dataframes into memory and assign them to the selection frame. 
+            dataframes into memory and copy them . 
         """
         if self.download_settings.float_type == 'phys':
             if not self.download_settings.keep_index_in_memory:
                 self.prof_index = self.__load_prof_dataframe()
-                self.selection_frame = self.prof_index
-            else:
-                self.selection_frame = self.prof_index
+            self.selection_frame = self.prof_index.copy()
+        
         elif self.download_settings.float_type == 'bgc':
             if not self.download_settings.keep_index_in_memory:
                 self.sprof_index = self.__load_sprof_dataframe()
-                self.selection_frame = self.sprof_index
-            else:
-                self.selection_frame = self.sprof_index
+            self.selection_frame = self.sprof_index.copy()
+        
         elif self.download_settings.float_type == 'all':
             if not self.download_settings.keep_index_in_memory:
                 self.sprof_index = self.__load_sprof_dataframe()
                 self.prof_index = self.__load_prof_dataframe()
-                self.selection_frame = pd.DataFrame()
-            else:
-                self.selection_frame = pd.DataFrame()
+            # Combining dataframes
+            self.selection_frame = pd.concat([self.sprof_index, self.prof_index], axis=0, ignore_index=True) 
+            # Removing the bgc floats from the sprof column
+            bgc_indexes = self.selection_frame[(self.selection_frame['is_bgc'] == True)].index
+            self.selection_frame.drop(bgc_indexes, inplace=True)
+
+
 
     
     def __narrow_profiles_by_criteria(self)-> dict:
@@ -514,29 +517,30 @@ class Argo:
             :return: narrowed_profiles : dict - A dictionary with float ID
                 keys corresponding to a list of profiles that match criteria.
         """
-        # The case for pulling information from both dataframes
-        if self.selection_frame.empty:
-            self.selection_frame = self.sprof_index
-            profiles_in_geographic_range = self.__get_in_geographic_range()
-            self.selection_frame = self.prof_index
-            profiles_in_geographic_range.update(self.__get_in_geographic_range())
-        # The case for pulling information from a single dataframe
-        else:
-            profiles_in_geographic_range = self.__get_in_geographic_range()
+        # Call the functions to narrow down the profiles in the working dataframe
+        # we're using the self.selection_frame in these functions, dropping
+        # rows as the profiles don't fit the criteria
+        self.__get_in_geographic_range()
+        # self.__get_in_date_range()
 
-        # Printing Dict, likely to remove after testing period
-        print(f'Here is the dictionary after filtering:')
-        for key, value in profiles_in_geographic_range.items():
-            print(f'{key}: {value}')
+        # Convert the working dataframe into a dictionary
+        # selected_floats_dict = self.__dataframe_to_dictionary()
+
+        # # Printing Dict, likely to remove after testing period
+        # print(f'Here is the dictionary after filtering:')
+        # for key, value in selected_floats_dict.items():
+        #     print(f'{key}: {value}')
 
 
-    def __get_in_geographic_range(self) -> dict:
-        """ A function to compile floats within a certain geographic range.
-
-            :return: narrowed_profiles : dict - A dictionary with float ID
-                keys corresponding to a list of profiles that match 
-                latitude and longitude criteria.
+    def __get_in_geographic_range(self):
+        """ A function to drop floats from self.selection_frame that are not within a 
+            certain geographic range.
         """
+        # If the user has passed us the entire globe don't go through the whole
+        # process of checking if the points of all the floats are inside the polygon
+        if self.keep_full_geographic: 
+            return
+        
         # The longitudes in the dataframe are standardized to fall within -180 and 180.
         # but our longitudes only have a standard minimum value of -180. In this section
         # we adjust the longitude and latitudes in the dataframe to follow this minimum 
@@ -569,29 +573,21 @@ class Argo:
                 coordinates.append([lon, lat])
             shape = Polygon(coordinates)
 
-        # Create a dictionary of floats and their profiles that fall inside of the polygon
+        # Drop any rows from the working dataframe who's points are not inside of the polygon
         if self.download_settings.verbose: print(f'Sorting floats for those inside of the polygon...')
-        profiles_in_geographic_range = {}
         for i, point in enumerate(profile_points): 
-            if shape.contains(point):
-                if (self.download_settings.float_type == 'all') and (hasattr(self.selection_frame, 'is_bgc')):
-                    if self.selection_frame.iloc[i]['is_bgc']:
-                        # If we are are dealing with both frames ('all' setting) and we are on the prof frame (has 'is_bgc')
-                        # then if the 'is_bgc' value for this row is true we don't want to add this point to our dict
-                        # because it will have already been added from the sprof file. So we are going to skip the remaining code 
-                        # inside of the loop for the current iteration only by using a continue statement. 
-                        continue 
-                wmoid = self.selection_frame.iloc[i]['wmoid']
-                profile_index = self.selection_frame.iloc[i]['profile_index']
-                if wmoid not in profiles_in_geographic_range:
-                    profiles_in_geographic_range[wmoid] = [profile_index]
-                else:
-                    profiles_in_geographic_range[wmoid].append(profile_index)
+            if not shape.contains(point):
+                print(f'removing point: {point}')
+                self.selection_frame.drop(i, inplace=True)
+            else: 
+                print(f'keeping point: {point}')
         
-        if self.download_settings.verbose: print(f'{len(profiles_in_geographic_range)} floats have profiles within the shape!')
-
-        return profiles_in_geographic_range        
+        if self.download_settings.verbose: print(f'{len(self.selection_frame)} floats have profiles within the shape!')   
+        print(self.selection_frame)     
 
 
     def __get_in_date_range(self):
+        pass
+
+    def __dataframe_to_dictionary(self)-> dict:
         pass

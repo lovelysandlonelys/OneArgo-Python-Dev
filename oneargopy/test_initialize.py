@@ -174,3 +174,30 @@ argo.select_profiles([-170, -168], [20, 25])
 ###########################################################################################################################
 
 ###########################################################################################################################
+# Saving this here for refrence: 
+# # Create a dictionary of floats and their profiles that fall inside of the polygon
+# #drop rows from working frame rather than adding to a dictionary 
+# if self.download_settings.verbose: print(f'Sorting floats for those inside of the polygon...')
+# profiles_in_geographic_range = {}
+# for i, point in enumerate(profile_points): 
+#     if shape.contains(point):
+#         if (self.download_settings.float_type == 'all') and (hasattr(self.selection_frame, 'is_bgc')):
+#             if self.selection_frame.iloc[i]['is_bgc']:
+#                 # If we are are dealing with both frames ('all' setting) and we are on the prof frame (has 'is_bgc')
+#                 # then if the 'is_bgc' value for this row is true we don't want to add this point to our dict
+#                 # because it will have already been added from the sprof file. So we are going to skip the remaining code 
+#                 # inside of the loop for the current iteration only by using a continue statement. 
+#                 continue 
+#         wmoid = self.selection_frame.iloc[i]['wmoid']
+#         profile_index = self.selection_frame.iloc[i]['profile_index']
+#         if wmoid not in profiles_in_geographic_range:
+#             profiles_in_geographic_range[wmoid] = [profile_index]
+#         else:
+#             profiles_in_geographic_range[wmoid].append(profile_index)
+
+# if self.download_settings.verbose: print(f'{len(profiles_in_geographic_range)} floats have profiles within the shape!')
+
+# return profiles_in_geographic_range 
+###########################################################################################################################
+
+###########################################################################################################################
