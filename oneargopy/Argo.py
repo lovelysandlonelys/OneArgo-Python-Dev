@@ -472,6 +472,10 @@ class Argo:
             if self.download_settings.verbose: print(f'Current start date: {self.start_date}')
             raise Exception(f'Start date must be after at least: {datetime(1995, 1, 1, tzinfo=timezone.utc)} for any floats to be active.')
         
+        # Set to datetime64 for dataframe comparisons
+        self.start_date = np.datetime64(self.start_date)
+        self.end_date = np.datetime64(self.end_date)
+        
 
     def __select_frame(self):
         """ A function that determines what dataframes will be loaded/used when selecting floats. 
@@ -508,8 +512,6 @@ class Argo:
             self.selection_frame.drop(bgc_indexes, inplace=True)
 
 
-
-    
     def __narrow_profiles_by_criteria(self)-> dict:
         """ A function to narrow down the available profiles to only those
             that meet the criteria passed to select_profiles.
@@ -521,15 +523,15 @@ class Argo:
         # we're using the self.selection_frame in these functions, dropping
         # rows as the profiles don't fit the criteria
         self.__get_in_geographic_range()
-        # self.__get_in_date_range()
+        self.__get_in_date_range()
 
         # Convert the working dataframe into a dictionary
-        # selected_floats_dict = self.__dataframe_to_dictionary()
+        selected_floats_dict = self.__dataframe_to_dictionary()
 
-        # # Printing Dict, likely to remove after testing period
-        # print(f'Here is the dictionary after filtering:')
-        # for key, value in selected_floats_dict.items():
-        #     print(f'{key}: {value}')
+        # Printing Dict, likely to remove after testing period
+        print(f'Here is the dictionary after filtering:')
+        for key, value in selected_floats_dict.items():
+            print(f'{key}: {value}')
 
 
     def __get_in_geographic_range(self):
@@ -582,12 +584,32 @@ class Argo:
         # Drop all of the indexes at once
         self.selection_frame = self.selection_frame.drop(remove_indexes)
         
-        if self.download_settings.verbose: print(f'{len(self.selection_frame)} profiles fall within the shape!')   
-        print(self.selection_frame)     
+        if self.download_settings.verbose: print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the shape!")   
+        if self.download_settings.verbose: print(f'{len(self.selection_frame)} profiles fall within the shape!')
 
 
     def __get_in_date_range(self):
-        pass
+        """ A function to drop floats from self.selection_frame that are not within a 
+            certain date range.
+        """
+        if self.download_settings.verbose: print(f'Sorting floats for those within the date range...')
+        self.selection_frame = self.selection_frame.drop(self.selection_frame[(self.selection_frame.date < self.start_date) | (self.selection_frame.date > self.end_date)].index)
+
+        if self.download_settings.verbose: print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the date range!")   
+        if self.download_settings.verbose: print(f'{len(self.selection_frame)} profiles fall within the date range!')
+
 
     def __dataframe_to_dictionary(self)-> dict:
-        pass
+        """ A function to turn the working directory into a dictionary
+            of float keys with a list of profiles that match the criteria. 
+
+            :return: narrowed_profiles : dict - A dictionary with float ID
+                keys corresponding to a list of profiles that match criteria.
+        """
+        selected_profiles = {}
+        for index, row in self.selection_frame.iterrows():
+            if row['wmoid'] not in selected_profiles:
+                selected_profiles[row['wmoid']] = [row['profile_index']]
+            else:
+                selected_profiles[row['wmoid']].append(row['profile_index'])
+        return selected_profiles

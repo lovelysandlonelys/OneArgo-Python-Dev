@@ -7,7 +7,7 @@
       "update": 3600,
       "max_attempts": 5,
       "keep_index_in_memory": true,
-      "float_type": "phys"
+      "float_type": "bgc"
     },
     "AnalysisSettings": {
       "temp_thresh": 0.2,

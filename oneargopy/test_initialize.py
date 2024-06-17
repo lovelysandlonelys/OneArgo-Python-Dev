@@ -5,7 +5,7 @@ from Argo import Argo
 #argo = Argo()
 argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
-argo.select_profiles([-170, -168], [20, 25])
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
 # argo.select_profiles([-270.7, 40.009], [-90, 90], '2003-11-21')
 
 ############################################################################################################################
