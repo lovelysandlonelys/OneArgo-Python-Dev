@@ -178,7 +178,7 @@ class Argo:
         self.start_date = start_date
         self.end_date = end_date
         self.outside = kwargs.get('outside')
-        self.download_settings.float_type = kwargs.get('type') # might have to but else keep as is or smth, need to test
+        if kwargs.get('type') is not None: self.download_settings.float_type = kwargs.get('type')
 
         if self.download_settings.verbose: print(f'Validating parameters...')
         self.__validate_lon_lat_limits()
@@ -500,7 +500,7 @@ class Argo:
         if self.download_settings.verbose: print(f"Validating 'type' keyword argument...")
 
         if self.download_settings.float_type != 'all' and self.download_settings.float_type != 'phys' and self.download_settings.float_type != 'bgc':
-                raise Exception(f"The only acceptable values for the 'outside' keyword argument are 'all', 'phys', and 'bgc'.")
+                raise Exception(f"The only acceptable values for the 'type' keyword argument are 'all', 'phys', and 'bgc'.")
         
 
     def __select_frame(self):
