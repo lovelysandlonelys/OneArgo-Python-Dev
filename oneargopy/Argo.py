@@ -178,11 +178,13 @@ class Argo:
         self.start_date = start_date
         self.end_date = end_date
         self.outside = kwargs.get('outside')
+        self.download_settings.float_type = kwargs.get('type')
 
         if self.download_settings.verbose: print(f'Validating parameters...')
         self.__validate_lon_lat_limits()
         self.__validate_start_end_dates()
         self.__validate_outside_kwarg()
+        self.__validate_type_kwarg()
 
         # Load correct dataframes according to float_type
         self.__select_frame()
@@ -490,6 +492,15 @@ class Argo:
         if self.outside is not None: 
             if self.outside != 'time' and self.outside != 'space' and self.outside != 'both':
                 raise Exception(f"The only acceptable values for the 'outside' keyword argument are 'time', 'space', and 'both'.")
+            
+    
+    def __validate_type_kwarg(self): 
+        """ A function to validate the value of the optional 'type' keyword argument.
+        """
+        if self.download_settings.verbose: print(f"Validating 'type' keyword argument...")
+
+        if self.download_settings.float_type != 'all' and self.download_settings.float_type != 'phys' and self.download_settings.float_type != 'bgc':
+                raise Exception(f"The only acceptable values for the 'outside' keyword argument are 'all', 'phys', and 'bgc'.")
         
 
     def __select_frame(self):
