@@ -178,7 +178,7 @@ class Argo:
         self.start_date = start_date
         self.end_date = end_date
         self.outside = kwargs.get('outside')
-        self.download_settings.float_type = kwargs.get('type')
+        self.download_settings.float_type = kwargs.get('type') # might have to but else keep as is or smth, need to test
 
         if self.download_settings.verbose: print(f'Validating parameters...')
         self.__validate_lon_lat_limits()
