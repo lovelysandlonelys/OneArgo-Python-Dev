@@ -18,13 +18,16 @@ from Settings import DownloadSettings, SourceSettings
 
 # System
 from pathlib import Path
-import pandas as pd
 import requests
 from datetime import datetime, timedelta, timezone
 import shutil
 import gzip
 import numpy as np
-from shapely.geometry import Point, Polygon, box
+import matplotlib.path as mpltPath
+import pandas as pd
+
+from time import time
+import json
 
 
 class Argo:
@@ -81,7 +84,7 @@ class Argo:
             del self.prof_index
 
 
-    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: str = '1995-01-01', end_date: str = None, **kargs)-> dict:
+    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: str = '1995-01-01', end_date: str = None, **kwargs)-> dict:
         """ select_profiles is a public function of the Argo class that returns a 
             dictionary if float IDs and profile lists that match the passed criteria.
 
@@ -174,11 +177,12 @@ class Argo:
         self.lat_lim = lat_lim
         self.start_date = start_date
         self.end_date = end_date
+        self.outside = kwargs.get('outside')
 
         if self.download_settings.verbose: print(f'Validating parameters...')
         self.__validate_lon_lat_limits()
         self.__validate_start_end_dates()
-        # Parse/Validate Optional Arguments Here ...
+        self.__validate_outside_kwarg()
 
         # Load correct dataframes according to float_type
         self.__select_frame()
@@ -428,6 +432,7 @@ class Argo:
                 self.keep_full_geographic = True
             else: 
                 self.keep_full_geographic = False
+
         # Validating latitudes
         if not all(-90 <= lat <= 90 for lat in self.lat_lim):
             print(f'Latitudes: {self.lat_lim}')
@@ -454,10 +459,10 @@ class Argo:
         # Parse Strings to Datetime Objects
         try:
             # Check if the string matches the expected format
-            self.start_date = datetime.strptime(self.start_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            self.start_date = datetime.fromisoformat(self.start_date).replace(tzinfo=timezone.utc)
             # end_date is optional and should be set to tomorrow if not provided
             if self.end_date != None:
-                self.end_date = datetime.strptime(self.end_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                self.end_date = datetime.fromisoformat(self.end_date).replace(tzinfo=timezone.utc)
             else:
                 self.end_date = datetime.now(timezone.utc) + timedelta(days=1)
         except ValueError:
@@ -475,6 +480,16 @@ class Argo:
         # Set to datetime64 for dataframe comparisons
         self.start_date = np.datetime64(self.start_date)
         self.end_date = np.datetime64(self.end_date)
+
+
+    def __validate_outside_kwarg(self): 
+        """ A function to validate the value of the optional 'outside' keyword argument.
+        """
+        if self.download_settings.verbose: print(f"Validating 'outside' keyword argument...")
+
+        if self.outside is not None: 
+            if self.outside != 'time' and self.outside != 'space' and self.outside != 'both':
+                raise Exception(f"The only acceptable values for the 'outside' keyword argument are 'time', 'space', and 'both'.")
         
 
     def __select_frame(self):
@@ -529,10 +544,10 @@ class Argo:
         selected_floats_dict = self.__dataframe_to_dictionary()
 
         # Printing Dict, likely to remove after testing period
-        print(f'Here is the dictionary after filtering:')
+        print(f'Floats: {selected_floats_dict.keys()}')
         for key, value in selected_floats_dict.items():
             print(f'{key}: {value}')
-
+        
 
     def __get_in_geographic_range(self):
         """ A function to drop floats from self.selection_frame that are not within a 
@@ -543,6 +558,10 @@ class Argo:
         if self.keep_full_geographic: 
             return
         
+        # Make Point objects out of profile lat and lons
+        if self.download_settings.verbose: print(f'Creating point list from profiles...')
+        profile_points = np.empty((len(self.selection_frame), 2))
+        
         # The longitudes in the dataframe are standardized to fall within -180 and 180.
         # but our longitudes only have a standard minimum value of -180. In this section
         # we adjust the longitude and latitudes in the dataframe to follow this minimum 
@@ -550,39 +569,43 @@ class Argo:
         if max(self.lon_lim) > 180:
             if self.download_settings.verbose: print(f'The max value in lon_lim is {max(self.lon_lim)}')
             if self.download_settings.verbose: print(f'Adjusting longitude values...')
-            lons = self.selection_frame['longitude'].apply(lambda x: x + 360 if -180 < x < min(self.lon_lim) else x)
+            profile_points[:,0] = self.selection_frame['longitude'].apply(lambda x: x + 360 if -180 < x < min(self.lon_lim) else x).values
         else:
-            lons = self.selection_frame['longitude'] 
+            profile_points[:,0] = self.selection_frame['longitude'].values
         
         # Latitudes in the dataframe are good to go
-        lats = self.selection_frame['latitude'] 
-
-        # Make Point objects out of profile lat and lons
-        profile_points =[]
-        if self.download_settings.verbose: print(f'Creating point list from profiles...')
-        for lat, lon in zip(lats, lons):
-            point = Point(lon, lat)
-            profile_points.append(point)
+        profile_points[:,1] = self.selection_frame['latitude'].values
 
         # Create polygon or box using lat_lim and lon_lim 
         if self.download_settings.verbose: print(f'Creating polygon...')
         if len(self.lat_lim) == 2:
-            shape = box(min(self.lon_lim), min(self.lat_lim), 
-                        max(self.lon_lim), max(self.lat_lim))
+            shape = [[max(self.lon_lim), min(self.lat_lim)], # Top-right
+                     [max(self.lon_lim), max(self.lat_lim)], # Bottom-right
+                     [min(self.lon_lim), max(self.lat_lim)], # Bottom-left
+                     [min(self.lon_lim), min(self.lat_lim)]] # Top-left
         else:
-            coordinates = []
+            shape = []
             for lat, lon in zip(self.lat_lim, self.lon_lim):
-                coordinates.append([lon, lat])
-            shape = Polygon(coordinates)
+                shape.append([lon, lat])
 
-        # Make a list of profies outside of the polygon
-        remove_indexes = []
-        if self.download_settings.verbose: print(f'Sorting floats for those inside of the polygon...')
-        for i, point in enumerate(profile_points): 
-            if not shape.contains(point):
-                remove_indexes.extend([self.selection_frame.iloc[i].name])
-        # Drop all of the indexes at once
-        self.selection_frame = self.selection_frame.drop(remove_indexes)
+        # Test if points are inside clockwise shape
+        path = mpltPath.Path(shape)
+        inside_cw = path.contains_points(profile_points)
+            
+        # Drop profiles outside of range
+        if self.outside == 'space' or self.outside == 'both':
+            if self.download_settings.verbose: 
+                if self.outside == 'space': print(f"Filtering for outside='space' option.") 
+                else: print(f"Filtering for outside='both' option.")
+            # Drop any profile outside of range 
+            self.profiles_in_range = self.selection_frame[inside_cw]
+            # Gather all profiles of any floats that are inside the range
+            matching_rows = self.selection_frame[self.selection_frame['wmoid'].isin(self.profiles_in_range['wmoid'].unique())]
+            # Add profiles back to dataframe so that any float where at least one profile matches the lon/lat constrains 
+            # will have all profiles in the dataframe.
+            self.selection_frame = pd.concat([self.profiles_in_range, matching_rows]).drop_duplicates().reset_index(drop=True)
+        else:
+            self.selection_frame = self.selection_frame[inside_cw]
         
         if self.download_settings.verbose: print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the shape!")   
         if self.download_settings.verbose: print(f'{len(self.selection_frame)} profiles fall within the shape!')
@@ -593,7 +616,20 @@ class Argo:
             certain date range.
         """
         if self.download_settings.verbose: print(f'Sorting floats for those within the date range...')
-        self.selection_frame = self.selection_frame.drop(self.selection_frame[(self.selection_frame.date < self.start_date) | (self.selection_frame.date > self.end_date)].index)
+
+        if self.outside == 'time' or self.outside == 'both':
+            if self.download_settings.verbose: 
+                if self.outside == 'space': print(f"Filtering for outside='time' option.") 
+                else: print(f"Filtering for outside='both' option.")
+            # Drop any profile outside of range
+            self.profiles_in_range = self.selection_frame.drop(self.selection_frame[(self.selection_frame.date < self.start_date) | (self.selection_frame.date > self.end_date)].index)
+            # Gather all profiles of any floats that are inside the range
+            matching_rows = self.selection_frame[self.selection_frame['wmoid'].isin(self.profiles_in_range['wmoid'].unique())]
+            # Add profiles back to dataframe so that any float where at least one profile matches the time and space constrains 
+            # will have all profiles inside the space constraints in the dataframe.
+            self.selection_frame = pd.concat([self.profiles_in_range, matching_rows]).drop_duplicates().reset_index(drop=True)
+        else: 
+            self.selection_frame = self.selection_frame.drop(self.selection_frame[(self.selection_frame.date < self.start_date) | (self.selection_frame.date > self.end_date)].index)
 
         if self.download_settings.verbose: print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the date range!")   
         if self.download_settings.verbose: print(f'{len(self.selection_frame)} profiles fall within the date range!')

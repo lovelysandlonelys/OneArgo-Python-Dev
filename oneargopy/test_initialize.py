@@ -3,9 +3,41 @@
 from Argo import Argo
 import time
 
-argo = Argo()
-# argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
+# argo = Argo()
+argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
+# Testing outside functionality
+start_time = time.time()
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2014-01-01')
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
+
+start_time = time.time()
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2014-01-01', outside='both')
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
+
+
+# print(f'Testing Min-Max VS Rectangle:')
+# print(f'Min-Max:')
+# start_time = time.time()
+# argo.select_profiles([-170, -168], [20, 25])
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
+# # In Argo: 
+# # shape = [[max(self.lon_lim), min(self.lat_lim)], # Top-right
+# #          [max(self.lon_lim), max(self.lat_lim)], # Bottom-right
+# #          [min(self.lon_lim), max(self.lat_lim)], # Bottom-left
+# #          [min(self.lon_lim), min(self.lat_lim)]] # Top-left
+
+# print(f'Rectangle:')
+# start_time = time.time()
+# argo.select_profiles([-168, -168, -170, -170], [20, 20, 25, 25])
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
+
+
+# Same as Matlab Tests
 # # Rectangular without dates
 # print(f'Rectangular without dates:')
 # start_time = time.time()
@@ -27,14 +59,14 @@ argo = Argo()
 # elapsed_time = time.time() - start_time
 # print(f'This test took: {elapsed_time}\n')
 
-# Lat only without dates
-print(f'Lat only without dates:')
-start_time = time.time()
-argo.select_profiles(lat_lim=[20, 25])
-elapsed_time = time.time() - start_time
-print(f'This test took: {elapsed_time}\n')
+# # Lat only without dates
+# print(f'Lat only without dates:')
+# start_time = time.time()
+# argo.select_profiles(lat_lim=[20, 25])
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
 
-# Dates only
+# # Dates only
 # print(f'Dates only:')
 # start_time = time.time()
 # argo.select_profiles(start_date='2017-01-01', end_date='2019-12-31')
@@ -209,6 +241,7 @@ print(f'This test took: {elapsed_time}\n')
 
 ###########################################################################################################################
 # Saving this here for refrence: 
+
 # # Create a dictionary of floats and their profiles that fall inside of the polygon
 # #drop rows from working frame rather than adding to a dictionary 
 # if self.download_settings.verbose: print(f'Sorting floats for those inside of the polygon...')
@@ -232,6 +265,14 @@ print(f'This test took: {elapsed_time}\n')
 # if self.download_settings.verbose: print(f'{len(profiles_in_geographic_range)} floats have profiles within the shape!')
 
 # return profiles_in_geographic_range 
+
+# Make a list of profies outside of the polygon
+# remove_indexes = []
+# if self.download_settings.verbose: print(f'Sorting floats for those inside of the polygon...')
+# for i, point in enumerate(profile_points): 
+#     if not shape.contains(point):
+#         remove_indexes.extend([self.selection_frame.iloc[i].name])
+        
 ###########################################################################################################################
 
 ###########################################################################################################################
