@@ -1,12 +1,46 @@
 ############################################################################################################################
 # Argo Functions
 from Argo import Argo
+import time
 
-#argo = Argo()
-argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
+argo = Argo()
+# argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
-argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
-# argo.select_profiles([-270.7, 40.009], [-90, 90], '2003-11-21')
+# # Rectangular without dates
+# print(f'Rectangular without dates:')
+# start_time = time.time()
+# argo.select_profiles([-170, -168], [20, 25])
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
+
+# # Polygon with dates
+# print(f'Polygon with dates:')
+# start_time = time.time()
+# argo.select_profiles([38.21, 31.26, 29.77], [-74.8, -65.57, -80.16], '2013-01-01', '2020-01-01')
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
+
+# # lon only with dates
+# print(f'Lon only with dates:')
+# start_time = time.time()
+# argo.select_profiles(lon_lim=[-170, -168], start_date='2012-01-01', end_date='2014-01-01' )
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
+
+# Lat only without dates
+print(f'Lat only without dates:')
+start_time = time.time()
+argo.select_profiles(lat_lim=[20, 25])
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
+
+# Dates only
+# print(f'Dates only:')
+# start_time = time.time()
+# argo.select_profiles(start_date='2017-01-01', end_date='2019-12-31')
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
+
 
 ############################################################################################################################
 
