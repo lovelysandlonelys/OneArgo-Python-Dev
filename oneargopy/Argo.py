@@ -178,7 +178,7 @@ class Argo:
         self.start_date = start_date
         self.end_date = end_date
         self.outside = kwargs.get('outside')
-        if kwargs.get('type') is not None: self.download_settings.float_type = kwargs.get('type')
+        if kwargs.get('type') is not None: self.float_type = kwargs.get('type')
         self.floats = kwargs.get('floats')
         self.ocean = kwargs.get('ocean')
         self.sensor = kwargs.get('sensor')
@@ -203,6 +203,7 @@ class Argo:
             del self.selection_frame
 
         if self.download_settings.verbose: print(f'Profiles Selected!\n\n')
+
 
         return narrowed_profiles
 
@@ -504,7 +505,7 @@ class Argo:
         """
         if self.download_settings.verbose: print(f"Validating 'type' keyword argument...")
 
-        if self.download_settings.float_type != 'all' and self.download_settings.float_type != 'phys' and self.download_settings.float_type != 'bgc':
+        if self.float_type != 'all' and self.float_type != 'phys' and self.float_type != 'bgc':
                 raise Exception(f"The only acceptable values for the 'type' keyword argument are 'all', 'phys', and 'bgc'.")
         
     
@@ -531,17 +532,17 @@ class Argo:
             constructor are deleted. In this function we only reload the necessary
             dataframes into memory and copy them . 
         """
-        if self.download_settings.float_type == 'phys':
+        if self.download_settings.float_type == 'phys' or self.float_type == 'phys':
             if not self.download_settings.keep_index_in_memory:
                 self.prof_index = self.__load_prof_dataframe()
             self.selection_frame = self.prof_index.copy()
         
-        elif self.download_settings.float_type == 'bgc':
+        elif self.download_settings.float_type == 'bgc' or self.float_type == 'bgc':
             if not self.download_settings.keep_index_in_memory:
                 self.sprof_index = self.__load_sprof_dataframe()
             self.selection_frame = self.sprof_index.copy()
         
-        elif self.download_settings.float_type == 'all':
+        elif self.download_settings.float_type == 'all' or self.float_type == 'all':
             if not self.download_settings.keep_index_in_memory:
                 self.sprof_index = self.__load_sprof_dataframe()
                 self.prof_index = self.__load_prof_dataframe()
