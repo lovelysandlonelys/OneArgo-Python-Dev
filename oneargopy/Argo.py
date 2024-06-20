@@ -688,7 +688,7 @@ class Argo:
         """ A function to apply the 'outside' kwarg constraints to the results after filtering by
             space and time. 
         """
-        # Float ID key list, that has a singular profile that is in both lon/lat constinras and date constrians
+        # Float ID key list, that has floats that have a singular profile that is in both lon/lat constinras and date constrians
         prof_in_time  = ((self.selection_frame['date'] > self.start_date) & (self.selection_frame['date'] < self.end_date)).tolist()
         floats_that_meet_both_constraints = self.selection_frame[prof_in_time]
         
