@@ -31,22 +31,22 @@ argo = Argo()
 
 # Testing outside functionality
 start_time = time.time()
-argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', type='bgc')
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 
 start_time = time.time()
-argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time', type='bgc')
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 
 start_time = time.time()
-argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='space')
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='space', type='bgc')
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 
 start_time = time.time()
-argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='both')
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='both', type='bgc')
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 

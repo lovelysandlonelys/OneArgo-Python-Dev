@@ -708,7 +708,7 @@ class Argo:
         elif self.outside == 'both': 
             print(f'Applying outside={self.outside} constraints.')
 
-        if self.download_settings.verbose: 
+        if self.download_settings.verbose:
             print(f"{len(self.selection_frame['wmoid'].unique())} floats selected")   
             print(f'{len(self.selection_frame)} profiles selected according to constraints!')
 
