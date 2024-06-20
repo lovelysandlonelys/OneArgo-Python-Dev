@@ -31,7 +31,7 @@ argo = Argo()
 
 # Testing outside functionality
 start_time = time.time()
-argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', type="all", outside=None)
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 

@@ -178,7 +178,7 @@ class Argo:
         self.start_date = start_date
         self.end_date = end_date
         self.outside = kwargs.get('outside')
-        if kwargs.get('type') is not None: self.float_type = kwargs.get('type')
+        self.float_type = kwargs.get('type') if kwargs.get('type') is not None else None
         self.floats = kwargs.get('floats')
         self.ocean = kwargs.get('ocean')
         self.sensor = kwargs.get('sensor')
@@ -563,9 +563,11 @@ class Argo:
         # Call the functions to narrow down the profiles in the working dataframe
         # we're using the self.selection_frame in these functions, dropping
         # rows as the profiles don't fit the criteria
-        if self.floats : self.__get_by_float_ids()
         self.__get_in_geographic_range()
         self.__get_in_date_range()
+        self.__apply_outside_constraints()
+
+        if self.floats : self.__get_by_float_ids()
         if self.ocean : self.__get_in_ocean_basin()
 
         # Convert the working dataframe into a dictionary
@@ -583,7 +585,7 @@ class Argo:
         if self.download_settings.verbose: print(f"Sorting floats for those passed in 'floats' kwarg...")
         if type(self.floats) is list:
             self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(self.floats)]
-        elif type(self.floats) is str or type(self.floats) is int: 
+        else: 
             self.selection_frame = self.selection_frame[self.selection_frame['wmoid'] == int(self.floats)]
 
         if self.download_settings.verbose: 
@@ -602,7 +604,27 @@ class Argo:
         
         if self.download_settings.verbose: print(f'Sorting floats for those within the geographic range...')
 
-        # Make Point objects out of profile lat and lons
+        # Create true false array for points in the limits for the dataframe
+        prof_in_space = self.__generate_in_polygon_array()
+        
+        # Drop all floats where all profiles are outside of geographic range but 
+        # keep all floats and profiles where at least one profile is in range
+        self.profiles_in_range = self.selection_frame[prof_in_space]
+        floats_in_range = self.profiles_in_range['wmoid'].unique()
+        self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(floats_in_range)].reset_index(drop=True)
+        
+        #Redefine T/F array for 
+
+        if self.download_settings.verbose: 
+            print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the shape!")
+            print(f'{len(self.selection_frame)} profiles associated with those floats!')
+
+
+    def __generate_in_polygon_array(self) ->list[bool]:
+        """ A function to generate a t/f array for the current state of the dataframe
+            detailing which profiles(rows) are inside of the defined geographic range.
+        """
+        # Make points out of profile lat and lons
         if self.download_settings.verbose: print(f'Creating point list from profiles...')
         profile_points = np.empty((len(self.selection_frame), 2))
         
@@ -632,29 +654,11 @@ class Argo:
             for lat, lon in zip(self.lat_lim, self.lon_lim):
                 shape.append([lon, lat])
 
-        # Test if points are inside clockwise shape
+        # Define a t/f array for points within the shape
         path = mpltPath.Path(shape)
-        inside_cw = path.contains_points(profile_points)
+        prof_in_space = path.contains_points(profile_points)
 
-        if self.outside == 'space' or self.outside == 'both':
-            if self.download_settings.verbose: print(f"Filtering for outside='{self.outside}' option.")
-
-            # Profiles in range
-            self.profiles_in_range = self.selection_frame[inside_cw]
-            
-            # Gather all profiles of any floats that are inside the range
-            matching_rows = self.selection_frame[self.selection_frame['wmoid'].isin(self.profiles_in_range['wmoid'].unique())]
-            
-            # Add profiles back to dataframe so that any float where at least one profile matches the lon/lat constrains 
-            # will have all profiles in the dataframe.
-            self.selection_frame = pd.concat([self.profiles_in_range, matching_rows]).drop_duplicates().reset_index(drop=True)
-        else:
-            self.selection_frame = self.selection_frame[inside_cw]
-        
-        if self.download_settings.verbose: 
-            print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the shape!")
-            print(f'{len(self.selection_frame)} profiles fall within the shape!')
-
+        return prof_in_space
 
     def __get_in_date_range(self):
         """ A function to drop floats from self.selection_frame that are not within a 
@@ -662,26 +666,51 @@ class Argo:
         """
         if self.download_settings.verbose: print(f'Sorting floats for those within the date range...')
 
-        # Define a mask for dates within the range
-        in_range_mask = (self.selection_frame['date'] > self.start_date) & (self.selection_frame['date'] < self.end_date)
+        # Define a t/f array for dates within the range
+        prof_in_time  = ((self.selection_frame['date'] > self.start_date) & (self.selection_frame['date'] < self.end_date)).tolist()
         
-        if self.outside == 'time' or self.outside == 'both':
-            if self.download_settings.verbose: print(f"Filtering for outside='{self.outside}' option.")
-            
-            # Profiles in range based on the mask
-            self.profiles_in_range = self.selection_frame[in_range_mask]
-            
-            # Gather all profiles of any floats that are inside the range
-            matching_rows = self.selection_frame[self.selection_frame['wmoid'].isin(self.profiles_in_range['wmoid'].unique())]
-            
-            # Add profiles back to dataframe
-            self.selection_frame = pd.concat([self.profiles_in_range, matching_rows]).drop_duplicates().reset_index(drop=True)
-        else:
-            self.selection_frame = self.selection_frame[in_range_mask]
+        # Drop all floats where all profiles are outside of date range but
+        # keep all floats and profiles where at least one profile is in range
+        self.profiles_in_range = self.selection_frame[prof_in_time]
+        floats_in_range = self.profiles_in_range['wmoid'].unique()
+        self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(floats_in_range)].reset_index(drop=True)
 
         if self.download_settings.verbose: 
             print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the date range!")   
-            print(f'{len(self.selection_frame)} profiles fall within the date range!')
+            print(f'{len(self.selection_frame)} profiles associated with those floats!')
+
+
+    def __apply_outside_constraints(self): 
+        """ A function to apply the 'outside' kwarg constraints to the results after filtering by
+            space and time. 
+        """
+        if self.outside == 'time': 
+            print(f'Applying outside={self.outside} constraints.')
+            
+            prof_in_space = self.__generate_in_polygon_array()
+            self.selection_frame = self.selection_frame[prof_in_space]
+       
+        elif self.outside == 'space': 
+            print(f'Applying outside={self.outside} constraints.')
+            
+            prof_in_time  = ((self.selection_frame['date'] > self.start_date) & (self.selection_frame['date'] < self.end_date)).tolist()
+            self.selection_frame = self.selection_frame[prof_in_time]
+        
+        elif self.outside == None : 
+            print(f'Applying outside=None constraints.')
+            
+            prof_in_time  = ((self.selection_frame['date'] > self.start_date) & (self.selection_frame['date'] < self.end_date)).tolist()
+            self.selection_frame = self.selection_frame[prof_in_time]
+            
+            prof_in_space = self.__generate_in_polygon_array()
+            self.selection_frame = self.selection_frame[prof_in_space]
+        
+        elif self.outside == 'both': 
+            print(f'Applying outside={self.outside} constraints.')
+
+        if self.download_settings.verbose: 
+            print(f"{len(self.selection_frame['wmoid'].unique())} floats selected")   
+            print(f'{len(self.selection_frame)} profiles selected according to constraints!')
 
 
     def __get_in_ocean_basin(self): 
