@@ -620,13 +620,17 @@ class Argo:
             print(f'{len(self.selection_frame)} profiles associated with those floats!')
 
 
-    def __generate_in_polygon_array(self) ->list[bool]:
+    def __generate_in_polygon_array(self, dataframe: pd = None) ->list[bool]:
         """ A function to generate a t/f array for the current state of the dataframe
             detailing which profiles(rows) are inside of the defined geographic range.
         """
+        # if not dataframe provided use the selection frame
+        if dataframe == None : 
+            dataframe = self.selection_frame
+
         # Make points out of profile lat and lons
         if self.download_settings.verbose: print(f'Creating point list from profiles...')
-        profile_points = np.empty((len(self.selection_frame), 2))
+        profile_points = np.empty((len(dataframe), 2))
         
         # The longitudes in the dataframe are standardized to fall within -180 and 180.
         # but our longitudes only have a standard minimum value of -180. In this section
@@ -635,12 +639,12 @@ class Argo:
         if max(self.lon_lim) > 180:
             if self.download_settings.verbose: print(f'The max value in lon_lim is {max(self.lon_lim)}')
             if self.download_settings.verbose: print(f'Adjusting longitude values...')
-            profile_points[:,0] = self.selection_frame['longitude'].apply(lambda x: x + 360 if -180 < x < min(self.lon_lim) else x).values
+            profile_points[:,0] = dataframe['longitude'].apply(lambda x: x + 360 if -180 < x < min(self.lon_lim) else x).values
         else:
-            profile_points[:,0] = self.selection_frame['longitude'].values
+            profile_points[:,0] = dataframe['longitude'].values
         
         # Latitudes in the dataframe are good to go
-        profile_points[:,1] = self.selection_frame['latitude'].values
+        profile_points[:,1] = dataframe['latitude'].values
 
         # Create polygon or box using lat_lim and lon_lim 
         if self.download_settings.verbose: print(f'Creating polygon...')
@@ -684,15 +688,26 @@ class Argo:
         """ A function to apply the 'outside' kwarg constraints to the results after filtering by
             space and time. 
         """
+        # Float ID key list, that has a singular profile that is in both lon/lat constinras and date constrians
+        prof_in_time  = ((self.selection_frame['date'] > self.start_date) & (self.selection_frame['date'] < self.end_date)).tolist()
+        floats_that_meet_both_constraints = self.selection_frame[prof_in_time]
+        
+        prof_in_space = self.__generate_in_polygon_array(floats_that_meet_both_constraints)
+        floats_that_meet_both_constraints = floats_that_meet_both_constraints[prof_in_space]
+
+        valid_floats = floats_that_meet_both_constraints['wmoid'].tolist()
+        
         if self.outside == 'time': 
             print(f'Applying outside={self.outside} constraints.')
             
+            self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(valid_floats)].reset_index(drop=True)
             prof_in_space = self.__generate_in_polygon_array()
             self.selection_frame = self.selection_frame[prof_in_space]
        
         elif self.outside == 'space': 
             print(f'Applying outside={self.outside} constraints.')
             
+            self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(valid_floats)].reset_index(drop=True)
             prof_in_time  = ((self.selection_frame['date'] > self.start_date) & (self.selection_frame['date'] < self.end_date)).tolist()
             self.selection_frame = self.selection_frame[prof_in_time]
         
@@ -707,6 +722,8 @@ class Argo:
         
         elif self.outside == 'both': 
             print(f'Applying outside={self.outside} constraints.')
+
+            self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(valid_floats)].reset_index(drop=True)
 
         if self.download_settings.verbose:
             print(f"{len(self.selection_frame['wmoid'].unique())} floats selected")   
