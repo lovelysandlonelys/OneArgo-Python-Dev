@@ -66,7 +66,7 @@ class Argo:
 
         # Load the argo_synthetic-profile_index.txt file into a data frame
         if self.download_settings.verbose: print(f'\nTransferring index files into data frames...')
-        self.sprof_index  = self.__load_sprof_dataframe()
+        self.sprof_index  = self.__load_sprof_dataframe() 
         self.prof_index = self.__load_prof_dataframe()
 
         # Add column noting if a float is also in the sprof_index, meaning that it is a bgc float
@@ -121,7 +121,7 @@ class Argo:
                     (positive downwards; in db)
             direction=dir: Select profiles by direction ('a' for ascending,
                     'd' for descending, '' for both directions)
-            floats=floats: Select profiles only from these floats that must
+            floats=floats[] or 'float': Select profiles only from these floats that must
                     match all other criteria
             interp_lonlat=intp : If intp is 'yes' (default), missing lon/lat
                     values (e.g., under ice) will be interpolated;
@@ -152,7 +152,7 @@ class Argo:
                     ('space'), or both constraints ('both')
             profiler',profiler: Select floats of the given profiler type (integer,
                     e.g., 846 is an APEX BGC float)
-            sensor', SENSOR_TYPE: This option allows the selection by
+            sensor='sensor' or [sensors], SENSOR_TYPE: This option allows the selection by
                     sensor type. Available as of 2024: PRES, PSAL, TEMP, DOXY, BBP,
                     BBP470, BBP532, BBP700, TURBIDITY, CP, CP660, CHLA, CDOM,
                     NITRATE, BISULFIDE, PH_IN_SITU_TOTAL, DOWN_IRRADIANCE,
@@ -179,12 +179,16 @@ class Argo:
         self.end_date = end_date
         self.outside = kwargs.get('outside')
         if kwargs.get('type') is not None: self.download_settings.float_type = kwargs.get('type')
+        self.floats = kwargs.get('floats')
+        self.ocean = kwargs.get('ocean')
+        self.sensor = kwargs.get('sensor')
 
         if self.download_settings.verbose: print(f'Validating parameters...')
         self.__validate_lon_lat_limits()
         self.__validate_start_end_dates()
-        self.__validate_outside_kwarg()
-        self.__validate_type_kwarg()
+        if self.outside : self.__validate_outside_kwarg()
+        if kwargs.get('type') : self.__validate_type_kwarg()
+        if self.ocean : self.__validate_ocean_kwarg()
 
         # Load correct dataframes according to float_type
         self.__select_frame()
@@ -472,12 +476,13 @@ class Argo:
         
         # Validate datetimes
         if self.start_date > self.end_date:
-            if self.download_settings.verbose: print(f'Current start date: {self.start_date}')
-            if self.download_settings.verbose: print(f'Current end date: {self.end_date}')
-            raise Exception(f'The start date must be in the past when compared to the end date.')
+            if self.download_settings.verbose: 
+                print(f'Current start date: {self.start_date}')
+                print(f'Current end date: {self.end_date}')
+            raise ValueError(f'The start date must be in the past when compared to the end date.')
         if self.start_date < datetime(1995, 1, 1, tzinfo=timezone.utc):
             if self.download_settings.verbose: print(f'Current start date: {self.start_date}')
-            raise Exception(f'Start date must be after at least: {datetime(1995, 1, 1, tzinfo=timezone.utc)} for any floats to be active.')
+            raise ValueError(f'Start date must be after at least: {datetime(1995, 1, 1, tzinfo=timezone.utc)} for any floats to be active.')
         
         # Set to datetime64 for dataframe comparisons
         self.start_date = np.datetime64(self.start_date)
@@ -502,6 +507,15 @@ class Argo:
         if self.download_settings.float_type != 'all' and self.download_settings.float_type != 'phys' and self.download_settings.float_type != 'bgc':
                 raise Exception(f"The only acceptable values for the 'type' keyword argument are 'all', 'phys', and 'bgc'.")
         
+    
+    def __validate_ocean_kwarg(self): 
+        """ A function to validate the value of the optional 'ocean' keyword argument.
+        """
+        if self.download_settings.verbose: print(f"Validating 'ocean' keyword argument...")
+
+        if self.ocean != 'A' and self.ocean != 'P' and self.ocean != 'I':
+                raise Exception(f"The only acceptable values for the 'ocean' keyword argument are 'A' (Atlantic), 'P' (Pacific), and 'I' (Indian).")
+
 
     def __select_frame(self):
         """ A function that determines what dataframes will be loaded/used when selecting floats. 
@@ -548,8 +562,10 @@ class Argo:
         # Call the functions to narrow down the profiles in the working dataframe
         # we're using the self.selection_frame in these functions, dropping
         # rows as the profiles don't fit the criteria
+        if self.floats : self.__get_by_float_ids()
         self.__get_in_geographic_range()
         self.__get_in_date_range()
+        if self.ocean : self.__get_in_ocean_basin()
 
         # Convert the working dataframe into a dictionary
         selected_floats_dict = self.__dataframe_to_dictionary()
@@ -560,6 +576,20 @@ class Argo:
             print(f'{key}: {value}')
         
 
+    def __get_by_float_ids(self):
+        """ A function to drop all float profiles that do match float ids passed to select_profiles.
+        """
+        if self.download_settings.verbose: print(f"Sorting floats for those passed in 'floats' kwarg...")
+        if type(self.floats) is list:
+            self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(self.floats)]
+        elif type(self.floats) is str or type(self.floats) is int: 
+            self.selection_frame = self.selection_frame[self.selection_frame['wmoid'] == int(self.floats)]
+
+        if self.download_settings.verbose: 
+            print(f"{len(self.selection_frame['wmoid'].unique())} floats match passed float IDs!") 
+            print(f'{len(self.selection_frame)} profiles are associated with these floats!')
+
+
     def __get_in_geographic_range(self):
         """ A function to drop floats from self.selection_frame that are not within a 
             certain geographic range.
@@ -569,6 +599,8 @@ class Argo:
         if self.keep_full_geographic: 
             return
         
+        if self.download_settings.verbose: print(f'Sorting floats for those within the geographic range...')
+
         # Make Point objects out of profile lat and lons
         if self.download_settings.verbose: print(f'Creating point list from profiles...')
         profile_points = np.empty((len(self.selection_frame), 2))
@@ -602,24 +634,25 @@ class Argo:
         # Test if points are inside clockwise shape
         path = mpltPath.Path(shape)
         inside_cw = path.contains_points(profile_points)
-            
-        # Drop profiles outside of range
+
         if self.outside == 'space' or self.outside == 'both':
-            if self.download_settings.verbose: 
-                if self.outside == 'space': print(f"Filtering for outside='space' option.") 
-                else: print(f"Filtering for outside='both' option.")
-            # Drop any profile outside of range 
+            if self.download_settings.verbose: print(f"Filtering for outside='{self.outside}' option.")
+
+            # Profiles in range
             self.profiles_in_range = self.selection_frame[inside_cw]
+            
             # Gather all profiles of any floats that are inside the range
             matching_rows = self.selection_frame[self.selection_frame['wmoid'].isin(self.profiles_in_range['wmoid'].unique())]
+            
             # Add profiles back to dataframe so that any float where at least one profile matches the lon/lat constrains 
             # will have all profiles in the dataframe.
             self.selection_frame = pd.concat([self.profiles_in_range, matching_rows]).drop_duplicates().reset_index(drop=True)
         else:
             self.selection_frame = self.selection_frame[inside_cw]
         
-        if self.download_settings.verbose: print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the shape!")   
-        if self.download_settings.verbose: print(f'{len(self.selection_frame)} profiles fall within the shape!')
+        if self.download_settings.verbose: 
+            print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the shape!")
+            print(f'{len(self.selection_frame)} profiles fall within the shape!')
 
 
     def __get_in_date_range(self):
@@ -628,22 +661,37 @@ class Argo:
         """
         if self.download_settings.verbose: print(f'Sorting floats for those within the date range...')
 
+        # Define a mask for dates within the range
+        in_range_mask = (self.selection_frame['date'] > self.start_date) & (self.selection_frame['date'] < self.end_date)
+        
         if self.outside == 'time' or self.outside == 'both':
-            if self.download_settings.verbose: 
-                if self.outside == 'space': print(f"Filtering for outside='time' option.") 
-                else: print(f"Filtering for outside='both' option.")
-            # Drop any profile outside of range
-            self.profiles_in_range = self.selection_frame.drop(self.selection_frame[(self.selection_frame.date < self.start_date) | (self.selection_frame.date > self.end_date)].index)
+            if self.download_settings.verbose: print(f"Filtering for outside='{self.outside}' option.")
+            
+            # Profiles in range based on the mask
+            self.profiles_in_range = self.selection_frame[in_range_mask]
+            
             # Gather all profiles of any floats that are inside the range
             matching_rows = self.selection_frame[self.selection_frame['wmoid'].isin(self.profiles_in_range['wmoid'].unique())]
-            # Add profiles back to dataframe so that any float where at least one profile matches the time and space constrains 
-            # will have all profiles inside the space constraints in the dataframe.
+            
+            # Add profiles back to dataframe
             self.selection_frame = pd.concat([self.profiles_in_range, matching_rows]).drop_duplicates().reset_index(drop=True)
-        else: 
-            self.selection_frame = self.selection_frame.drop(self.selection_frame[(self.selection_frame.date < self.start_date) | (self.selection_frame.date > self.end_date)].index)
+        else:
+            self.selection_frame = self.selection_frame[in_range_mask]
 
-        if self.download_settings.verbose: print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the date range!")   
-        if self.download_settings.verbose: print(f'{len(self.selection_frame)} profiles fall within the date range!')
+        if self.download_settings.verbose: 
+            print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the date range!")   
+            print(f'{len(self.selection_frame)} profiles fall within the date range!')
+
+
+    def __get_in_ocean_basin(self): 
+        """ A function to drop floats/profiles outside of the specified ocean basin.
+        """
+        if self.download_settings.verbose: print(f"Sorting floats for those passed in 'ocean' kwarg...")
+        self.selection_frame = self.selection_frame[self.selection_frame['ocean'] == str(self.ocean)]
+
+        if self.download_settings.verbose: 
+            print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the ocean basin!")
+            print(f'{len(self.selection_frame)} profiles fall within the ocean basin!')
 
 
     def __dataframe_to_dictionary(self)-> dict:

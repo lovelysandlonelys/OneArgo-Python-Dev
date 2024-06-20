@@ -3,17 +3,50 @@
 from Argo import Argo
 import time
 
-# argo = Argo()
-argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
+argo = Argo()
+# argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
+
+# Testing get by ocean basin: 
+# start_time = time.time()
+# argo.select_profiles(start_date='2012-01-01', end_date='2012-01-02', ocean='A')
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
+
+
+# # Testing get by float id: 
+# start_time = time.time()
+# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', floats=[5903611, 5903802, 5903807])
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
+
+# start_time = time.time()
+# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', floats=5903611)
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
+
+# start_time = time.time()
+# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', floats='5903611')
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
 
 # Testing outside functionality
 start_time = time.time()
-argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2014-01-01')
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 
 start_time = time.time()
-argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2014-01-01', type='phys')
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
+
+start_time = time.time()
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='space')
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
+
+start_time = time.time()
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='both')
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 
