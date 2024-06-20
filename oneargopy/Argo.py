@@ -620,12 +620,12 @@ class Argo:
             print(f'{len(self.selection_frame)} profiles associated with those floats!')
 
 
-    def __generate_in_polygon_array(self, dataframe: pd = None) ->list[bool]:
+    def __generate_in_polygon_array(self, dataframe: pd = pd.DataFrame() ) ->list[bool]:
         """ A function to generate a t/f array for the current state of the dataframe
             detailing which profiles(rows) are inside of the defined geographic range.
         """
         # if not dataframe provided use the selection frame
-        if dataframe == None : 
+        if dataframe.empty : 
             dataframe = self.selection_frame
 
         # Make points out of profile lat and lons
