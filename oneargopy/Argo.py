@@ -560,15 +560,17 @@ class Argo:
             :return: narrowed_profiles : dict - A dictionary with float ID
                 keys corresponding to a list of profiles that match criteria.
         """
-        # Call the functions to narrow down the profiles in the working dataframe
-        # we're using the self.selection_frame in these functions, dropping
-        # rows as the profiles don't fit the criteria
+        # Call the functions to narrow down the profiles 
+        # we call get_by_float_id's first because it has the highest 
+        # potential for reducing the amount of data we are working with
+        if self.floats : self.__get_by_float_ids()
+
         self.__get_in_geographic_range()
         self.__get_in_date_range()
         self.__apply_outside_constraints()
 
-        if self.floats : self.__get_by_float_ids()
         if self.ocean : self.__get_in_ocean_basin()
+        # other narrowing functions that act on created selection frame...
 
         # Convert the working dataframe into a dictionary
         selected_floats_dict = self.__dataframe_to_dictionary()
