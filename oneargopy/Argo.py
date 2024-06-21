@@ -35,18 +35,23 @@ class Argo:
     def __init__(self, user_settings: str = None) -> None:
         """ The Argo constructor downloads the index files form GDAC and 
             stores them in the proper directories defined in the 
-            DownloadSettings class. It then constructs dataframes
+            DownloadSettings class. It then constructs thee dataframes
             from the argo_synthetic-profile_index.txt file and the
             ar_index_global_prof.txt file for use in class function
-            calls.  
+            calls. Two of the dataframes are a reflection of the index
+            files, the third dataframe is a two column frame with 
+            float ids and if they are a bgc float or not. 
 
             :param: user_settings : str - An optional parameter that will be used
                 to initialize the Settings classes if passed. Should be the 
+                full filepath. 
 
             NOTE: If the user has their own settings configuration and has
             set keep_index_in_memory to false then the dataframes will be
             removed from memory at the end of construction and will be
-            reloaded with following Argo function calls. 
+            reloaded with following Argo function calls, meaning that
+            functions will take longer but occupy less memory if this
+            option is set to false. 
         """
         self.download_settings = DownloadSettings(user_settings)
         self.source_settings = SourceSettings(user_settings)
@@ -64,14 +69,18 @@ class Argo:
         for file in self.download_settings.index_files:
             self.__download_index_file(file)
 
-        # Load the argo_synthetic-profile_index.txt file into a data frame
+        # Load the index files into dataframes
         if self.download_settings.verbose: print(f'\nTransferring index files into data frames...')
         self.sprof_index  = self.__load_sprof_dataframe() 
         self.prof_index = self.__load_prof_dataframe()
 
-        # Add column noting if a float is also in the sprof_index, meaning that it is a bgc float
-        if self.download_settings.verbose: print(f'Marking bgc floats in prof_index...')
+        # Add column noting if a float profile is also in the sprof_index, meaning that it is a bgc float
+        if self.download_settings.verbose: print(f'Marking bgc floats in prof_index dataframe...')
         self.__mark_bgcs_in_prof()
+
+        # Create float_is_bgc refrence index for use in select profiles
+        if self.download_settings.verbose: print(f'Creating float_is_bgc_index dataframe...')
+        self.float_is_bgc_index = self.__load_is_bgc_index()
         
         # Print number of floats
         if self.download_settings.verbose: self.__display_floats() 
@@ -82,6 +91,7 @@ class Argo:
             if self.download_settings.verbose: print('Removing dataframes from memory...')
             del self.sprof_index 
             del self.prof_index
+            del self.float_is_bgc_index
 
 
     def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: str = '1995-01-01', end_date: str = None, **kwargs)-> dict:
@@ -187,10 +197,14 @@ class Argo:
         self.__validate_lon_lat_limits()
         self.__validate_start_end_dates()
         if self.outside : self.__validate_outside_kwarg()
-        if kwargs.get('type') : self.__validate_type_kwarg()
+        if self.float_type : self.__validate_type_kwarg()
+        if self.floats : self.__validate_floats_kwarg()
         if self.ocean : self.__validate_ocean_kwarg()
+        # if self.sensor : self.__validate_sensor_kwarg()
 
-        # Load correct dataframes according to float_type
+        # Load correct dataframes according to self.float_type and self.floats
+        # we set self.selected_from_sprof_index and self.selected_from_prof_index
+        # in this function which will be used in __narrow_profiles_by_criteria
         self.__prepare_selection()
         
         # Narrow down float profiles and save in dictionary
@@ -360,6 +374,7 @@ class Argo:
         self.source_settings.set_dacs(sprof_index )
 
         # Merge the pivoted DataFrame back with the original DataFrame and drop split rows
+        if self.download_settings.verbose: print(f'Marking Parameters with their data mode...')
         sprof_index = sprof_index .drop(columns=['parameters', 'parameter_data_mode'])
         sprof_index = sprof_index .join(result_df)
 
@@ -405,6 +420,13 @@ class Argo:
         bgc_floats = self.sprof_index['wmoid'].unique()
         is_bgc = self.prof_index['wmoid'].isin(bgc_floats)
         self.prof_index.insert(1, "is_bgc", is_bgc)
+
+    def __load_is_bgc_index(self)-> pd:
+        """ Function to create a dataframe with float IDs and
+            their is_bcg status for use in select_profiles().
+        """ 
+        float_bgc_status = self.prof_index[['wmoid', 'is_bgc']].drop_duplicates()
+        return float_bgc_status
 
 
     def __display_floats(self) -> None:
@@ -508,6 +530,13 @@ class Argo:
                 raise Exception(f"The only acceptable values for the 'type' keyword argument are 'all', 'phys', and 'bgc'.")
         
     
+    def __validate_floats_kwarg(self):
+        """ A function to validated the 'floats' keyword argument. The 'floats' must be a list even if it is a single float.
+        """
+        if not isinstance(self.floats, list):
+            self.floats = [self.floats]
+        
+    
     def __validate_ocean_kwarg(self): 
         """ A function to validate the value of the optional 'ocean' keyword argument.
         """
@@ -518,38 +547,57 @@ class Argo:
 
 
     def __prepare_selection(self):
-        """ A function that determines what dataframes will be loaded/used when selecting floats. 
+        """ A function that determines what dataframes will be loaded/used when selecting floats.
+            We determine what dataframes to load based on two factors: type and passed floats.  
 
             If type is 'phys', the dataframe based on ar_index_global_prof.txt will be used.
             If type is 'bgc', the dataframe based on argo_synthetic-profile_index.txt will be used.
-            If type is 'all', both dataframes are used, the one from argo_synthetic-profile_index.txt 
-            for floats that are in it and match the criteria, the dataframe from ar_index_global_prof.txt
-            for all floats that are not listed in argo_synthetic-profile_index.txt. In this 
-            function combine the two dataframes and drop any duplicate bgc floats. 
+            If type is 'all', both dataframes are used.
+
+            If the user passed floats, we only load the passed floats into the selection frames.
 
             If keep_index_in_memory is set to false the dataframes created during Argo's 
             constructor are deleted. In this function we only reload the necessary
-            dataframes into memory and copy them. 
+            dataframes into memory.
         """
-        if self.download_settings.float_type == 'phys' or self.float_type == 'phys':
-            if not self.download_settings.keep_index_in_memory:
-                self.prof_index = self.__load_prof_dataframe()
-            self.selection_frame = self.prof_index
-        
-        elif self.download_settings.float_type == 'bgc' or self.float_type == 'bgc':
-            if not self.download_settings.keep_index_in_memory:
-                self.sprof_index = self.__load_sprof_dataframe()
-            self.selection_frame = self.sprof_index.copy()
-        
-        elif self.download_settings.float_type == 'all' or self.float_type == 'all':
-            if not self.download_settings.keep_index_in_memory:
-                self.sprof_index = self.__load_sprof_dataframe()
-                self.prof_index = self.__load_prof_dataframe()
-            # Combining dataframes
-            self.selection_frame = pd.concat([self.sprof_index, self.prof_index], axis=0, ignore_index=True) 
-            # Removing the bgc floats from the sprof column
-            bgc_indexes = self.selection_frame[(self.selection_frame['is_bgc'] == True)].index
-            self.selection_frame.drop(bgc_indexes, inplace=True)
+        if self.download_settings.verbose: print(f'Preparing float data for filtering...')
+        selected_floats_phys = None
+        selected_floats_bgc = None
+
+        # Load dataframes into memory if they are not there
+        if not self.download_settings.keep_index_in_memory:
+            self.sprof_index = self.__load_sprof_dataframe()
+            self.prof_index = self.__load_prof_dataframe()
+            self.float_is_bgc_index = self.__load_is_bgc_index()
+
+        # If we aren't filtering from specific floats assign selected frames
+        # to the whole index frames
+        if self.floats is None: 
+            self.selected_from_sprof_index = self.sprof_index
+            self.selected_from_prof_index = self.prof_index
+        # If we do have specific floats to filter from, assign 
+        # selected floats by pulling those floats from the 
+        # larger dataframes, only adding floats that match the 
+        # type to the frames. 
+        else:
+            if type != 'phys':
+                  # Make a list of bgc floats that the user wants 
+                  bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.floats)) & (self.float_is_bgc_index['is_bgc'] == True)
+                  selected_floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
+                  # Gather bgc profiles for these floats from sprof index frame
+                  self.selected_from_sprof_index = self.sprof_index[self.sprof_index['wmoid'].isin(selected_floats_bgc)]
+            if type != 'bgc': 
+                  # Make a list of phys floats that the user wants 
+                  phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.floats)) & (self.float_is_bgc_index['is_bgc'] == False)
+                  selected_floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
+                  # Gather phys profiles for these floats from prof index frame
+                  self.selected_from_sprof_index = self.prof_index[self.prof_index['wmoid'].isin(selected_floats_phys)]
+
+        if self.download_settings.verbose:
+            num_unique_floats = len(self.selected_from_sprof_index['wmoid'].unique()) + len(self.selected_from_prof_index['wmoid'].unique())
+            print(f"We will filter through {num_unique_floats} floats!") 
+            print(f'There are {len(self.selected_from_sprof_index) + len(self.selected_from_prof_index)} profiles are associated with these floats!')
+
 
 
     def __narrow_profiles_by_criteria(self)-> dict:
@@ -559,15 +607,20 @@ class Argo:
             :return: narrowed_profiles : dict - A dictionary with float ID
                 keys corresponding to a list of profiles that match criteria.
         """
-        # Call the functions to narrow down the profiles 
-        # we call get_by_float_id's first because it has the highest 
-        # potential for reducing the amount of data we are working with
-        if self.floats : self.__get_by_float_ids()
-
-        self.__get_in_geographic_range()
-        self.__get_in_date_range()
-        self.__apply_outside_constraints()
-
+        # Filter by time, space, and type constraints first.
+        if self.float_type == 'bgc' : 
+            self.selection_frame_phys = pd.DataFrame()
+        else :
+            self.selection_frame_phys = self.__get_in_time_and_space_constraints(self.selected_from_prof_index)
+        if self.float_type == 'phys' : 
+            self.selection_frame_bgc = pd.DataFrame()
+        else :
+            self.selection_frame_bgc = self.__get_in_time_and_space_constraints(self.selected_from_sprof_index)
+        
+        self.selection_frame = pd.concat(self.selection_frame_bgc, self.selection_frame_phys)
+        
+        # Filter by other constraints, these functions will use self.selection_frame 
+        # so we don't have to pass a frame
         if self.ocean : self.__get_in_ocean_basin()
         # other narrowing functions that act on created selection frame...
 
@@ -579,20 +632,6 @@ class Argo:
         for key, value in selected_floats_dict.items():
             print(f'{key}: {value}')
         
-
-    def __get_by_float_ids(self):
-        """ A function to drop all float profiles that do match float ids passed to select_profiles.
-        """
-        if self.download_settings.verbose: print(f"Sorting floats for those passed in 'floats' kwarg...")
-        if type(self.floats) is list:
-            self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(self.floats)]
-        else: 
-            self.selection_frame = self.selection_frame[self.selection_frame['wmoid'] == int(self.floats)]
-
-        if self.download_settings.verbose: 
-            print(f"{len(self.selection_frame['wmoid'].unique())} floats match passed float IDs!") 
-            print(f'{len(self.selection_frame)} profiles are associated with these floats!')
-
 
     def __get_in_geographic_range(self):
         """ A function to drop floats from self.selection_frame that are not within a 
@@ -685,7 +724,7 @@ class Argo:
             print(f'{len(self.selection_frame)} profiles associated with those floats!')
 
 
-    def __apply_outside_constraints(self): 
+    def __get_in_time_and_space_constraints(self, dataframe_to_filter: pd)-> pd: 
         """ A function to apply the 'outside' kwarg constraints to the results after filtering by
             space and time. 
         """
