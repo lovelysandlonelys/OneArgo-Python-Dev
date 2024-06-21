@@ -191,7 +191,7 @@ class Argo:
         if self.ocean : self.__validate_ocean_kwarg()
 
         # Load correct dataframes according to float_type
-        self.__select_frame()
+        self.__prepare_selection()
         
         # Narrow down float profiles and save in dictionary
         narrowed_profiles = self.__narrow_profiles_by_criteria()
@@ -517,7 +517,7 @@ class Argo:
                 raise Exception(f"The only acceptable values for the 'ocean' keyword argument are 'A' (Atlantic), 'P' (Pacific), and 'I' (Indian).")
 
 
-    def __select_frame(self):
+    def __prepare_selection(self):
         """ A function that determines what dataframes will be loaded/used when selecting floats. 
 
             If type is 'phys', the dataframe based on ar_index_global_prof.txt will be used.
@@ -529,12 +529,12 @@ class Argo:
 
             If keep_index_in_memory is set to false the dataframes created during Argo's 
             constructor are deleted. In this function we only reload the necessary
-            dataframes into memory and copy them . 
+            dataframes into memory and copy them. 
         """
         if self.download_settings.float_type == 'phys' or self.float_type == 'phys':
             if not self.download_settings.keep_index_in_memory:
                 self.prof_index = self.__load_prof_dataframe()
-            self.selection_frame = self.prof_index.copy()
+            self.selection_frame = self.prof_index
         
         elif self.download_settings.float_type == 'bgc' or self.float_type == 'bgc':
             if not self.download_settings.keep_index_in_memory:
