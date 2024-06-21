@@ -204,7 +204,6 @@ class Argo:
 
         if self.download_settings.verbose: print(f'Profiles Selected!\n\n')
 
-
         return narrowed_profiles
 
 
