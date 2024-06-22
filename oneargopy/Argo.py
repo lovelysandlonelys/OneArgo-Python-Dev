@@ -188,7 +188,7 @@ class Argo:
         self.start_date = start_date
         self.end_date = end_date
         self.outside = kwargs.get('outside')
-        self.float_type = kwargs.get('type') if kwargs.get('type') is not None else None
+        self.float_type = kwargs.get('type') if kwargs.get('type') is not None else self.download_settings.float_type
         self.floats = kwargs.get('floats')
         self.ocean = kwargs.get('ocean')
         self.sensor = kwargs.get('sensor')
@@ -580,18 +580,18 @@ class Argo:
         # larger dataframes, only adding floats that match the 
         # type to the frames. 
         else:
-            if type != 'phys':
+            if self.float_type != 'phys':
                   # Make a list of bgc floats that the user wants 
                   bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.floats)) & (self.float_is_bgc_index['is_bgc'] == True)
                   selected_floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
                   # Gather bgc profiles for these floats from sprof index frame
                   self.selected_from_sprof_index = self.sprof_index[self.sprof_index['wmoid'].isin(selected_floats_bgc)]
-            if type != 'bgc': 
+            if self.float_type != 'bgc': 
                   # Make a list of phys floats that the user wants 
                   phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.floats)) & (self.float_is_bgc_index['is_bgc'] == False)
                   selected_floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
                   # Gather phys profiles for these floats from prof index frame
-                  self.selected_from_sprof_index = self.prof_index[self.prof_index['wmoid'].isin(selected_floats_phys)]
+                  self.selected_from_prof_index = self.prof_index[self.prof_index['wmoid'].isin(selected_floats_phys)]
 
         if self.download_settings.verbose:
             num_unique_floats = len(self.selected_from_sprof_index['wmoid'].unique()) + len(self.selected_from_prof_index['wmoid'].unique())
@@ -617,7 +617,11 @@ class Argo:
         else :
             self.selection_frame_bgc = self.__get_in_time_and_space_constraints(self.selected_from_sprof_index)
         
-        self.selection_frame = pd.concat(self.selection_frame_bgc, self.selection_frame_phys)
+        # Set the selection frame
+        self.selection_frame = pd.concat([self.selection_frame_bgc, self.selection_frame_phys])
+        if self.download_settings.verbose:
+            print(f"{len(self.selection_frame['wmoid'].unique())} floats selected!")   
+            print(f'{len(self.selection_frame)} profiles selected according to time and space constraints!')
         
         # Filter by other constraints, these functions will use self.selection_frame 
         # so we don't have to pass a frame
@@ -633,44 +637,20 @@ class Argo:
             print(f'{key}: {value}')
         
 
-    def __get_in_geographic_range(self):
-        """ A function to drop floats from self.selection_frame that are not within a 
-            certain geographic range.
+    def __get_in_geographic_range(self, dataframe_to_filter: pd)-> list:
+        """ A function to create and return two true false arrays indicating
+            floats and profiles that fall within the geographic range.
         """
         # If the user has passed us the entire globe don't go through the whole
         # process of checking if the points of all the floats are inside the polygon
         if self.keep_full_geographic: 
-            return
+            return  [True] * len(dataframe_to_filter)
         
         if self.download_settings.verbose: print(f'Sorting floats for those within the geographic range...')
 
-        # Create true false array for points in the limits for the dataframe
-        prof_in_space = self.__generate_in_polygon_array()
-        
-        # Drop all floats where all profiles are outside of geographic range but 
-        # keep all floats and profiles where at least one profile is in range
-        self.profiles_in_range = self.selection_frame[prof_in_space]
-        floats_in_range = self.profiles_in_range['wmoid'].unique()
-        self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(floats_in_range)].reset_index(drop=True)
-        
-        #Redefine T/F array for 
-
-        if self.download_settings.verbose: 
-            print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the shape!")
-            print(f'{len(self.selection_frame)} profiles associated with those floats!')
-
-
-    def __generate_in_polygon_array(self, dataframe: pd = pd.DataFrame() ) ->list[bool]:
-        """ A function to generate a t/f array for the current state of the dataframe
-            detailing which profiles(rows) are inside of the defined geographic range.
-        """
-        # if not dataframe provided use the selection frame
-        if dataframe.empty : 
-            dataframe = self.selection_frame
-
         # Make points out of profile lat and lons
         if self.download_settings.verbose: print(f'Creating point list from profiles...')
-        profile_points = np.empty((len(dataframe), 2))
+        profile_points = np.empty((len(dataframe_to_filter), 2))
         
         # The longitudes in the dataframe are standardized to fall within -180 and 180.
         # but our longitudes only have a standard minimum value of -180. In this section
@@ -679,12 +659,12 @@ class Argo:
         if max(self.lon_lim) > 180:
             if self.download_settings.verbose: print(f'The max value in lon_lim is {max(self.lon_lim)}')
             if self.download_settings.verbose: print(f'Adjusting longitude values...')
-            profile_points[:,0] = dataframe['longitude'].apply(lambda x: x + 360 if -180 < x < min(self.lon_lim) else x).values
+            profile_points[:,0] = dataframe_to_filter['longitude'].apply(lambda x: x + 360 if -180 < x < min(self.lon_lim) else x).values
         else:
-            profile_points[:,0] = dataframe['longitude'].values
+            profile_points[:,0] = dataframe_to_filter['longitude'].values
         
         # Latitudes in the dataframe are good to go
-        profile_points[:,1] = dataframe['latitude'].values
+        profile_points[:,1] = dataframe_to_filter['latitude'].values
 
         # Create polygon or box using lat_lim and lon_lim 
         if self.download_settings.verbose: print(f'Creating polygon...')
@@ -698,76 +678,81 @@ class Argo:
             for lat, lon in zip(self.lat_lim, self.lon_lim):
                 shape.append([lon, lat])
 
-        # Define a t/f array for points within the shape
+        # Define a t/f array for profiles within the shape
         path = mpltPath.Path(shape)
-        prof_in_space = path.contains_points(profile_points)
+        profiles_in_range = path.contains_points(profile_points)
+        
+        if self.download_settings.verbose: 
+            profiles_in_range_dataframe = dataframe_to_filter[profiles_in_range]
+            print(f"{len(profiles_in_range_dataframe['wmoid'].unique())} floats fall within the geographic range!")   
+            print(f'{len(profiles_in_range_dataframe)} profiles associated with those floats!')
 
-        return prof_in_space
+        return profiles_in_range
 
-    def __get_in_date_range(self):
-        """ A function to drop floats from self.selection_frame that are not within a 
-            certain date range.
+
+    def __get_in_date_range(self, dataframe_to_filter: pd)-> list:
+        """ A function to create and return two true false arrays indicating
+            floats and profiles that fall within the geographic range.
         """
+        # If the user has passed us the entire available date don't go through the whole
+        # process of checking if the points of all the floats are inside the range
+        beginning_of_full_range = np.datetime64(datetime(1995, 1, 1, tzinfo=timezone.utc))
+        end_of_full_range = np.datetime64(datetime.now(timezone.utc))
+        if self.start_date == beginning_of_full_range and self.end_date >= end_of_full_range: 
+            return [True] * len(dataframe_to_filter)
+        
         if self.download_settings.verbose: print(f'Sorting floats for those within the date range...')
 
         # Define a t/f array for dates within the range
-        prof_in_time  = ((self.selection_frame['date'] > self.start_date) & (self.selection_frame['date'] < self.end_date)).tolist()
-        
-        # Drop all floats where all profiles are outside of date range but
-        # keep all floats and profiles where at least one profile is in range
-        self.profiles_in_range = self.selection_frame[prof_in_time]
-        floats_in_range = self.profiles_in_range['wmoid'].unique()
-        self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(floats_in_range)].reset_index(drop=True)
+        profiles_in_range  = ((dataframe_to_filter['date'] > self.start_date) & (dataframe_to_filter['date'] < self.end_date)).tolist()
 
         if self.download_settings.verbose: 
-            print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the date range!")   
-            print(f'{len(self.selection_frame)} profiles associated with those floats!')
+            profiles_in_range_dataframe = dataframe_to_filter[profiles_in_range]
+            print(f"{len(profiles_in_range_dataframe['wmoid'].unique())} floats fall within the date range!")   
+            print(f'{len(profiles_in_range_dataframe)} profiles associated with those floats!')
+
+        return profiles_in_range
 
 
     def __get_in_time_and_space_constraints(self, dataframe_to_filter: pd)-> pd: 
         """ A function to apply the 'outside' kwarg constraints to the results after filtering by
             space and time. 
         """
-        # Float ID key list, that has floats that have a singular profile that is in both lon/lat constinras and date constrians
-        prof_in_time  = ((self.selection_frame['date'] > self.start_date) & (self.selection_frame['date'] < self.end_date)).tolist()
-        floats_that_meet_both_constraints = self.selection_frame[prof_in_time]
-        
-        prof_in_space = self.__generate_in_polygon_array(floats_that_meet_both_constraints)
-        floats_that_meet_both_constraints = floats_that_meet_both_constraints[prof_in_space]
+        # Generate t/f arrays for profiles according to geographic and date range
+        profiles_in_space = self.__get_in_geographic_range(dataframe_to_filter)
+        profiles_in_time = self.__get_in_date_range(dataframe_to_filter)
 
-        valid_floats = floats_that_meet_both_constraints['wmoid'].tolist()
-        
+        # Converting to np arrays so we can combine to make constraints
+        profiles_in_space = np.array(profiles_in_space)
+        profiles_in_time = np.array(profiles_in_time)
+
+        constraints = profiles_in_time & profiles_in_space
+        floats_in_time_and_space = dataframe_to_filter[constraints]
+        floats_in_time_and_space = np.array(dataframe_to_filter['wmoid'].isin(floats_in_time_and_space['wmoid']))
+
+        # Filter passed dataframe by time and space constraints to 
+        # create a new dataframe to return as part of the selection frame
         if self.outside == 'time': 
-            print(f'Applying outside={self.outside} constraints.')
-            
-            self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(valid_floats)].reset_index(drop=True)
-            prof_in_space = self.__generate_in_polygon_array()
-            self.selection_frame = self.selection_frame[prof_in_space]
+            print(f'Applying outside={self.outside} constraints...')
+            constraints = floats_in_time_and_space & profiles_in_space
+            selection_frame = dataframe_to_filter[constraints]
        
         elif self.outside == 'space': 
-            print(f'Applying outside={self.outside} constraints.')
-            
-            self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(valid_floats)].reset_index(drop=True)
-            prof_in_time  = ((self.selection_frame['date'] > self.start_date) & (self.selection_frame['date'] < self.end_date)).tolist()
-            self.selection_frame = self.selection_frame[prof_in_time]
+            print(f'Applying outside={self.outside} constraints...')
+            constraints = floats_in_time_and_space & profiles_in_time
+            selection_frame = dataframe_to_filter[constraints]
         
         elif self.outside == None : 
-            print(f'Applying outside=None constraints.')
-            
-            prof_in_time  = ((self.selection_frame['date'] > self.start_date) & (self.selection_frame['date'] < self.end_date)).tolist()
-            self.selection_frame = self.selection_frame[prof_in_time]
-            
-            prof_in_space = self.__generate_in_polygon_array()
-            self.selection_frame = self.selection_frame[prof_in_space]
+            print(f'Applying outside=None constraints...')
+            constraints = floats_in_time_and_space & profiles_in_space & profiles_in_time
+            selection_frame = dataframe_to_filter[constraints]
         
         elif self.outside == 'both': 
-            print(f'Applying outside={self.outside} constraints.')
-
-            self.selection_frame = self.selection_frame[self.selection_frame['wmoid'].isin(valid_floats)].reset_index(drop=True)
-
-        if self.download_settings.verbose:
-            print(f"{len(self.selection_frame['wmoid'].unique())} floats selected")   
-            print(f'{len(self.selection_frame)} profiles selected according to constraints!')
+            print(f'Applying outside={self.outside} constraints...')
+            constraints = floats_in_time_and_space
+            selection_frame = dataframe_to_filter[constraints]
+        
+        return selection_frame
 
 
     def __get_in_ocean_basin(self): 
