@@ -218,6 +218,7 @@ class Argo:
             :param: floats : int | str | list - A float or list of floats to plot 
                 the trajectories of. 
         """
+
         # Check that dataframes are loaded into memory
         if not self.download_settings.keep_index_in_memory: 
             self.sprof_index = self.__load_sprof_dataframe()
@@ -238,37 +239,44 @@ class Argo:
             del self.prof_index
             del self.float_is_bgc_index
 
+        # Set central longitude
+        lons = floats_profiles['longitude'].dropna().values.tolist()
+        sorted_lons = np.sort(lons)
+        median_lon = np.nanmedian(sorted_lons)
+
         # Set up basic trajectory graph background
-        plt.figure(figsize=(14,12))
-        ax = plt.axes(projection = ccrs.PlateCarree())
+        ax = plt.axes(projection = ccrs.PlateCarree(central_longitude=median_lon))
         ax.add_feature(cf.COASTLINE, linewidth=1.5)
         ax.add_feature(cf.LAND, zorder=2, edgecolor='k', facecolor='lightgray')
-        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, 
-                          color='gray', alpha = 0.5, linestyle='--', zorder=1)
 
-        # labels on bottom and left axes
-        gl.top_labels = False
-        gl.right_labels = False
-
-        # Titles
-        plt.title(f'Trajectories for {floats}', fontsize=18, fontweight='bold')
-        plt.xlabel("Longitude")
-        plt.ylabel("Latitude")
-
-        # define the label style
-        gl.xlabel_style = {'size': 15, 'color': 'black'}
-        gl.ylabel_style = {'size': 15, 'color': 'black'}
-
-        #Plot trajectories of passed flaots with unique colors
-        colors = plt.cm.viridis(np.linspace(0, 1, len(self.floats)))
+        #Plot trajectories of passed floats with colorblind friendly pallet
+        colors = ("#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#E69F00", "#000000")
 
         # Plot trajectories of passed floats
         for float, color in zip(self.floats, colors): 
                 specific_float_profiles = floats_profiles[floats_profiles['wmoid'] == float]
                 plt.plot(specific_float_profiles['longitude'].values, specific_float_profiles['latitude'].values, marker='o', alpha=0.7, linestyle='-', linewidth=2, transform=ccrs.Geodetic(), label=f'Float {float}', color=color)
+        
+        #Setting Titles
+        plt.title(f'Trajectories for {floats}', fontsize=18, fontweight='bold')
+        ax.set_xlabel('Longitude', fontsize=15)
+        ax.set_ylabel('Latitude', fontsize=15)
+
+        # Trying to make the aspect equal
+        ax.set_aspect('equal', adjustable='box')
+
+        # Gridlines
+        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle='--', zorder=1)
+        gl.top_labels = False
+        gl.right_labels = False
+        gl.xlabel_style = {'size': 15, 'color': 'black'}
+        gl.ylabel_style = {'size': 15, 'color': 'black'}
 
         # Legend
         plt.legend(loc='upper left')
+
+        # trying to make the aspect equal
+        ax.set_aspect('equal', adjustable='box')
 
         plt.show()
 
