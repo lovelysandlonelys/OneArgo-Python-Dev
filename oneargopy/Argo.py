@@ -234,13 +234,18 @@ class Argo:
         
         ax.add_feature(cf.COASTLINE)
         ax.add_feature(cf.LAND, zorder=2, edgecolor='k')
-
-        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
-                        linewidth=2, color='gray', alpha = 0.25, linestyle='--', zorder=1)
+        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=2, 
+                          color='gray', alpha = 0.25, linestyle='--', zorder=1)
 
         # labels on bottom and left axes
         gl.top_labels = False
         gl.right_labels = False
+
+        # Legend
+        plt.legend(loc='upper left')
+
+        # Title of plot
+        plt.title(f'Trajectories for {floats}')
 
         # define the label style
         gl.xlabel_style = {'size': 15, 'color': 'black'}
