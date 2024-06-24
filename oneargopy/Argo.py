@@ -250,7 +250,7 @@ class Argo:
         ax.add_feature(cf.LAND, zorder=2, edgecolor='k', facecolor='lightgray')
 
         #Plot trajectories of passed floats with colorblind friendly pallet
-        colors = ("#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#E69F00", "#000000")
+        colors = ("#56B4E9", "#009E73", "#F0E442", "#0072B2", "#CC79A7", "#D55E00", "#E69F00", "#000000")
 
         # Plot trajectories of passed floats
         for float, color in zip(self.floats, colors): 
