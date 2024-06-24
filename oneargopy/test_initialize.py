@@ -6,10 +6,10 @@ import time
 argo = Argo()
 # argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
-argo.trajectories('5905105')
-argo.trajectories(5904859)
-floats = [5905105, 5904859]
-argo.trajectories(floats)
+# argo.trajectories('5905105')
+# argo.trajectories(5904859)
+# floats = [5905105, 5904859]
+# argo.trajectories(floats)
 
 profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
 argo.trajectories(list(profiles.keys()))
