@@ -25,12 +25,18 @@ import gzip
 import numpy as np
 import matplotlib.path as mpltPath
 import pandas as pd
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import cartopy.feature as cf
 
 from time import time
 import json
 
 
 class Argo:
+    #######################################################################
+    # Constructor
+    #######################################################################
     
     def __init__(self, user_settings: str = None) -> None:
         """ The Argo constructor downloads the index files form GDAC and 
@@ -93,6 +99,10 @@ class Argo:
             del self.prof_index
             del self.float_is_bgc_index
 
+
+    #######################################################################
+    # Public Functions
+    #######################################################################
 
     def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: str = '1995-01-01', end_date: str = None, **kwargs)-> dict:
         """ select_profiles is a public function of the Argo class that returns a 
@@ -194,8 +204,56 @@ class Argo:
 
         if self.download_settings.verbose: print(f'Profiles Selected!\n\n')
 
-        return narrowed_profiles
+        # Printing Dict, likely to remove after testing period
+        print(f'Floats: {narrowed_profiles.keys()}')
+        for key, value in narrowed_profiles.items():
+            print(f'{key}: {value}')
 
+        return narrowed_profiles
+    
+    def trajectories(self, floats: str | list)-> None: 
+        """ This function plots the trajectories of one or more specified float(s)
+        """
+        # Check that dataframes are loaded into memory
+        if not self.download_settings.keep_index_in_memory: 
+            self.sprof_index = self.__load_sprof_dataframe()
+            self.prof_index = self.__load_prof_dataframe()
+            self.float_is_bgc_index = self.__load_is_bgc_index()
+
+        # Validate that passed floats exist in dataframes
+
+        # Pull rows/profiles for passed floats
+        # If keep index in memory is false remove other dataframes
+
+        # Get the median longitude value for graph's central longitude
+        median_lon = 89
+
+        # Set up basic trajectory graph background
+        plt.figure(figsize=(14,12))
+        ax = plt.axes(projection = ccrs.PlateCarree(central_longitude=median_lon))
+        
+        ax.add_feature(cf.COASTLINE)
+        ax.add_feature(cf.LAND, zorder=2, edgecolor='k')
+
+        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+                        linewidth=2, color='gray', alpha = 0.25, linestyle='--', zorder=1)
+
+        # labels on bottom and left axes
+        gl.top_labels = False
+        gl.right_labels = False
+
+        # define the label style
+        gl.xlabel_style = {'size': 15, 'color': 'black'}
+        gl.ylabel_style = {'size': 15, 'color': 'black'}
+
+        # Plot trajectories of passed floats
+
+        pass
+    
+
+    #######################################################################
+    # Private Functions
+    #######################################################################
 
     def __initialize_subdirectories(self) -> None:
         """ A function that checks for and creates the necessary folders as 
@@ -616,11 +674,6 @@ class Argo:
 
         # Convert the working dataframe into a dictionary
         selected_floats_dict = self.__dataframe_to_dictionary()
-
-        # Printing Dict, likely to remove after testing period
-        print(f'Floats: {selected_floats_dict.keys()}')
-        for key, value in selected_floats_dict.items():
-            print(f'{key}: {value}')
         
 
     def __get_in_geographic_range(self, dataframe_to_filter: pd)-> list:
