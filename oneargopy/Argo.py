@@ -69,15 +69,9 @@ class Argo:
         for file in self.download_settings.index_files:
             self.__download_index_file(file)
 
-<<<<<<< HEAD
         # Load the index files into dataframes
         if self.download_settings.verbose: print(f'\nTransferring index files into data frames...')
         self.sprof_index  = self.__load_sprof_dataframe() 
-=======
-        # Load the argo_synthetic-profile_index.txt file into a dataframe
-        if self.download_settings.verbose: print(f'\nTransferring index files into dataframes...')
-        self.sprof_index  = self.__load_sprof_dataframe()
->>>>>>> main
         self.prof_index = self.__load_prof_dataframe()
 
         # Add column noting if a float profile is also in the sprof_index, meaning that it is a bgc float
@@ -313,19 +307,7 @@ class Argo:
         
 
     def __load_sprof_dataframe(self) -> pd:
-<<<<<<< HEAD
         """ A function to load the sprof index file into a data frame for easier reference.
-=======
-        """ A function to load an index file into a dataframe for easier reference.
-
-            :param: file_name : str - The name of the file that we would like
-                to read into a dataframe.
-
-            NOTE: the header is 8 here because there are 8 lines in both index files
-                devoted to header information.
-            NOTE: R: raw data, A: adjusted mode (real-time adjusted), D: delayed mode quality controlled
-
->>>>>>> main
         """
         file_name = "argo_synthetic-profile_index.txt"
         # The header is 8 here because there are 8 lines in both index files devoted to header information.
@@ -335,7 +317,6 @@ class Argo:
         
         # Parsing out variables in first column: file
         dacs = sprof_index ['file'].str.split('/').str[0]
-<<<<<<< HEAD
         sprof_index.insert(1, "dacs", dacs)
 
         wmoid = sprof_index ['file'].str.split('/').str[1].astype('int')
@@ -343,15 +324,6 @@ class Argo:
 
         profile = sprof_index ['file'].str.split('_').str[1].str.replace('.nc', '')
         sprof_index.insert(2, "profile", profile)
-=======
-        sprof_index .insert(0, "dacs", dacs)
-
-        wmoid = sprof_index ['file'].str.split('/').str[1]
-        sprof_index .insert(1, "wmoid", wmoid)
-
-        profile = sprof_index ['file'].str.split('_').str[1].str.replace('.nc', '')
-        sprof_index .insert(2, "profile", profile)
->>>>>>> main
 
         # Splitting the parameters into their own columns
         parameters_split = sprof_index ['parameters'].str.split()
@@ -392,17 +364,7 @@ class Argo:
         
 
     def __load_prof_dataframe(self) -> pd:
-<<<<<<< HEAD
         """ A function to load the prof index file into a data frame for easier reference.
-=======
-        """ A function to load an index file into a dataframe for easier reference.
-
-            :param: file_name : str - The name of the file that we would like
-                to read into a dataframe.
-
-            Notes: the header is 8 here because there are 8 lines in both index files
-                devoted to header information.
->>>>>>> main
         """
         file_name = "ar_index_global_prof.txt"
         file_path = Path.joinpath(self.download_settings.base_dir, 'Index', file_name)
@@ -414,23 +376,16 @@ class Argo:
         dacs = prof_index['file'].str.split('/').str[0]
         prof_index.insert(0, "dacs", dacs)
 
-<<<<<<< HEAD
         wmoid = prof_index['file'].str.split('/').str[1].astype('int')
-=======
-        wmoid = prof_index['file'].str.split('/').str[1]
->>>>>>> main
         prof_index.insert(1, "wmoid", wmoid)
 
         R_file = prof_index['file'].str.split('/').str[3].str.startswith('R')
         prof_index.insert(2, "R_file", R_file)
-<<<<<<< HEAD
 
         # Add profile_index column
         prof_index.sort_values(by=['wmoid', 'date'], inplace=True)
         prof_index.insert(0, "profile_index", 0)
         prof_index['profile_index'] = prof_index.groupby('wmoid')['date'].cumcount() + 1
-=======
->>>>>>> main
 
         return prof_index
     
