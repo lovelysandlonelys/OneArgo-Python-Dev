@@ -621,6 +621,8 @@ class Argo:
         print(f'Floats: {selected_floats_dict.keys()}')
         for key, value in selected_floats_dict.items():
             print(f'{key}: {value}')
+
+        return selected_floats_dict
         
 
     def __get_in_geographic_range(self, dataframe_to_filter: pd)-> list:
