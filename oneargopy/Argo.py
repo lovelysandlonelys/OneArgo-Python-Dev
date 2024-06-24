@@ -118,38 +118,8 @@ class Argo:
             range that encloses all the desired longitude values.
 
             KEY ARGUMENT VALUE OPTIONS IN PROGRESS:
-            cycles=cycles: Select profiles by their CYCLE_NUMBER values. cycles can
-                    be a scalar or an array. Only floats that have at least one
-                    of the specified cycles will be returned.
-            dac=dac: Select by Data Assimilation Center responsible for the floats.
-                    A single DAC can be entered as a string (e.g.: 'aoml'),
-                    multiple DACs can be entered as a list of strings (e.g.:
-                    ['meds';'incois'].
-                    Valid values as of 2024 are any: {'aoml'; 'bodc'; 'coriolis'; ...
-                    'csio'; 'csiro'; 'incois'; 'jma'; 'kma'; 'kordi'; 'meds'}
-            depth=depth: Select profiles that reach at least this depth
-                    (positive downwards; in db)
-            direction=dir: Select profiles by direction ('a' for ascending,
-                    'd' for descending, '' for both directions)
             floats=floats[] or 'float': Select profiles only from these floats that must
                     match all other criteria
-            interp_lonlat=intp : If intp is 'yes' (default), missing lon/lat
-                    values (e.g., under ice) will be interpolated;
-                    set intp to 'no' to suppress interpolation;
-                    the default is taken from AnalysisSettings.interp_lonlat 
-                    (defined during the construction of the Argo class object.)
-            min_num_prof=num: Select only floats that have at least
-                    num profiles that meet all other criteria
-            mode=mode: Valid modes are 'R' (real-time), 'A' (adjusted), and
-                    'D', in any combination. Only profiles with the selected
-                    mode(s) will be listed.
-                    Default is 'RAD' (all modes).
-                    If multiple sensors are specified, all of them must be in
-                    the selected mode(s).
-                    If 'sensor' option is not used, the 'mode' option is ignored,
-                    unless 'type','phys' is specified (for non-BGC floats,
-                    pressure, temperature, and salinity are always in the same
-                    mode).
             ocean=ocean: Valid choices are 'A' (Atlantic), 'P' (Pacific), and
                     'I' (Indian). This selection is in addition to the specified
                     longitude and latitude limits. (To select all floats and
@@ -160,17 +130,6 @@ class Argo:
                     returned ('none'); specify to also maintain profiles outside
                     the temporal constraints ('time'), spatial constraints
                     ('space'), or both constraints ('both')
-            profiler',profiler: Select floats of the given profiler type (integer,
-                    e.g., 846 is an APEX BGC float)
-            sensor='sensor' or [sensors], SENSOR_TYPE: This option allows the selection by
-                    sensor type. Available as of 2024: PRES, PSAL, TEMP, DOXY, BBP,
-                    BBP470, BBP532, BBP700, TURBIDITY, CP, CP660, CHLA, CDOM,
-                    NITRATE, BISULFIDE, PH_IN_SITU_TOTAL, DOWN_IRRADIANCE,
-                    DOWN_IRRADIANCE380, DOWN_IRRADIANCE412, DOWN_IRRADIANCE443,
-                    DOWN_IRRADIANCE490, DOWN_IRRADIANCE555, DOWN_IRRADIANCE670,
-                    UP_RADIANCE, UP_RADIANCE412, UP_RADIANCE443, UP_RADIANCE490,
-                    UP_RADIANCE555, DOWNWELLING_PAR, CNDC, DOXY2, DOXY3, BBP700_2
-                    Multiple sensors can be entered as a list, e.g.: ['DOXY';'NITRATE']
             type', type: Valid choices are 'bgc' (select BGC floats only),
                     'phys' (select core and deep floats only),
                     and 'all' (select all floats that match other criteria).
@@ -180,6 +139,23 @@ class Argo:
                     In all other cases the default type is DownloadSettings.float_type,
                     which is set in the Argo constructor, you can also set the float_type
                     as a different value if passing a configuration file to the Argo constructor.
+
+            would like to implement before end of project/easier ones
+            sensor='sensor' or [sensors], SENSOR_TYPE: This option allows the selection by
+                    sensor type. Available as of 2024: PRES, PSAL, TEMP, DOXY, BBP,
+                    BBP470, BBP532, BBP700, TURBIDITY, CP, CP660, CHLA, CDOM,
+                    NITRATE, BISULFIDE, PH_IN_SITU_TOTAL, DOWN_IRRADIANCE,
+                    DOWN_IRRADIANCE380, DOWN_IRRADIANCE412, DOWN_IRRADIANCE443,
+                    DOWN_IRRADIANCE490, DOWN_IRRADIANCE555, DOWN_IRRADIANCE670,
+                    UP_RADIANCE, UP_RADIANCE412, UP_RADIANCE443, UP_RADIANCE490,
+                    UP_RADIANCE555, DOWNWELLING_PAR, CNDC, DOXY2, DOXY3, BBP700_2
+                    Multiple sensors can be entered as a list, e.g.: ['DOXY';'NITRATE']
+            dac=dac: Select by Data Assimilation Center responsible for the floats.
+                    A single DAC can be entered as a string (e.g.: 'aoml'),
+                    multiple DACs can be entered as a list of strings (e.g.:
+                    ['meds';'incois'].
+                    Valid values as of 2024 are any: {'aoml'; 'bodc'; 'coriolis'; ...
+                    'csio'; 'csiro'; 'incois'; 'jma'; 'kma'; 'kordi'; 'meds'}
         """
         if self.download_settings.verbose: print(f'Starting select_profiles...')
         self.epsilon = 1e-3
@@ -573,8 +549,9 @@ class Argo:
         # If we aren't filtering from specific floats assign selected frames
         # to the whole index frames
         if self.floats is None: 
+            self.selected_from_prof_index = self.prof_index[self.prof_index['is_bgc'] == False]
             self.selected_from_sprof_index = self.sprof_index
-            self.selected_from_prof_index = self.prof_index
+
         # If we do have specific floats to filter from, assign 
         # selected floats by pulling those floats from the 
         # larger dataframes, only adding floats that match the 
@@ -619,6 +596,14 @@ class Argo:
         
         # Set the selection frame
         self.selection_frame = pd.concat([self.selection_frame_bgc, self.selection_frame_phys])
+
+        # Remove extraneous frames if keep index in memory is set to false
+        if not self.download_settings.keep_index_in_memory: 
+            del self.sprof_index
+            del self.prof_index
+            del self.selection_frame_bgc
+            del self.selection_frame_phys
+
         if self.download_settings.verbose:
             print(f"{len(self.selection_frame['wmoid'].unique())} floats selected!")   
             print(f'{len(self.selection_frame)} profiles selected according to time and space constraints!')
