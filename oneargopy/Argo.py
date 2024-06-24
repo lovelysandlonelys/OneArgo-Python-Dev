@@ -200,6 +200,7 @@ class Argo:
             if self.download_settings.verbose: print('Removing dataframes from memory...')
             del self.sprof_index 
             del self.prof_index
+            del self.float_is_bgc_index
             del self.selection_frame
 
         if self.download_settings.verbose: print(f'Profiles Selected!\n\n')
@@ -211,8 +212,11 @@ class Argo:
 
         return narrowed_profiles
     
-    def trajectories(self, floats: str | list)-> None: 
+    def trajectories(self, floats: int | str | list)-> None: 
         """ This function plots the trajectories of one or more specified float(s)
+
+            :param: floats : int | str | list - A float or list of floats to plot 
+                the trajectories of. 
         """
         # Check that dataframes are loaded into memory
         if not self.download_settings.keep_index_in_memory: 
@@ -220,41 +224,53 @@ class Argo:
             self.prof_index = self.__load_prof_dataframe()
             self.float_is_bgc_index = self.__load_is_bgc_index()
 
-        # Validate that passed floats exist in dataframes
+        # Validate passed floats/convert to list
+        self.floats = floats
+        self.__validate_floats_kwarg()
 
         # Pull rows/profiles for passed floats
-        # If keep index in memory is false remove other dataframes
+        floats_profiles = self.__filter_by_floats()
 
-        # Get the median longitude value for graph's central longitude
-        median_lon = 89
+        # If keep index in memory is false remove other dataframes
+        if not self.download_settings.keep_index_in_memory:
+            if self.download_settings.verbose: print('Removing dataframes from memory...')
+            del self.sprof_index 
+            del self.prof_index
+            del self.float_is_bgc_index
 
         # Set up basic trajectory graph background
         plt.figure(figsize=(14,12))
-        ax = plt.axes(projection = ccrs.PlateCarree(central_longitude=median_lon))
-        
-        ax.add_feature(cf.COASTLINE)
-        ax.add_feature(cf.LAND, zorder=2, edgecolor='k')
-        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=2, 
-                          color='gray', alpha = 0.25, linestyle='--', zorder=1)
+        ax = plt.axes(projection = ccrs.PlateCarree())
+        ax.add_feature(cf.COASTLINE, linewidth=1.5)
+        ax.add_feature(cf.LAND, zorder=2, edgecolor='k', facecolor='lightgray')
+        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, 
+                          color='gray', alpha = 0.5, linestyle='--', zorder=1)
 
         # labels on bottom and left axes
         gl.top_labels = False
         gl.right_labels = False
 
-        # Legend
-        plt.legend(loc='upper left')
-
-        # Title of plot
-        plt.title(f'Trajectories for {floats}')
+        # Titles
+        plt.title(f'Trajectories for {floats}', fontsize=18, fontweight='bold')
+        plt.xlabel("Longitude")
+        plt.ylabel("Latitude")
 
         # define the label style
         gl.xlabel_style = {'size': 15, 'color': 'black'}
         gl.ylabel_style = {'size': 15, 'color': 'black'}
 
-        # Plot trajectories of passed floats
+        #Plot trajectories of passed flaots with unique colors
+        colors = plt.cm.viridis(np.linspace(0, 1, len(self.floats)))
 
-        pass
-    
+        # Plot trajectories of passed floats
+        for float, color in zip(self.floats, colors): 
+                specific_float_profiles = floats_profiles[floats_profiles['wmoid'] == float]
+                plt.plot(specific_float_profiles['longitude'].values, specific_float_profiles['latitude'].values, marker='o', alpha=0.7, linestyle='-', linewidth=2, transform=ccrs.Geodetic(), label=f'Float {float}', color=color)
+
+        # Legend
+        plt.legend(loc='upper left')
+
+        plt.show()
 
     #######################################################################
     # Private Functions
@@ -574,7 +590,7 @@ class Argo:
         """ A function to validated the 'floats' keyword argument. The 'floats' must be a list even if it is a single float.
         """
         if not isinstance(self.floats, list):
-            self.floats = [self.floats]
+            self.floats = [int(self.floats)]
         
     
     def __validate_ocean_kwarg(self): 
@@ -679,6 +695,8 @@ class Argo:
 
         # Convert the working dataframe into a dictionary
         selected_floats_dict = self.__dataframe_to_dictionary()
+
+        return selected_floats_dict
         
 
     def __get_in_geographic_range(self, dataframe_to_filter: pd)-> list:
@@ -824,3 +842,24 @@ class Argo:
             else:
                 selected_profiles[row['wmoid']].append(row['profile_index'])
         return selected_profiles
+    
+    def __filter_by_floats(self)-> pd:
+        """ Function to pull profiles of floats passed to trajectories() and return 
+            a dataframe with floats from sprof and prof index frames. 
+
+            :returns: floats_profiles: pd - The dataframe with only the profiles of
+                the passed floats. 
+        """
+        ## Gather bgc profiles for these floats from sprof index frame
+        bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.floats)) & (self.float_is_bgc_index['is_bgc'] == True)
+        floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
+        floats_bgc = self.sprof_index[self.sprof_index['wmoid'].isin(floats_bgc)]
+ 
+        ## Gather phys profiles for these floats from prof index frame 
+        phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.floats)) & (self.float_is_bgc_index['is_bgc'] == False)
+        floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
+        floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
+
+        floats_profiles = pd.concat([floats_bgc, floats_phys])
+
+        return floats_profiles
