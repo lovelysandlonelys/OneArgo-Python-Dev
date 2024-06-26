@@ -448,7 +448,7 @@ class Argo:
         lon_range = max(self.lon_lim) - min(self.lon_lim)
         if lon_range > 360 or lon_range <= 0:
             if self.download_settings.verbose: print(f'Current longitude range: {lon_range}')
-            raise Exception(f'The range between the maximum and minimum longitude values must be between 1 and 360.')
+            raise Exception(f'The range between the maximum and minimum longitude values must be between 0 and 360.')
         ## Adjusting values to fit between -180 and 360
         if  min(self.lon_lim) < -180:
             if self.download_settings.verbose: print(f'Adjusting within -180')
