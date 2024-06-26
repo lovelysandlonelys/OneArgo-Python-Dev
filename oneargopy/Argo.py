@@ -413,7 +413,6 @@ class Argo:
                     url = "".join([host,'dac/', dac, float_ID, file_name])
 
                 if self.download_settings.verbose: print(f'Downloading {file_name} from {url}...')
-                start_time = time.time()
                 try:
                     with requests.get(url, stream=True) as r:
                         r.raise_for_status()
@@ -431,8 +430,6 @@ class Argo:
 
                     success = True
                     if self.download_settings.verbose: print(f'Success!')
-                    elapsed_time = time.time() - start_time
-                    print(f'Download of: {file_name} took {elapsed_time}')
                     
                     # Exit the loop if download is successful so we don't try additional
                     # sources for no reason.
