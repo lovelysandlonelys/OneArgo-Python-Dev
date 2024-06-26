@@ -668,7 +668,7 @@ class Argo:
             If the user passed floats, we only load the passed floats 
             into the selection frames.
 
-            If keep_index_in_memory is set to false the dataframes created 
+            If keep_index_in_memory is set to false, the dataframes created 
             during Argo's constructor are deleted. In this function we only 
             reload the necessary dataframes into memory.
         """
