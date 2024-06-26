@@ -459,7 +459,7 @@ class Argo:
             # with pd.option_context('future.no_silent_downcasting', True):
         result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).astype('int8')
 
-        # Fill in source_settings information based off of synthetic file before removing rows
+        # Fill in source_settings information based off of sprof index file before removing rows
         if self.download_settings.verbose: print(f'Filling in source settings information...')
         self.source_settings.set_avail_vars(sprof_index )
         self.source_settings.set_dacs(sprof_index )
