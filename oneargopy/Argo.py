@@ -398,7 +398,7 @@ class Argo:
                     # Extract float id from filename
                     float_ID = file_name.split('_')[0]
                     # Extract dac for that float id from datafrmae
-                    dac = self.prof_index.at[int(float_ID), 'dac']
+                    dac = self.prof_index.at[int(float_ID), 'dacs']
                     # Add trailing forward slashes for formating
                     dac = f('{dac}/')
                     float_ID = f('{float_ID}/')
