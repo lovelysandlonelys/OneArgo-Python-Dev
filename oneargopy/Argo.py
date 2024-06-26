@@ -441,7 +441,8 @@ class Argo:
         parameters_split = sprof_index['parameters'].str.split()
         data_types_split = sprof_index['parameter_data_mode'].apply(list)
 
-        # R: raw data, A: adjusted mode (real-time adjusted), D: delayed mode quality controlled
+        # R: raw data, A: adjusted mode (real-time adjusted), 
+        # D: delayed mode quality controlled
         data_type_mapping = {np.nan: 0, 'R':1, 'A':2, 'D':3 }
         mapped_data_types_split = data_types_split.apply(lambda lst: [data_type_mapping.get(x, 0) if pd.notna(x) else 0 for x in lst])
 
@@ -453,7 +454,8 @@ class Argo:
         })
 
         # Pivot the expanded DataFrame to get parameters as columns
-            # Line here to suppress warning about fillna() being depreciated in future versions of pandas: 
+            # Line here to suppress warning about fillna() 
+            # being depreciated in future versions of pandas: 
             # with pd.option_context('future.no_silent_downcasting', True):
         result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).astype('int8')
 
