@@ -7,6 +7,7 @@ argo = Argo()
 # argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
 argo.load_float_data(5903611)
+argo.load_float_data([5903611, 5903802, 5903807])
 
 # argo.trajectories('5905105')
 # argo.trajectories(5904859)
@@ -42,10 +43,10 @@ argo.load_float_data(5903611)
 # elapsed_time = time.time() - start_time
 # print(f'This test took: {elapsed_time}\n')
 
-start_time = time.time()
-argo.select_profiles(floats=5903611)
-elapsed_time = time.time() - start_time
-print(f'This test took: {elapsed_time}\n')
+# start_time = time.time()
+# argo.select_profiles(floats=5903611)
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
 # argo.select_profiles(floats='5903611')
@@ -58,11 +59,11 @@ print(f'This test took: {elapsed_time}\n')
 # print(f'This test took: {elapsed_time}\n')
 
 # Testing outside functionality
-start_time = time.time()
-print(f'OUTSIDE = NONE')
-argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
-elapsed_time = time.time() - start_time
-print(f'This test took: {elapsed_time}\n')
+# start_time = time.time()
+# print(f'OUTSIDE = NONE')
+# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
 # print(f'OUTSIDE = TIME')

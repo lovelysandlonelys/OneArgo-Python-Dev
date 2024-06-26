@@ -32,7 +32,7 @@ import cartopy.feature as cf
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from matplotlib.ticker import FixedLocator
 
-from time import time
+import time
 import json
 
 
@@ -290,6 +290,9 @@ class Argo:
 
     def load_float_data(self, floats: int | str | list)-> None: 
         """ A function to load float data into memory.
+
+            :param: floats : int | str | list - A float or list of floats to  
+                load data from  
         """
         # Check that index files are in memory
         if not self.download_settings.keep_index_in_memory: 
@@ -311,6 +314,8 @@ class Argo:
                 file_name = f'{wmoid}_prof.nc'
             # Download file
             self.__download_file(file_name)
+
+        # Next Steps Here
 
 
     #######################################################################
@@ -384,7 +389,8 @@ class Argo:
             second_save_path = directory.joinpath(file_name)
         elif file_name.endswith('.nc') :
             directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
-            first_save_path = directory.joinpath("".join([file_name, ".gz"]))
+            first_save_path = directory.joinpath(file_name)
+            second_save_path = None
 
         success = False
         iterations = 0
@@ -407,6 +413,7 @@ class Argo:
                     url = "".join([host,'dac/', dac, float_ID, file_name])
 
                 if self.download_settings.verbose: print(f'Downloading {file_name} from {url}...')
+                start_time = time.time()
                 try:
                     with requests.get(url, stream=True) as r:
                         r.raise_for_status()
@@ -414,7 +421,7 @@ class Argo:
                             r.raw.decode_content = True
                             shutil.copyfileobj(r.raw, f)
                     
-                    if second_save_path: 
+                    if second_save_path is not None: 
                         if self.download_settings.verbose: print(f'Unzipping {file_name}.gz...')
                         with gzip.open(first_save_path, 'rb') as gz_file:
                             with open(second_save_path, 'wb') as txt_file:
@@ -424,6 +431,8 @@ class Argo:
 
                     success = True
                     if self.download_settings.verbose: print(f'Success!')
+                    elapsed_time = time.time() - start_time
+                    print(f'Download of: {file_name} took {elapsed_time}')
                     
                     # Exit the loop if download is successful so we don't try additional
                     # sources for no reason.
