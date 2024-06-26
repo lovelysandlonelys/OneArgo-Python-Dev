@@ -31,7 +31,7 @@ class DownloadSettings():
         :param: user_settings : str - An optional path to user defined 
             settings.
 
-        SETTINGS: 
+        Settings: 
         base_dir : str - The base directory that all sub directories 
             should be created at.
         sub_dirs : list - A list of folders to that will store 
@@ -154,11 +154,7 @@ class AnalysisSettings():
 
             :param: user_settings : Path - The path to the user's settings file
 
-<<<<<<< HEAD
             :returns: ds_data : dict - The parsed json string to assign to AnalysisSettings
-=======
-            :returns: as_data : ___ - The parsed json string to assign to AnalysisSettings
->>>>>>> main
                 parameters. 
         """
         if not user_settings.exists():
@@ -223,11 +219,7 @@ class SourceSettings():
 
             :param: user_settings : Path - The path to the user's settings file
 
-<<<<<<< HEAD
             :returns: ds_data : dict - The parsed json string to assign to SourceSettings
-=======
-            :returns: ss_data : ___ - The parsed json string to assign to SourceSettings
->>>>>>> main
                 parameters. 
         """
         if not user_settings.exists():
