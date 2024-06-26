@@ -637,7 +637,7 @@ class Argo:
         # Checking that floats are in index dataframes
         all_present = all(float in self.prof_index['wmoid'].values for float in self.floats)
         if not all_present: 
-            raise Exception(f"You have passed float values that do not exist in the dataframes: {self.floats}")
+            raise Exception(f"You have passed float IDs that do not exist in the dataframes: {self.floats}")
         
     
     def __validate_ocean_kwarg(self): 
