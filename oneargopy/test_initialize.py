@@ -36,7 +36,7 @@ argo = Argo()
 
 # Testing get by float id: 
 start_time = time.time()
-argo.select_profiles(floats=[5903611, 5903802, 5903807])
+argo.select_profiles(start_date='2012-01-01', end_date='2013-01-01', floats=[5903611, 5903802, 5903807])
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 
