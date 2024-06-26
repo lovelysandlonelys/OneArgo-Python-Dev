@@ -131,7 +131,7 @@ class Argo:
             The longitude and latitude limits can be input in any 360 degree
             range that encloses all the desired longitude values.
 
-            KEY ARGUMENT VALUE OPTIONS IN PROGRESS:
+            Key/argument value options in progress:
             floats=floats[] or 'float': Select profiles only from these floats that must
                     match all other criteria
             ocean=ocean: Valid choices are 'A' (Atlantic), 'P' (Pacific), and
