@@ -76,7 +76,7 @@ class Argo:
         # Download files from GDAC to Index directory
         if self.download_settings.verbose: print(f'\nDownloading index files...')
         for file in self.download_settings.index_files:
-            self.__download_index_file(file)
+            self.__download_file(file)
 
         # Load the index files into dataframes
         if self.download_settings.verbose: print(f'\nTransferring index files into dataframes...')
@@ -302,7 +302,14 @@ class Argo:
 
         # Download .nc files for passed floats
         for wmoid in self.floats : 
-            self.__download_float_file(str(wmoid))
+            # Generate filename 
+            ## If the float is a bgc float it will have a corresponding sprof file
+            if self.float_is_bgc_index.loc[self.float_is_bgc_index['wmoid'] == wmoid, 'is_bgc'].values[0] : 
+                file_name = f'{wmoid}_Sprof.nc'
+            ## If the float is a phys float it will have a corresponding prof file
+            else :
+                file_name = f'{wmoid}_prof.nc'
+            self.__download_file()
 
         pass
 
@@ -326,57 +333,18 @@ class Argo:
                     if self.download_settings.verbose: print(f'Failed to create the {directory} directory: {e}')
 
 
-    def __download_index_file(self, file_name: str) -> None:
+    def __download_file(self, file_name: str) -> None:
         """ A function to download and save an index file from GDAC sources. 
 
             :param: filename : str - The name of the file we are downloading.
         """
-        index_directory = Path(self.download_settings.base_dir.joinpath("Index"))
+        if file_name.endswith('.txt') : 
+            directory = Path(self.download_settings.base_dir.joinpath("Index"))
+        elif file_name.endswith('.nc') :
+            directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
 
         # Get the expected filepath for the file
-        file_path = index_directory.joinpath(file_name)
-
-        # Check if the filepath exists
-        if file_path.exists():
-
-            # Check if the settings allow for updates
-            if self.download_settings.update == 0:
-                if self.download_settings.verbose: 
-                    print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
-            else: 
-                txt_last_modified_time = Path(file_path).stat().st_mtime
-                current_time = datetime.now().timestamp()
-                txt_seconds_since_modified = current_time - txt_last_modified_time
-                # Check if the file should be updated
-                if (txt_seconds_since_modified > self.download_settings.update):
-                    if self.download_settings.verbose: print(f'Updating {file_name}...')
-                    self.__try_download(file_name ,True)
-                else:
-                    if self.download_settings.verbose: print(f'{file_name} does not need to be updated yet.')
-
-        # if the file doesn't exist then download it
-        else: 
-            if self.download_settings.verbose: print(f'{file_name} needs to be downloaded.')
-            self.__try_download(file_name, False)
-
-
-    def __download_float_file(self, float_ID: str) -> None:
-        """ A function to download and save a netCDF for a passed float ID.
-
-            :param: filename : str - The name of the file we are downloading.
-        """
-        profiles_directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
-
-        # Generate filename 
-        ## If the float is a bgc float it will have a corresponding sprof file
-        if self.float_is_bgc_index.loc[self.float_is_bgc_index['wmoid'] == float_ID, 'is_bgc'].values[0] : 
-            file_name = f'{float_ID}_Sprof.nc'
-        ## If the float is a phys float it will have a corresponding prof file
-        else :
-            file_name = f'{float_ID}_prof.nc'
-
-        # Get the expected filepath for the file
-        file_path = profiles_directory.joinpath(file_name)
+        file_path = directory.joinpath(file_name)
 
         # Check if the filepath exists
         if file_path.exists():
@@ -392,7 +360,7 @@ class Argo:
                 # Check if the file should be updated
                 if (seconds_since_modified > self.download_settings.update):
                     if self.download_settings.verbose: print(f'Updating {file_name}...')
-                    self.__try_download(file_name, True)
+                    self.__try_download(file_name ,True)
                 else:
                     if self.download_settings.verbose: print(f'{file_name} does not need to be updated yet.')
 
