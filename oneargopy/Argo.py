@@ -187,7 +187,6 @@ class Argo:
         self.__validate_start_end_dates()
         if self.outside : self.__validate_outside_kwarg()
         if self.float_type : self.__validate_type_kwarg()
-        if self.floats : self.__validate_floats_kwarg()
         if self.ocean : self.__validate_ocean_kwarg()
         # if self.sensor : self.__validate_sensor_kwarg()
 
@@ -293,6 +292,16 @@ class Argo:
         plt.show()
 
     def load_float_data(self, floats: int | str | list)-> None: 
+        """ A function to load float data into memory.
+        """
+
+        # Check that index files are in memory
+
+        # Check that passed float is inside of the dataframes
+
+        # Download .nc files for passed floats
+
+        # 
         pass
 
     #######################################################################
@@ -612,8 +621,14 @@ class Argo:
     def __validate_floats_kwarg(self):
         """ A function to validated the 'floats' keyword argument. The 'floats' must be a list even if it is a single float.
         """
+        # Casting to list
         if not isinstance(self.floats, list):
             self.floats = [int(self.floats)]
+
+        # Checking that floats are in index dataframes
+        all_present = all(float in self.prof_index['wmoid'].values for float in self.floats)
+        if not all_present: 
+            raise Exception(f"You have passed float values that do not exist in the dataframes: {self.floats}")
         
     
     def __validate_ocean_kwarg(self): 
@@ -648,6 +663,9 @@ class Argo:
             self.sprof_index = self.__load_sprof_dataframe()
             self.prof_index = self.__load_prof_dataframe()
             self.float_is_bgc_index = self.__load_is_bgc_index()
+
+        # We can only validate flaots after the dataframes are loaded into memory
+        if self.floats : self.__validate_floats_kwarg()
 
         # If we aren't filtering from specific floats assign selected frames
         # to the whole index frames
@@ -808,12 +826,12 @@ class Argo:
         profiles_in_time = self.__get_in_date_range(dataframe_to_filter)
 
         # Converting to np arrays so we can combine to make constraints
-        profiles_in_space = np.array(profiles_in_space)
-        profiles_in_time = np.array(profiles_in_time)
+        profiles_in_space = np.array(profiles_in_space, dtype=bool)
+        profiles_in_time = np.array(profiles_in_time, dtype=bool)
 
         constraints = profiles_in_time & profiles_in_space
         floats_in_time_and_space = dataframe_to_filter[constraints]
-        floats_in_time_and_space = np.array(dataframe_to_filter['wmoid'].isin(floats_in_time_and_space['wmoid']))
+        floats_in_time_and_space = np.array(dataframe_to_filter['wmoid'].isin(floats_in_time_and_space['wmoid']), dtype=bool)
 
         # Filter passed dataframe by time and space constraints to 
         # create a new dataframe to return as part of the selection frame
