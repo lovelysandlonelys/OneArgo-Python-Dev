@@ -391,7 +391,7 @@ class Argo:
     
 
     def __mark_bgcs_in_prof(self):
-        """ A function to mark weather the floats listed in prof_index are 
+        """ A function to mark whether the floats listed in prof_index are 
             biogeochemical floats or not. 
         """
         bgc_floats = self.sprof_index['wmoid'].unique()
