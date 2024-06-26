@@ -22,6 +22,7 @@ argo.trajectories(list(profiles.keys()))
 
 #Note: do we want to labe the points with profile nubmers?
 # if we have more floats than colors we stop plotting, so fix that, maybe use a colormap instead of the fixed colors
+# title super long if we have a million floats
 
 ##############################################################################################################################
 
