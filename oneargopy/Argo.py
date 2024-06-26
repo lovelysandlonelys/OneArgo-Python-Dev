@@ -762,8 +762,8 @@ class Argo:
         
 
     def __get_in_geographic_range(self, dataframe_to_filter: pd)-> list:
-        """ A function to create and return two true false arrays indicating
-            floats and profiles that fall within the geographic range.
+        """ A function to create and return a true false array indicating
+            profiles that fall within the geographic range.
         """
         # If the user has passed us the entire globe don't go through the whole
         # process of checking if the points of all the floats are inside the polygon
@@ -799,7 +799,7 @@ class Argo:
                      [min(self.lon_lim), min(self.lat_lim)]] # Top-left
         else:
             shape = []
-            for lat, lon in zip(self.lat_lim, self.lon_lim):
+            for lon, lat in zip(self.lon_lim, self.lat_lim):
                 shape.append([lon, lat])
 
         # Define a t/f array for profiles within the shape
@@ -815,8 +815,8 @@ class Argo:
 
 
     def __get_in_date_range(self, dataframe_to_filter: pd)-> list:
-        """ A function to create and return two true false arrays indicating
-            floats and profiles that fall within the geographic range.
+        """ A function to create and return a true false array indicating
+            profiles that fall within the date range.
         """
         # If the user has passed us the entire available date don't go through the whole
         # process of checking if the points of all the floats are inside the range

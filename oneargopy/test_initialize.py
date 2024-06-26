@@ -50,24 +50,24 @@ argo.select_profiles(floats='5903611')
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 
-# # Testing outside functionality
-# start_time = time.time()
-# print(f'OUTSIDE = NONE')
-# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
-# elapsed_time = time.time() - start_time
-# print(f'This test took: {elapsed_time}\n')
+# Testing outside functionality
+start_time = time.time()
+print(f'OUTSIDE = NONE')
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
 
-# start_time = time.time()
-# print(f'OUTSIDE = TIME')
-# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
-# elapsed_time = time.time() - start_time
-# print(f'This test took: {elapsed_time}\n')
+start_time = time.time()
+print(f'OUTSIDE = TIME')
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
 
-# start_time = time.time()
-# print(f'OUTSIDE = SPACE')
-# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='space')
-# elapsed_time = time.time() - start_time
-# print(f'This test took: {elapsed_time}\n')
+start_time = time.time()
+print(f'OUTSIDE = SPACE')
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='space')
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
 # print(f'OUTSIDE = BOTH')
