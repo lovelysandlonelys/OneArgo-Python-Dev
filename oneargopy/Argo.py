@@ -662,6 +662,8 @@ class Argo:
             argo_synthetic-profile_index.txt will be used.
             
             If type is 'all', both dataframes are used.
+            BGC floats are taken from argo_synthetic-profile_index.txt,
+            non-BGC floats from ar_index_global_prof.txt.
 
             If the user passed floats, we only load the passed floats 
             into the selection frames.
