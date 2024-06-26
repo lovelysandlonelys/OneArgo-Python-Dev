@@ -447,7 +447,7 @@ class Argo:
 
         # Create a new DataFrame from the split parameters 
         expanded_df = pd.DataFrame({
-            'index': sprof_index .index.repeat(parameters_split.str.len()),
+            'index': sprof_index.index.repeat(parameters_split.str.len()),
             'parameter': parameters_split.explode(),
             'data_type': mapped_data_types_split.explode()
         })
@@ -464,8 +464,8 @@ class Argo:
 
         # Merge the pivoted DataFrame back with the original DataFrame and drop split rows
         if self.download_settings.verbose: print(f'Marking Parameters with their data mode...')
-        sprof_index = sprof_index .drop(columns=['parameters', 'parameter_data_mode'])
-        sprof_index = sprof_index .join(result_df)
+        sprof_index = sprof_index.drop(columns=['parameters', 'parameter_data_mode'])
+        sprof_index = sprof_index.join(result_df)
 
         # Add profile_index column
         sprof_index.sort_values(by=['wmoid', 'date'], inplace=True)
