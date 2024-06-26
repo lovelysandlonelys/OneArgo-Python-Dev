@@ -380,13 +380,14 @@ class Argo:
         """
         if file_name.endswith('.txt') : 
             directory = Path(self.download_settings.base_dir.joinpath("Index"))
+            first_save_path = directory.joinpath("".join([file_name, ".gz"]))
+            second_save_path = directory.joinpath(file_name)
         elif file_name.endswith('.nc') :
             directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
+            first_save_path = directory.joinpath("".join([file_name, ".gz"]))
 
         success = False
         iterations = 0
-        file_save_path = directory.joinpath(file_name)
-        gz_save_path = directory.joinpath("".join([file_name, ".gz"]))
 
         while (not success) and (iterations < self.download_settings.max_attempts):
             # Try both hosts (preferred one is listed first in download settings)
@@ -398,31 +399,31 @@ class Argo:
                     # Extract float id from filename
                     float_ID = file_name.split('_')[0]
                     # Extract dac for that float id from datafrmae
-                    dac = self.prof_index.at[int(float_ID), 'dacs']
+                    filtered_df = self.prof_index[self.prof_index['wmoid'] == int(float_ID)]
+                    dac = filtered_df['dacs'].iloc[0]
                     # Add trailing forward slashes for formating
-                    dac = f('{dac}/')
-                    float_ID = f('{float_ID}/')
-                    url = "".join([host, dac, float_ID, file_name, ".gz"])
+                    dac = f'{dac}/'
+                    float_ID = f'{float_ID}/'
+                    url = "".join([host,'dac/', dac, float_ID, file_name])
 
                 if self.download_settings.verbose: print(f'Downloading {file_name} from {url}...')
-
                 try:
                     with requests.get(url, stream=True) as r:
                         r.raise_for_status()
-                        with open(gz_save_path, 'wb') as f:
+                        with open(first_save_path, 'wb') as f:
                             r.raw.decode_content = True
                             shutil.copyfileobj(r.raw, f)
-
-                    if self.download_settings.verbose: print(f'Unzipping {file_name}.gz...')
-                    with gzip.open(gz_save_path, 'rb') as gz_file:
-                        with open(file_save_path, 'wb') as txt_file:
-                            shutil.copyfileobj(gz_file, txt_file)
                     
+                    if second_save_path: 
+                        if self.download_settings.verbose: print(f'Unzipping {file_name}.gz...')
+                        with gzip.open(first_save_path, 'rb') as gz_file:
+                            with open(second_save_path, 'wb') as txt_file:
+                                shutil.copyfileobj(gz_file, txt_file)
+                        # Remove extraneous .gz file
+                        first_save_path.unlink()
+
                     success = True
                     if self.download_settings.verbose: print(f'Success!')
-
-                    # Remove extraneous .gz file
-                    gz_save_path.unlink()
                     
                     # Exit the loop if download is successful so we don't try additional
                     # sources for no reason.
@@ -430,7 +431,7 @@ class Argo:
 
                 except requests.RequestException as e:
                     print(f'Error encountered: {e}. Trying next host...')
-            
+             
             # Increment Iterations
             iterations += 1
 
@@ -655,6 +656,7 @@ class Argo:
             The 'floats' must be a list even if it is a single float.
             The float IDs must be present in the index files.
         """
+        if self.download_settings.verbose: print(f'Validating passed float IDs...')
         # Casting to list
         if not isinstance(self.floats, list):
             self.floats = [int(self.floats)]
