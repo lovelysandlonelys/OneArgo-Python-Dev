@@ -424,7 +424,7 @@ class Argo:
         file_name = "argo_synthetic-profile_index.txt"
         # The header is 8 here because there are 8 lines in both index files devoted to header information.
         file_path = Path.joinpath(self.download_settings.base_dir, 'Index', file_name)
-        sprof_index  = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
+        sprof_index = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'], 
                                 date_format='%Y%m%d%H%M%S')
         
         # Parsing out variables in first column: file
@@ -461,8 +461,8 @@ class Argo:
 
         # Fill in source_settings information based off of sprof index file before removing rows
         if self.download_settings.verbose: print(f'Filling in source settings information...')
-        self.source_settings.set_avail_vars(sprof_index )
-        self.source_settings.set_dacs(sprof_index )
+        self.source_settings.set_avail_vars(sprof_index)
+        self.source_settings.set_dacs(sprof_index)
 
         # Merge the pivoted DataFrame back with the original DataFrame and drop split rows
         if self.download_settings.verbose: print(f'Marking Parameters with their data mode...')
