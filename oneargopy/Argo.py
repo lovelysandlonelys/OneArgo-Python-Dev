@@ -29,6 +29,8 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cf
 
+import cartopy.mpl.ticker as cticker
+
 from time import time
 import json
 
@@ -239,44 +241,69 @@ class Argo:
             del self.prof_index
             del self.float_is_bgc_index
 
-        # Set central longitude
         lons = floats_profiles['longitude'].dropna().values.tolist()
+        lats = floats_profiles['latitude'].dropna().values.tolist()
+
         sorted_lons = np.sort(lons)
         median_lon = np.nanmedian(sorted_lons)
 
         # Set up basic trajectory graph background
-        ax = plt.axes(projection = ccrs.PlateCarree(central_longitude=median_lon))
+        fig = plt.figure(figsize=(10, 10))
+        ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree(central_longitude=median_lon))
+
+        # Set min/max latitude and longitude values based off of median and max and min values
+        lon_range = np.nanmax(lons) - np.nanmin(lons)
+        lat_range = np.nanmax(lats) - np.nanmin(lats)
+
+        if lon_range >= 180: 
+            ax.set_aspect('auto')
+        if lon_range > lat_range : 
+            buffer_distance = (lon_range - lat_range)/2.0
+            # Calculate extents with buffer
+            min_lat, max_lat = np.nanmin(lats) - buffer_distance, np.nanmax(lats) + buffer_distance
+            min_lon, max_lon = np.nanmin(lons), np.nanmax(lons)
+            print(f"lon_range: {lon_range}, lat_range: {lat_range}, buffer_distance: {buffer_distance}")
+            print(f"min_lat: {min_lat}, max_lat: {max_lat}, min_lon: {min_lon}, max_lon: {max_lon}")
+            ax.set_extent([min_lon, max_lon, min_lat, max_lat])
+        else: 
+            buffer_distance = (lat_range - lon_range)/2.0
+             # Calculate extents with buffer
+            min_lat, max_lat = np.nanmin(lats), np.nanmax(lats)
+            min_lon, max_lon = np.nanmin(lons) - buffer_distance, np.nanmax(lons) + buffer_distance
+            print(f"lon_range: {lon_range}, lat_range: {lat_range}, buffer_distance: {buffer_distance}")
+            print(f"min_lat: {min_lat}, max_lat: {max_lat}, min_lon: {min_lon}, max_lon: {max_lon}")
+            ax.set_extent([min_lon, max_lon, min_lat, max_lat])
+
+        # Add landmasses and coastlines
         ax.add_feature(cf.COASTLINE, linewidth=1.5)
         ax.add_feature(cf.LAND, zorder=2, edgecolor='k', facecolor='lightgray')
 
-        #Plot trajectories of passed floats with colorblind friendly pallet
+        # Plot trajectories of passed floats with colorblind friendly pallet
         colors = ("#56B4E9", "#009E73", "#F0E442", "#0072B2", "#CC79A7", "#D55E00", "#E69F00", "#000000")
 
         # Plot trajectories of passed floats
         for float, color in zip(self.floats, colors): 
                 specific_float_profiles = floats_profiles[floats_profiles['wmoid'] == float]
-                plt.plot(specific_float_profiles['longitude'].values, specific_float_profiles['latitude'].values, marker='o', alpha=0.7, linestyle='-', linewidth=2, transform=ccrs.Geodetic(), label=f'Float {float}', color=color)
-        
-        #Setting Titles
-        plt.title(f'Trajectories for {floats}', fontsize=18, fontweight='bold')
-        ax.set_xlabel('Longitude', fontsize=15)
-        ax.set_ylabel('Latitude', fontsize=15)
-
-        # Trying to make the aspect equal
-        ax.set_aspect('equal', adjustable='box')
+                ax.plot(specific_float_profiles['longitude'].values, specific_float_profiles['latitude'].values, 
+                        marker='o', alpha=0.7, linestyle='-', linewidth=2, transform=ccrs.Geodetic(), label=f'Float {float}', color=color)
 
         # Gridlines
-        gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=1, color='gray', alpha=0.5, linestyle='--', zorder=1)
+        gl = ax.gridlines(draw_labels=True, linestyle='--')
         gl.top_labels = False
         gl.right_labels = False
-        gl.xlabel_style = {'size': 15, 'color': 'black'}
-        gl.ylabel_style = {'size': 15, 'color': 'black'}
+        gl.xformatter = cticker.LongitudeFormatter()
+        gl.yformatter = cticker.LatitudeFormatter()
+        gl.xlabel_style = {'size': 12, 'color': 'black'}
+        gl.ylabel_style = {'size': 12, 'color': 'black'}
 
         # Legend
         plt.legend(loc='upper left')
 
-        # trying to make the aspect equal
-        ax.set_aspect('equal', adjustable='box')
+        #Setting Titles
+        ax.set_title(f'Trajectories for {floats}', fontsize=18, fontweight='bold')
+        fig.text(0.5, 0.01, 'Longitude', ha='center', fontsize=15)
+        fig.text(0.01, 0.5, 'Latitude', va='center', rotation='vertical', fontsize=15)
+
 
         plt.show()
 
