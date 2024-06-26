@@ -712,7 +712,8 @@ class Argo:
         if self.download_settings.verbose:
             num_unique_floats = len(self.selected_from_sprof_index['wmoid'].unique()) + len(self.selected_from_prof_index['wmoid'].unique())
             print(f"We will filter through {num_unique_floats} floats!") 
-            print(f'There are {len(self.selected_from_sprof_index) + len(self.selected_from_prof_index)} profiles are associated with these floats!')
+            num_profiles = len(self.selected_from_sprof_index) + len(self.selected_from_prof_index)
+            print(f'There are {num_profiles} profiles associated with these floats!\n')
 
 
 
