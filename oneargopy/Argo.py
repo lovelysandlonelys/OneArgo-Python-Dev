@@ -70,7 +70,7 @@ class Argo:
             self.__download_index_file(file)
 
         # Load the index files into dataframes
-        if self.download_settings.verbose: print(f'\nTransferring index files into data frames...')
+        if self.download_settings.verbose: print(f'\nTransferring index files into dataframes...')
         self.sprof_index  = self.__load_sprof_dataframe() 
         self.prof_index = self.__load_prof_dataframe()
 
@@ -307,7 +307,7 @@ class Argo:
         
 
     def __load_sprof_dataframe(self) -> pd:
-        """ A function to load the sprof index file into a data frame for easier reference.
+        """ A function to load the sprof index file into a dataframe for easier reference.
         """
         file_name = "argo_synthetic-profile_index.txt"
         # The header is 8 here because there are 8 lines in both index files devoted to header information.
@@ -364,7 +364,7 @@ class Argo:
         
 
     def __load_prof_dataframe(self) -> pd:
-        """ A function to load the prof index file into a data frame for easier reference.
+        """ A function to load the prof index file into a dataframe for easier reference.
         """
         file_name = "ar_index_global_prof.txt"
         file_path = Path.joinpath(self.download_settings.base_dir, 'Index', file_name)
