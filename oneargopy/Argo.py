@@ -428,18 +428,18 @@ class Argo:
                                 date_format='%Y%m%d%H%M%S')
         
         # Parsing out variables in first column: file
-        dacs = sprof_index ['file'].str.split('/').str[0]
+        dacs = sprof_index['file'].str.split('/').str[0]
         sprof_index.insert(1, "dacs", dacs)
 
-        wmoid = sprof_index ['file'].str.split('/').str[1].astype('int')
+        wmoid = sprof_index['file'].str.split('/').str[1].astype('int')
         sprof_index.insert(0, "wmoid", wmoid)
 
-        profile = sprof_index ['file'].str.split('_').str[1].str.replace('.nc', '')
+        profile = sprof_index['file'].str.split('_').str[1].str.replace('.nc', '')
         sprof_index.insert(2, "profile", profile)
 
         # Splitting the parameters into their own columns
-        parameters_split = sprof_index ['parameters'].str.split()
-        data_types_split = sprof_index ['parameter_data_mode'].apply(list)
+        parameters_split = sprof_index['parameters'].str.split()
+        data_types_split = sprof_index['parameter_data_mode'].apply(list)
 
         # R: raw data, A: adjusted mode (real-time adjusted), D: delayed mode quality controlled
         data_type_mapping = {np.nan: 0, 'R':1, 'A':2, 'D':3 }
