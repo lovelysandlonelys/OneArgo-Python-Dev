@@ -309,9 +309,9 @@ class Argo:
             ## If the float is a phys float it will have a corresponding prof file
             else :
                 file_name = f'{wmoid}_prof.nc'
-            self.__download_file()
+            # Download file
+            self.__download_file(file_name)
 
-        pass
 
     #######################################################################
     # Private Functions
@@ -378,18 +378,31 @@ class Argo:
                 are trying to update it. False if the file hasn't been 
                 downloaded yet. 
         """
-        index_directory = Path(self.download_settings.base_dir.joinpath("Index"))
+        if file_name.endswith('.txt') : 
+            directory = Path(self.download_settings.base_dir.joinpath("Index"))
+        elif file_name.endswith('.nc') :
+            directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
 
         success = False
         iterations = 0
-        txt_save_path = index_directory.joinpath(file_name)
-        gz_save_path = index_directory.joinpath("".join([file_name, ".gz"]))
+        file_save_path = directory.joinpath(file_name)
+        gz_save_path = directory.joinpath("".join([file_name, ".gz"]))
 
         while (not success) and (iterations < self.download_settings.max_attempts):
             # Try both hosts (preferred one is listed first in download settings)
             for host in self.source_settings.hosts:
 
-                url = "".join([host, file_name, ".gz"])
+                if file_name.endswith('.txt') : 
+                    url = "".join([host, file_name, ".gz"])
+                elif file_name.endswith('.nc') :
+                    # Extract float id from filename
+                    float_ID = file_name.split('_')[0]
+                    # Extract dac for that float id from datafrmae
+                    dac = self.prof_index.at[int(float_ID), 'dac']
+                    # Add trailing forward slashes for formating
+                    dac = f('{dac}/')
+                    float_ID = f('{float_ID}/')
+                    url = "".join([host, dac, float_ID, file_name, ".gz"])
 
                 if self.download_settings.verbose: print(f'Downloading {file_name} from {url}...')
 
@@ -402,7 +415,7 @@ class Argo:
 
                     if self.download_settings.verbose: print(f'Unzipping {file_name}.gz...')
                     with gzip.open(gz_save_path, 'rb') as gz_file:
-                        with open(txt_save_path, 'wb') as txt_file:
+                        with open(file_save_path, 'wb') as txt_file:
                             shutil.copyfileobj(gz_file, txt_file)
                     
                     success = True

@@ -6,6 +6,8 @@ import time
 argo = Argo()
 # argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
+argo.load_float_data(5903611)
+
 # argo.trajectories('5905105')
 # argo.trajectories(5904859)
 # floats = [5905105, 5904859]
@@ -34,21 +36,21 @@ argo = Argo()
 # elapsed_time = time.time() - start_time
 # print(f'This test took: {elapsed_time}\n')
 
-# Testing get by float id: 
-start_time = time.time()
-argo.select_profiles(start_date='2012-01-01', end_date='2013-01-01', floats=[5903611, 5903802, 5903807])
-elapsed_time = time.time() - start_time
-print(f'This test took: {elapsed_time}\n')
+# # Testing get by float id: 
+# start_time = time.time()
+# argo.select_profiles(start_date='2012-01-01', end_date='2013-01-01', floats=[5903611, 5903802, 5903807])
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
 
 start_time = time.time()
 argo.select_profiles(floats=5903611)
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 
-start_time = time.time()
-argo.select_profiles(floats='5903611')
-elapsed_time = time.time() - start_time
-print(f'This test took: {elapsed_time}\n')
+# start_time = time.time()
+# argo.select_profiles(floats='5903611')
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
 # argo.select_profiles(floats=[4903500, 5903611, 1, 2])
@@ -62,17 +64,17 @@ argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 
-start_time = time.time()
-print(f'OUTSIDE = TIME')
-argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
-elapsed_time = time.time() - start_time
-print(f'This test took: {elapsed_time}\n')
+# start_time = time.time()
+# print(f'OUTSIDE = TIME')
+# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
 
-start_time = time.time()
-print(f'OUTSIDE = SPACE')
-argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='space')
-elapsed_time = time.time() - start_time
-print(f'This test took: {elapsed_time}\n')
+# start_time = time.time()
+# print(f'OUTSIDE = SPACE')
+# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='space')
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
 # print(f'OUTSIDE = BOTH')
