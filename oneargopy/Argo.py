@@ -432,7 +432,7 @@ class Argo:
             if (self.lon_lim[1] <= self.lon_lim[0]) or (self.lat_lim[1] <= self.lat_lim[0]):
                 if self.download_settings.verbose: print(f'Longitude Limits: min={self.lon_lim[0]} max={self.lon_lim[1]}')
                 if self.download_settings.verbose: print(f'Latitude Limits: min={self.lat_lim[0]} max={self.lat_lim[1]}')
-                raise Exception(f'When passing longitude and latitude lists using the [min, max] format the max value must be greater than the min value.')
+                raise Exception(f'When passing longitude and latitude lists using the [min, max] format, the max value must be greater than the min value.')
             if (abs(self.lon_lim[1]) - self.lon_lim[0] < self.epsilon) and (abs(self.lat_lim[1]) - self.lat_lim[0] < self.epsilon): 
                 self.keep_full_geographic = True
             else: 
