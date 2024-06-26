@@ -400,7 +400,7 @@ class Argo:
 
     def __load_is_bgc_index(self)-> pd:
         """ Function to create a dataframe with float IDs and
-            their is_bcg status for use in select_profiles().
+            their is_bgc status for use in select_profiles().
         """ 
         float_bgc_status = self.prof_index[['wmoid', 'is_bgc']].drop_duplicates()
         return float_bgc_status
