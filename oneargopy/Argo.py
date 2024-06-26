@@ -537,8 +537,8 @@ class Argo:
 
 
     def __validate_lon_lat_limits(self)-> None:
-        """ Function to validate the length, order, and contents of longitude and latitude limits passed 
-            to select_profiles.
+        """ Function to validate the length, order, and contents of 
+            longitude and latitude limits passed to select_profiles.
         """
         if self.download_settings.verbose: print(f'Validating longitude and latitude limits...')
 
@@ -606,7 +606,8 @@ class Argo:
 
 
     def __validate_outside_kwarg(self): 
-        """ A function to validate the value of the optional 'outside' keyword argument.
+        """ A function to validate the value of the 
+            optional 'outside' keyword argument.
         """
         if self.download_settings.verbose: print(f"Validating 'outside' keyword argument...")
 
@@ -616,7 +617,8 @@ class Argo:
             
     
     def __validate_type_kwarg(self): 
-        """ A function to validate the value of the optional 'type' keyword argument.
+        """ A function to validate the value of the 
+            optional 'type' keyword argument.
         """
         if self.download_settings.verbose: print(f"Validating 'type' keyword argument...")
 
@@ -625,7 +627,8 @@ class Argo:
         
     
     def __validate_floats_kwarg(self):
-        """ A function to validated the 'floats' keyword argument. The 'floats' must be a list even if it is a single float.
+        """ A function to validate the 'floats' keyword argument. 
+            The 'floats' must be a list even if it is a single float.
         """
         # Casting to list
         if not isinstance(self.floats, list):
@@ -638,7 +641,8 @@ class Argo:
         
     
     def __validate_ocean_kwarg(self): 
-        """ A function to validate the value of the optional 'ocean' keyword argument.
+        """ A function to validate the value of the 
+            optional 'ocean' keyword argument.
         """
         if self.download_settings.verbose: print(f"Validating 'ocean' keyword argument...")
 
@@ -647,18 +651,24 @@ class Argo:
 
 
     def __prepare_selection(self):
-        """ A function that determines what dataframes will be loaded/used when selecting floats.
-            We determine what dataframes to load based on two factors: type and passed floats.  
+        """ A function that determines what dataframes will be loaded/used 
+            when selecting floats. We determine what dataframes to load 
+            based on two factors: type and passed floats.  
 
-            If type is 'phys', the dataframe based on ar_index_global_prof.txt will be used.
-            If type is 'bgc', the dataframe based on argo_synthetic-profile_index.txt will be used.
+            If type is 'phys', the dataframe based on 
+            ar_index_global_prof.txt will be used. 
+            
+            If type is 'bgc', the dataframe based on 
+            argo_synthetic-profile_index.txt will be used.
+            
             If type is 'all', both dataframes are used.
 
-            If the user passed floats, we only load the passed floats into the selection frames.
+            If the user passed floats, we only load the passed floats 
+            into the selection frames.
 
-            If keep_index_in_memory is set to false the dataframes created during Argo's 
-            constructor are deleted. In this function we only reload the necessary
-            dataframes into memory.
+            If keep_index_in_memory is set to false the dataframes created 
+            during Argo's constructor are deleted. In this function we only 
+            reload the necessary dataframes into memory.
         """
         if self.download_settings.verbose: print(f'Preparing float data for filtering...')
         selected_floats_phys = None
