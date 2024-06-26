@@ -292,6 +292,9 @@ class Argo:
         # Displaying graph
         plt.show()
 
+    def load_float_data(self, floats: int | str | list)-> None: 
+        pass
+
     #######################################################################
     # Private Functions
     #######################################################################
