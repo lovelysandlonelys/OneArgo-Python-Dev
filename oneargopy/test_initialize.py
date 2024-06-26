@@ -14,6 +14,15 @@ argo.trajectories(floats)
 profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
 argo.trajectories(list(profiles.keys()))
 
+profiles = argo.select_profiles([100, 140], [30, 45])
+argo.trajectories(list(profiles.keys()))
+
+profiles = argo.select_profiles([0, 40])
+argo.trajectories(list(profiles.keys()))
+
+#Note: do we want to labe the points with profile nubmers?
+# if we have more floats than colors we stop plotting, so fix that, maybe use a colormap instead of the fixed colors
+
 ##############################################################################################################################
 
 # # No Criteria Specified

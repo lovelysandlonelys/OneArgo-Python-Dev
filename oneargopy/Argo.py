@@ -29,7 +29,8 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cf
 
-import cartopy.mpl.ticker as cticker
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+from matplotlib.ticker import FixedLocator
 
 from time import time
 import json
@@ -255,24 +256,20 @@ class Argo:
         lon_range = np.nanmax(lons) - np.nanmin(lons)
         lat_range = np.nanmax(lats) - np.nanmin(lats)
 
-        if lon_range >= 180: 
+        if lon_range >= 350: 
             ax.set_aspect('auto')
-        if lon_range > lat_range : 
-            buffer_distance = (lon_range - lat_range)/2.0
-            # Calculate extents with buffer
-            min_lat, max_lat = np.nanmin(lats) - buffer_distance, np.nanmax(lats) + buffer_distance
-            min_lon, max_lon = np.nanmin(lons), np.nanmax(lons)
-            print(f"lon_range: {lon_range}, lat_range: {lat_range}, buffer_distance: {buffer_distance}")
-            print(f"min_lat: {min_lat}, max_lat: {max_lat}, min_lon: {min_lon}, max_lon: {max_lon}")
-            ax.set_extent([min_lon, max_lon, min_lat, max_lat])
+        elif lon_range > lat_range : 
+            # buffer_distance = (lon_range - lat_range)/2.0 
+            # min_lat, max_lat = np.nanmin(lats) - buffer_distance, np.nanmax(lats) + buffer_distance
+            # min_lon, max_lon = np.nanmin(lons), np.nanmax(lons)
+            # ax.set_extent([min_lon, max_lon, min_lat, max_lat])
+            ax.set_aspect(aspect=3)
         else: 
-            buffer_distance = (lat_range - lon_range)/2.0
-             # Calculate extents with buffer
-            min_lat, max_lat = np.nanmin(lats), np.nanmax(lats)
-            min_lon, max_lon = np.nanmin(lons) - buffer_distance, np.nanmax(lons) + buffer_distance
-            print(f"lon_range: {lon_range}, lat_range: {lat_range}, buffer_distance: {buffer_distance}")
-            print(f"min_lat: {min_lat}, max_lat: {max_lat}, min_lon: {min_lon}, max_lon: {max_lon}")
-            ax.set_extent([min_lon, max_lon, min_lat, max_lat])
+            # buffer_distance = (lat_range - lon_range)/2.0 
+            # min_lat, max_lat = np.nanmin(lats), np.nanmax(lats)
+            # min_lon, max_lon = np.nanmin(lons) - buffer_distance, np.nanmax(lons) + buffer_distance
+            # ax.set_extent([min_lon, max_lon, min_lat, max_lat])
+            ax.set_aspect('equal')
 
         # Add landmasses and coastlines
         ax.add_feature(cf.COASTLINE, linewidth=1.5)
@@ -291,8 +288,14 @@ class Argo:
         gl = ax.gridlines(draw_labels=True, linestyle='--')
         gl.top_labels = False
         gl.right_labels = False
-        gl.xformatter = cticker.LongitudeFormatter()
-        gl.yformatter = cticker.LatitudeFormatter()
+        gl.xlines = True
+        gl.ylines = True
+        longitude_ticks = list(range(-180, 181, 2))
+        latitude_ticks = list(range(-90, 91, 2))
+        gl.xlocator = FixedLocator(longitude_ticks)
+        gl.ylocator = FixedLocator(latitude_ticks)
+        gl.xformatter = LONGITUDE_FORMATTER
+        gl.yformatter = LATITUDE_FORMATTER
         gl.xlabel_style = {'size': 12, 'color': 'black'}
         gl.ylabel_style = {'size': 12, 'color': 'black'}
 
