@@ -100,7 +100,6 @@ class Argo:
             if self.download_settings.verbose: print('Removing dataframes from memory...')
             del self.sprof_index 
             del self.prof_index
-            del self.float_is_bgc_index
 
 
     #######################################################################
@@ -203,7 +202,6 @@ class Argo:
             if self.download_settings.verbose: print('Removing dataframes from memory...')
             del self.sprof_index 
             del self.prof_index
-            del self.float_is_bgc_index
             del self.selection_frame
 
         if self.download_settings.verbose: print(f'Profiles Selected!\n\n')
@@ -240,7 +238,6 @@ class Argo:
             if self.download_settings.verbose: print('Removing dataframes from memory...')
             del self.sprof_index 
             del self.prof_index
-            del self.float_is_bgc_index
 
         # Set up basic graph size
         fig = plt.figure(figsize=(10, 10))
@@ -634,11 +631,11 @@ class Argo:
         if not isinstance(self.floats, list):
             self.floats = [int(self.floats)]
 
-        # Checking that floats are in index dataframes
-        all_present = all(float in self.prof_index['wmoid'].values for float in self.floats)
-        if not all_present: 
-            raise Exception(f"You have passed float IDs that do not exist in the dataframes: {self.floats}")
-        
+        # Finding float IDs that are not present in the index dataframes
+        missing_floats = [float for float in self.floats if float not in self.prof_index['wmoid'].values]
+        if missing_floats:
+            raise Exception(f"The following float IDs do not exist in the dataframes: {missing_floats}")
+            
     
     def __validate_ocean_kwarg(self): 
         """ A function to validate the value of the 

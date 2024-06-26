@@ -50,6 +50,11 @@ argo.select_profiles(floats='5903611')
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 
+start_time = time.time()
+argo.select_profiles(floats=[4903500, 5903611, 1, 2])
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
+
 # Testing outside functionality
 start_time = time.time()
 print(f'OUTSIDE = NONE')
