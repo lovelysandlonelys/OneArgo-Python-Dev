@@ -224,7 +224,6 @@ class Argo:
         if not self.download_settings.keep_index_in_memory: 
             self.sprof_index = self.__load_sprof_dataframe()
             self.prof_index = self.__load_prof_dataframe()
-            self.float_is_bgc_index = self.__load_is_bgc_index()
 
         # Validate passed floats/convert to list
         self.floats = floats
@@ -677,7 +676,6 @@ class Argo:
         if not self.download_settings.keep_index_in_memory:
             self.sprof_index = self.__load_sprof_dataframe()
             self.prof_index = self.__load_prof_dataframe()
-            self.float_is_bgc_index = self.__load_is_bgc_index()
 
         # We can only validate flaots after the dataframes are loaded into memory
         if self.floats : self.__validate_floats_kwarg()
