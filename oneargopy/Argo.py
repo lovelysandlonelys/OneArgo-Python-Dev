@@ -462,7 +462,6 @@ class Argo:
         # Fill in source_settings information based off of sprof index file before removing rows
         if self.download_settings.verbose: print(f'Filling in source settings information...')
         self.source_settings.set_avail_vars(sprof_index)
-        self.source_settings.set_dacs(sprof_index)
 
         # Merge the pivoted DataFrame back with the original DataFrame and drop split rows
         if self.download_settings.verbose: print(f'Marking Parameters with their data mode...')
@@ -500,6 +499,10 @@ class Argo:
         prof_index.sort_values(by=['wmoid', 'date'], inplace=True)
         prof_index.insert(0, "profile_index", 0)
         prof_index['profile_index'] = prof_index.groupby('wmoid')['date'].cumcount() + 1
+
+        # Fill in source_settings information based off of sprof index file before removing rows
+        if self.download_settings.verbose: print(f'Filling in source settings information...')
+        self.source_settings.set_dacs(prof_index)
 
         return prof_index
     
