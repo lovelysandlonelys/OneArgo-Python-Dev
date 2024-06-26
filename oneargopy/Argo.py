@@ -767,4 +767,10 @@ class Argo:
                 selected_profiles[row['wmoid']] = [row['profile_index']]
             else:
                 selected_profiles[row['wmoid']].append(row['profile_index'])
+
+        # Sort dict by key values
+        float_ids = list(selected_profiles.keys())
+        float_ids.sort()
+        selected_profiles = {i: selected_profiles[i] for i in float_ids}
+
         return selected_profiles
