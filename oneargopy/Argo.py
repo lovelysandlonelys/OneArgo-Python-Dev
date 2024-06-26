@@ -107,7 +107,8 @@ class Argo:
     # Public Functions
     #######################################################################
 
-    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], start_date: str = '1995-01-01', end_date: str = None, **kwargs)-> dict:
+    def select_profiles(self, lon_lim: list = [-180, 180], lat_lim: list = [-90, 90], 
+                        start_date: str = '1995-01-01', end_date: str = None, **kwargs)-> dict:
         """ select_profiles is a public function of the Argo class that returns a 
             dictionary if float IDs and profile lists that match the passed criteria.
 
