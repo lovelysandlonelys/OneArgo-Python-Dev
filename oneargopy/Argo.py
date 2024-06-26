@@ -481,8 +481,8 @@ class Argo:
         wmoid = prof_index['file'].str.split('/').str[1].astype('int')
         prof_index.insert(1, "wmoid", wmoid)
 
-        R_file = prof_index['file'].str.split('/').str[3].str.startswith('R')
-        prof_index.insert(2, "R_file", R_file)
+        D_file = prof_index['file'].str.split('/').str[3].str.startswith('D')
+        prof_index.insert(2, "D_file", D_file)
 
         # Add profile_index column
         prof_index.sort_values(by=['wmoid', 'date'], inplace=True)
@@ -493,7 +493,7 @@ class Argo:
     
 
     def __mark_bgcs_in_prof(self):
-        """ A function to mark weather the floats listed in prof_index are 
+        """ A function to mark whether the floats listed in prof_index are 
             biogeochemical floats or not. 
         """
         bgc_floats = self.sprof_index['wmoid'].unique()
@@ -534,8 +534,8 @@ class Argo:
             if (self.lon_lim[1] <= self.lon_lim[0]) or (self.lat_lim[1] <= self.lat_lim[0]):
                 if self.download_settings.verbose: print(f'Longitude Limits: min={self.lon_lim[0]} max={self.lon_lim[1]}')
                 if self.download_settings.verbose: print(f'Latitude Limits: min={self.lat_lim[0]} max={self.lat_lim[1]}')
-                raise Exception(f'When passing longitude and latitude lists using the [min, max] format the max value must be greater than the min value.')
-            if (abs(self.lon_lim[1]) - self.lon_lim[0] < self.epsilon) and (abs(self.lat_lim[1]) - self.lat_lim[0] < self.epsilon): 
+                raise Exception(f'When passing longitude and latitude lists using the [min, max] format, the max value must be greater than the min value.')
+            if (abs(self.lon_lim[1] - self.lon_lim[0] - 360.0) < self.epsilon) and (abs(self.lat_lim[1] - self.lat_lim[0] - 180.0) < self.epsilon): 
                 self.keep_full_geographic = True
             else: 
                 self.keep_full_geographic = False
@@ -550,7 +550,7 @@ class Argo:
         lon_range = max(self.lon_lim) - min(self.lon_lim)
         if lon_range > 360 or lon_range <= 0:
             if self.download_settings.verbose: print(f'Current longitude range: {lon_range}')
-            raise Exception(f'The range between the maximum and minimum longitude values must be between 1 and 360.')
+            raise Exception(f'The range between the maximum and minimum longitude values must be between 0 and 360.')
         ## Adjusting values to fit between -180 and 360
         if  min(self.lon_lim) < -180:
             if self.download_settings.verbose: print(f'Adjusting within -180')
