@@ -291,14 +291,19 @@ class Argo:
     def load_float_data(self, floats: int | str | list)-> None: 
         """ A function to load float data into memory.
         """
-
         # Check that index files are in memory
+        if not self.download_settings.keep_index_in_memory: 
+            self.sprof_index = self.__load_sprof_dataframe()
+            self.prof_index = self.__load_prof_dataframe()
 
         # Check that passed float is inside of the dataframes
+        self.floats = floats
+        self.__validate_floats_kwarg()
 
         # Download .nc files for passed floats
+        for wmoid in self.floats : 
+            self.__download_float_file(str(wmoid))
 
-        # 
         pass
 
     #######################################################################
@@ -346,6 +351,48 @@ class Argo:
                 if (txt_seconds_since_modified > self.download_settings.update):
                     if self.download_settings.verbose: print(f'Updating {file_name}...')
                     self.__try_download(file_name ,True)
+                else:
+                    if self.download_settings.verbose: print(f'{file_name} does not need to be updated yet.')
+
+        # if the file doesn't exist then download it
+        else: 
+            if self.download_settings.verbose: print(f'{file_name} needs to be downloaded.')
+            self.__try_download(file_name, False)
+
+
+    def __download_float_file(self, float_ID: str) -> None:
+        """ A function to download and save a netCDF for a passed float ID.
+
+            :param: filename : str - The name of the file we are downloading.
+        """
+        profiles_directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
+
+        # Generate filename 
+        ## If the float is a bgc float it will have a corresponding sprof file
+        if self.float_is_bgc_index.loc[self.float_is_bgc_index['wmoid'] == float_ID, 'is_bgc'].values[0] : 
+            file_name = f'{float_ID}_Sprof.nc'
+        ## If the float is a phys float it will have a corresponding prof file
+        else :
+            file_name = f'{float_ID}_prof.nc'
+
+        # Get the expected filepath for the file
+        file_path = profiles_directory.joinpath(file_name)
+
+        # Check if the filepath exists
+        if file_path.exists():
+
+            # Check if the settings allow for updates
+            if self.download_settings.update == 0:
+                if self.download_settings.verbose: 
+                    print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
+            else: 
+                last_modified_time = Path(file_path).stat().st_mtime
+                current_time = datetime.now().timestamp()
+                seconds_since_modified = current_time - last_modified_time
+                # Check if the file should be updated
+                if (seconds_since_modified > self.download_settings.update):
+                    if self.download_settings.verbose: print(f'Updating {file_name}...')
+                    self.__try_download(file_name, True)
                 else:
                     if self.download_settings.verbose: print(f'{file_name} does not need to be updated yet.')
 
@@ -625,6 +672,7 @@ class Argo:
     def __validate_floats_kwarg(self):
         """ A function to validate the 'floats' keyword argument. 
             The 'floats' must be a list even if it is a single float.
+            The float IDs must be present in the index files.
         """
         # Casting to list
         if not isinstance(self.floats, list):
