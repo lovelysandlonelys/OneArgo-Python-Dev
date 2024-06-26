@@ -861,25 +861,10 @@ class Argo:
                 selected_profiles[row['wmoid']] = [row['profile_index']]
             else:
                 selected_profiles[row['wmoid']].append(row['profile_index'])
+
+        # Sort dict by key values
+        float_ids = list(selected_profiles.keys())
+        float_ids.sort()
+        selected_profiles = {i: selected_profiles[i] for i in float_ids}
+
         return selected_profiles
-    
-    def __filter_by_floats(self)-> pd:
-        """ Function to pull profiles of floats passed to trajectories() and return 
-            a dataframe with floats from sprof and prof index frames. 
-
-            :returns: floats_profiles: pd - The dataframe with only the profiles of
-                the passed floats. 
-        """
-        ## Gather bgc profiles for these floats from sprof index frame
-        bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.floats)) & (self.float_is_bgc_index['is_bgc'] == True)
-        floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
-        floats_bgc = self.sprof_index[self.sprof_index['wmoid'].isin(floats_bgc)]
- 
-        ## Gather phys profiles for these floats from prof index frame 
-        phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.floats)) & (self.float_is_bgc_index['is_bgc'] == False)
-        floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
-        floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
-
-        floats_profiles = pd.concat([floats_bgc, floats_phys])
-
-        return floats_profiles

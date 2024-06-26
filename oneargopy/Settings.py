@@ -31,7 +31,7 @@ class DownloadSettings():
         :param: user_settings : str - An optional path to user defined 
             settings.
 
-        SETTINGS: 
+        Settings: 
         base_dir : str - The base directory that all sub directories 
             should be created at.
         sub_dirs : list - A list of folders to that will store 
