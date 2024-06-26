@@ -726,10 +726,12 @@ class Argo:
         """
         # Filter by time, space, and type constraints first.
         if self.float_type == 'bgc' : 
+            # Empty df for concat
             self.selection_frame_phys = pd.DataFrame()
         else :
             self.selection_frame_phys = self.__get_in_time_and_space_constraints(self.selected_from_prof_index)
         if self.float_type == 'phys' : 
+            # Empty df for concat
             self.selection_frame_bgc = pd.DataFrame()
         else :
             self.selection_frame_bgc = self.__get_in_time_and_space_constraints(self.selected_from_sprof_index)
@@ -737,12 +739,12 @@ class Argo:
         # Set the selection frame
         self.selection_frame = pd.concat([self.selection_frame_bgc, self.selection_frame_phys])
 
-        # Remove extraneous frames if keep index in memory is set to false
+        # Remove extraneous frames
         if not self.download_settings.keep_index_in_memory: 
             del self.sprof_index
             del self.prof_index
-            del self.selection_frame_bgc
-            del self.selection_frame_phys
+        del self.selection_frame_bgc
+        del self.selection_frame_phys
 
         if self.download_settings.verbose:
             print(f"{len(self.selection_frame['wmoid'].unique())} floats selected!")   
