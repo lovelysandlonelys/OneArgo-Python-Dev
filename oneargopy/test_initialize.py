@@ -14,15 +14,11 @@ argo.trajectories(floats)
 profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
 argo.trajectories(list(profiles.keys()))
 
-profiles = argo.select_profiles([100, 140], [30, 45])
-argo.trajectories(list(profiles.keys()))
+# profiles = argo.select_profiles([100, 140], [30, 45])
+# argo.trajectories(list(profiles.keys()))
 
-profiles = argo.select_profiles([0, 40])
-argo.trajectories(list(profiles.keys()))
-
-#Note: do we want to labe the points with profile nubmers?
-# if we have more floats than colors we stop plotting, so fix that, maybe use a colormap instead of the fixed colors
-# title super long if we have a million floats
+# profiles = argo.select_profiles([0, 40])
+# argo.trajectories(list(profiles.keys()))
 
 ##############################################################################################################################
 
@@ -334,6 +330,17 @@ argo.trajectories(list(profiles.keys()))
 # for i, point in enumerate(profile_points): 
 #     if not shape.contains(point):
 #         remove_indexes.extend([self.selection_frame.iloc[i].name])
+
+# calculating buffer distance for squareish saving 
+# elif lon_range > lat_range : 
+#             buffer_distance = (lon_range - lat_range)/2.0 
+#             min_lat, max_lat = np.nanmin(lats) - buffer_distance, np.nanmax(lats) + buffer_distance
+#             ax.set_ylim(min_lat, max_lat)
+#         else: 
+#             buffer_distance = (lat_range - lon_range)/2.0 
+#             min_lon, max_lon = np.nanmin(lons) - buffer_distance, np.nanmax(lons) + buffer_distance
+#             ax.set_xlim(min_lon, max_lon)
+#             ax.set_aspect('equal')
         
 ###########################################################################################################################
 

@@ -242,34 +242,17 @@ class Argo:
             del self.prof_index
             del self.float_is_bgc_index
 
-        lons = floats_profiles['longitude'].dropna().values.tolist()
-        lats = floats_profiles['latitude'].dropna().values.tolist()
+        # Set up basic graph size
+        fig = plt.figure(figsize=(10, 10))
 
+        # Define the median longitude for the graph to be centered on
+        lons = floats_profiles['longitude'].dropna().values.tolist()
         sorted_lons = np.sort(lons)
         median_lon = np.nanmedian(sorted_lons)
-
-        # Set up basic trajectory graph background
-        fig = plt.figure(figsize=(10, 10))
         ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree(central_longitude=median_lon))
 
-        # Set min/max latitude and longitude values based off of median and max and min values
-        lon_range = np.nanmax(lons) - np.nanmin(lons)
-        lat_range = np.nanmax(lats) - np.nanmin(lats)
-
-        if lon_range >= 350: 
-            ax.set_aspect('auto')
-        elif lon_range > lat_range : 
-            # buffer_distance = (lon_range - lat_range)/2.0 
-            # min_lat, max_lat = np.nanmin(lats) - buffer_distance, np.nanmax(lats) + buffer_distance
-            # min_lon, max_lon = np.nanmin(lons), np.nanmax(lons)
-            # ax.set_extent([min_lon, max_lon, min_lat, max_lat])
-            ax.set_aspect(aspect=3)
-        else: 
-            # buffer_distance = (lat_range - lon_range)/2.0 
-            # min_lat, max_lat = np.nanmin(lats), np.nanmax(lats)
-            # min_lon, max_lon = np.nanmin(lons) - buffer_distance, np.nanmax(lons) + buffer_distance
-            # ax.set_extent([min_lon, max_lon, min_lat, max_lat])
-            ax.set_aspect('equal')
+        # Set aspect ratio to keep all points inside of graph
+        ax.set_aspect('auto')
 
         # Add landmasses and coastlines
         ax.add_feature(cf.COASTLINE, linewidth=1.5)
@@ -277,14 +260,13 @@ class Argo:
 
         # Plot trajectories of passed floats with colorblind friendly pallet
         colors = ("#56B4E9", "#009E73", "#F0E442", "#0072B2", "#CC79A7", "#D55E00", "#E69F00", "#000000")
+        for i, float in enumerate(self.floats): 
+            specific_float_profiles = floats_profiles[floats_profiles['wmoid'] == float]
+            ax.plot(specific_float_profiles['longitude'].values, specific_float_profiles['latitude'].values, 
+                    marker='o', alpha=0.7, linestyle='-', linewidth=2, transform=ccrs.Geodetic(), 
+                    label=f'Float {float}', color=colors[i % len(colors)])
 
-        # Plot trajectories of passed floats
-        for float, color in zip(self.floats, colors): 
-                specific_float_profiles = floats_profiles[floats_profiles['wmoid'] == float]
-                ax.plot(specific_float_profiles['longitude'].values, specific_float_profiles['latitude'].values, 
-                        marker='o', alpha=0.7, linestyle='-', linewidth=2, transform=ccrs.Geodetic(), label=f'Float {float}', color=color)
-
-        # Gridlines
+        # Add Gridlines 
         gl = ax.gridlines(draw_labels=True, linestyle='--')
         gl.top_labels = False
         gl.right_labels = False
@@ -299,7 +281,7 @@ class Argo:
         gl.xlabel_style = {'size': 12, 'color': 'black'}
         gl.ylabel_style = {'size': 12, 'color': 'black'}
 
-        # Legend
+        # Add Legend
         plt.legend(loc='upper left')
 
         #Setting Titles
@@ -307,7 +289,7 @@ class Argo:
         fig.text(0.5, 0.01, 'Longitude', ha='center', fontsize=15)
         fig.text(0.01, 0.5, 'Latitude', va='center', rotation='vertical', fontsize=15)
 
-
+        # Displaying graph
         plt.show()
 
     #######################################################################
