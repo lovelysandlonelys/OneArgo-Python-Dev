@@ -919,23 +919,19 @@ class Argo:
 
             :returns: floats_profiles: pd - The dataframe with only the profiles of
                 the passed floats. 
-        """
-        # If the user has not passed a dictionary
-        if self.float_profiles_dict is None : 
-            ## Gather bgc profiles for these floats from sprof index frame
-            bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == True)
-            floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
-            floats_bgc = self.sprof_index[self.sprof_index['wmoid'].isin(floats_bgc)]
+        """ 
+        ## Gather bgc profiles for these floats from sprof index frame
+        bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == True)
+        floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
+        floats_bgc = self.sprof_index[self.sprof_index['wmoid'].isin(floats_bgc)]
 
-            ## Gather phys profiles for these floats from prof index frame 
-            phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == False)
-            floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
-            floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
+        ## Gather phys profiles for these floats from prof index frame 
+        phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == False)
+        floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
+        floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
 
-            floats_profiles = pd.concat([floats_bgc, floats_phys])
-
-        # If the user has passed a dictionary
-        else: 
+        # If the user has passed a dictionary also filter by profiles
+        if self.float_profiles_dict is not None : 
             # Flatten the float_dictionary into a DataFrame
             data = []
             for wmoid, profile_indexes in self.float_profiles_dict .items():
@@ -944,21 +940,15 @@ class Argo:
             # Convert the list of dictionaries into a DataFrame
             profile_df = pd.DataFrame(data)
 
-            ## Gather specific profiles in dictonary for bgc floasts
-            bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == True)
-            floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
-            floats_bgc = self.sprof_index[(self.sprof_index['wmoid'].isin(floats_bgc))]
+            # Filter only profiles included in dataframe for bgc floats
             floats_bgc = pd.merge(floats_bgc, profile_df, on=['wmoid', 'profile_index'])
             floats_bgc = floats_bgc.reset_index(drop=True)
 
-            ## Gather phys profiles for these floats from prof index frame 
-            phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == False)
-            floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
-            floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
+            # Filter only profiles included in the dataframe for phys floats
             floats_phys = pd.merge(floats_phys, profile_df, on=['wmoid', 'profile_index'])
             floats_phys = floats_phys.reset_index(drop=True)
 
-            floats_profiles = pd.concat([floats_bgc, floats_phys])
+        floats_profiles = pd.concat([floats_bgc, floats_phys])
 
         return floats_profiles
     
