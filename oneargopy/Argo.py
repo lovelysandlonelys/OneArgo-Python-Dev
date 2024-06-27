@@ -281,7 +281,10 @@ class Argo:
         plt.legend(loc='upper left')
 
         #Setting Titles
-        ax.set_title(f'Trajectories for {floats}', fontsize=18, fontweight='bold')
+        if len(self.float_ids) > 5 : 
+            ax.set_title(f'Trajectories for Selected Floats', fontsize=18, fontweight='bold')
+        else: 
+            ax.set_title(f'Trajectories for {self.float_ids}', fontsize=18, fontweight='bold')
         fig.text(0.5, 0.01, 'Longitude', ha='center', fontsize=15)
         fig.text(0.01, 0.5, 'Latitude', va='center', rotation='vertical', fontsize=15)
 
