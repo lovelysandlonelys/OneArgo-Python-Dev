@@ -6,7 +6,6 @@ import time
 argo = Argo()
 # argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
-argo.trajectories('5905105')
 argo.trajectories(5904859)
 floats = [5905105, 5904859]
 argo.trajectories(floats)
@@ -14,11 +13,11 @@ argo.trajectories(floats)
 profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
 argo.trajectories(list(profiles.keys()))
 
-profiles = argo.select_profiles([100, 140], [30, 45])
-argo.trajectories(list(profiles.keys()))
+# profiles = argo.select_profiles([100, 140], [30, 45])
+# argo.trajectories(list(profiles.keys()))
 
-profiles = argo.select_profiles([0, 40])
-argo.trajectories(list(profiles.keys()))
+# profiles = argo.select_profiles([0, 40])
+# argo.trajectories(list(profiles.keys()))
 
 ##############################################################################################################################
 
@@ -40,10 +39,10 @@ argo.trajectories(list(profiles.keys()))
 # elapsed_time = time.time() - start_time
 # print(f'This test took: {elapsed_time}\n')
 
-# start_time = time.time()
-# argo.select_profiles(floats=5903611)
-# elapsed_time = time.time() - start_time
-# print(f'This test took: {elapsed_time}\n')
+start_time = time.time()
+argo.select_profiles(floats=5903611)
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
 # argo.select_profiles(floats='5903611')
@@ -56,11 +55,11 @@ argo.trajectories(list(profiles.keys()))
 # print(f'This test took: {elapsed_time}\n')
 
 # # Testing outside functionality
-# start_time = time.time()
-# print(f'OUTSIDE = NONE')
-# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
-# elapsed_time = time.time() - start_time
-# print(f'This test took: {elapsed_time}\n')
+start_time = time.time()
+print(f'OUTSIDE = NONE')
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
 # print(f'OUTSIDE = TIME')
@@ -74,11 +73,11 @@ argo.trajectories(list(profiles.keys()))
 # elapsed_time = time.time() - start_time
 # print(f'This test took: {elapsed_time}\n')
 
-# start_time = time.time()
-# print(f'OUTSIDE = BOTH')
-# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='both')
-# elapsed_time = time.time() - start_time
-# print(f'This test took: {elapsed_time}\n')
+start_time = time.time()
+print(f'OUTSIDE = BOTH')
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='both')
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
 
 
 # print(f'Testing Min-Max VS Rectangle:')
