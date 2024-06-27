@@ -131,7 +131,7 @@ class Argo:
             range that encloses all the desired longitude values.
 
             Key/argument value options in progress:
-            floats=floats[] or 'float': Select profiles only from these floats that must
+            floats=floats[] or float: Select profiles only from these floats that must
                     match all other criteria
             ocean=ocean: Valid choices are 'A' (Atlantic), 'P' (Pacific), and
                     'I' (Indian). This selection is in addition to the specified
@@ -178,7 +178,7 @@ class Argo:
         self.end_date = end_date
         self.outside = kwargs.get('outside')
         self.float_type = kwargs.get('type') if kwargs.get('type') is not None else self.download_settings.float_type
-        self.floats = kwargs.get('floats')
+        self.float_ids = kwargs.get('floats')
         self.ocean = kwargs.get('ocean')
         self.sensor = kwargs.get('sensor')
 
@@ -190,7 +190,7 @@ class Argo:
         if self.ocean : self.__validate_ocean_kwarg()
         # if self.sensor : self.__validate_sensor_kwarg()
 
-        # Load correct dataframes according to self.float_type and self.floats
+        # Load correct dataframes according to self.float_type and self.float_ids
         # we set self.selected_from_sprof_index and self.selected_from_prof_index
         # in this function which will be used in __narrow_profiles_by_criteria
         self.__prepare_selection()
@@ -213,10 +213,10 @@ class Argo:
 
         return narrowed_profiles
     
-    def trajectories(self, floats: int | str | list)-> None: 
+    def trajectories(self, floats: int | list)-> None: 
         """ This function plots the trajectories of one or more specified float(s)
 
-            :param: floats : int | str | list - A float or list of floats to plot 
+            :param: floats : int | list - A float or list of floats to plot 
                 the trajectories of. 
         """
 
@@ -226,7 +226,7 @@ class Argo:
             self.prof_index = self.__load_prof_dataframe()
 
         # Validate passed floats/convert to list
-        self.floats = floats
+        self.float_ids = floats
         self.__validate_floats_kwarg()
 
         # Pull rows/profiles for passed floats
@@ -256,11 +256,11 @@ class Argo:
 
         # Plot trajectories of passed floats with colorblind friendly pallet
         colors = ("#56B4E9", "#009E73", "#F0E442", "#0072B2", "#CC79A7", "#D55E00", "#E69F00", "#000000")
-        for i, float in enumerate(self.floats): 
-            specific_float_profiles = floats_profiles[floats_profiles['wmoid'] == float]
+        for i, float_id in enumerate(self.float_ids): 
+            specific_float_profiles = floats_profiles[floats_profiles['wmoid'] == float_id]
             ax.plot(specific_float_profiles['longitude'].values, specific_float_profiles['latitude'].values, 
                     marker='o', alpha=0.7, linestyle='-', linewidth=2, transform=ccrs.Geodetic(), 
-                    label=f'Float {float}', color=colors[i % len(colors)])
+                    label=f'Float {float_id}', color=colors[i % len(colors)])
 
         # Add Gridlines 
         gl = ax.gridlines(draw_labels=True, linestyle='--')
@@ -288,7 +288,7 @@ class Argo:
         # Displaying graph
         plt.show()
 
-    def load_float_data(self, floats: int | str | list)-> None: 
+    def load_float_data(self, floats: int | list)-> None: 
         """ A function to load float data into memory.
         """
 
@@ -627,11 +627,11 @@ class Argo:
             The 'floats' must be a list even if it is a single float.
         """
         # Casting to list
-        if not isinstance(self.floats, list):
-            self.floats = [int(self.floats)]
+        if not isinstance(self.float_ids, list):
+            self.float_ids = [self.float_ids]
 
         # Finding float IDs that are not present in the index dataframes
-        missing_floats = [float for float in self.floats if float not in self.prof_index['wmoid'].values]
+        missing_floats = [float_id for float_id in self.float_ids if float_id not in self.prof_index['wmoid'].values]
         if missing_floats:
             raise Exception(f"The following float IDs do not exist in the dataframes: {missing_floats}")
             
@@ -678,11 +678,11 @@ class Argo:
             self.prof_index = self.__load_prof_dataframe()
 
         # We can only validate flaots after the dataframes are loaded into memory
-        if self.floats : self.__validate_floats_kwarg()
+        if self.float_ids : self.__validate_floats_kwarg()
 
         # If we aren't filtering from specific floats assign selected frames
         # to the whole index frames
-        if self.floats is None: 
+        if self.float_ids is None: 
             self.selected_from_prof_index = self.prof_index[self.prof_index['is_bgc'] == False]
             self.selected_from_sprof_index = self.sprof_index
 
@@ -693,13 +693,13 @@ class Argo:
         else:
             if self.float_type != 'phys':
                   # Make a list of bgc floats that the user wants 
-                  bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.floats)) & (self.float_is_bgc_index['is_bgc'] == True)
+                  bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == True)
                   selected_floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
                   # Gather bgc profiles for these floats from sprof index frame
                   self.selected_from_sprof_index = self.sprof_index[self.sprof_index['wmoid'].isin(selected_floats_bgc)]
             if self.float_type != 'bgc': 
                   # Make a list of phys floats that the user wants 
-                  phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.floats)) & (self.float_is_bgc_index['is_bgc'] == False)
+                  phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == False)
                   selected_floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
                   # Gather phys profiles for these floats from prof index frame
                   self.selected_from_prof_index = self.prof_index[self.prof_index['wmoid'].isin(selected_floats_phys)]
