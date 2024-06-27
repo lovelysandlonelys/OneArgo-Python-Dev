@@ -3,11 +3,13 @@
 
 from Argo import Argo
 argo = Argo()
-profiles = argo.select_profiles(lon_lim=[-130,-115], 
-                                lat_lim=[32.5,49], 
-                                start_date='2020-01-01', 
-                                type='bgc')
-argo.trajectories(profiles)
+
+# Graph for slide
+# profiles = argo.select_profiles(lon_lim=[-130,-115], 
+#                                 lat_lim=[32.5,49], 
+#                                 start_date='2020-01-01', 
+#                                 type='bgc')
+# argo.trajectories(profiles)
 
 # # Trajectories Tests
 # argo.trajectories(5905105)
@@ -15,10 +17,11 @@ argo.trajectories(profiles)
 # floats = [5905105, 5904859]
 # argo.trajectories(floats)
 
-# profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
-# argo.trajectories(profiles)
-# profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
-# argo.trajectories(profiles)
+# Testing dict passing
+profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+argo.trajectories(profiles)
+profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
+argo.trajectories(profiles)
 
 # profiles = argo.select_profiles([100, 140], [30, 45])
 # argo.trajectories(list(profiles.keys()))
