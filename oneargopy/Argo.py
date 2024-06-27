@@ -931,7 +931,9 @@ class Argo:
         if self.float_profiles_dict is not None : 
             # Flatten the float_dictionary into a DataFrame
             data = []
-            for wmoid, profile_indexes in self.float_profiles_dict .items():
+            for wmoid, profile_indexes in self.float_profiles_dict.items():
+                # Adding nan values to list if there is a gap between profiles
+                
                 for profile_index in profile_indexes:
                     data.append({'wmoid': wmoid, 'profile_index': profile_index})
             # Convert the list of dictionaries into a DataFrame
