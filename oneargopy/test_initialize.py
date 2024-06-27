@@ -1,18 +1,20 @@
 ############################################################################################################################
 # Argo Functions
+
 from Argo import Argo
-import time
-
 argo = Argo()
-# argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
-
-argo.trajectories(5905105)
-argo.trajectories(5904859)
-floats = [5905105, 5904859]
-argo.trajectories(floats)
-
-profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+profiles = argo.select_profiles(lon_lim=[-130,-115], lat_lim=[32.5,49], start_date='2020-1-1', type='bgc')
 argo.trajectories(list(profiles.keys()))
+
+
+# # Trajectories Tests
+# argo.trajectories(5905105)
+# argo.trajectories(5904859)
+# floats = [5905105, 5904859]
+# argo.trajectories(floats)
+
+# profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+# argo.trajectories(list(profiles.keys()))
 
 # profiles = argo.select_profiles([100, 140], [30, 45])
 # argo.trajectories(list(profiles.keys()))
