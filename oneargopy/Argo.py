@@ -213,11 +213,10 @@ class Argo:
 
         return narrowed_profiles
     
-    def trajectories(self, floats: int | list)-> None: 
+    def trajectories(self, floats: int | list | dict)-> None: 
         """ This function plots the trajectories of one or more specified float(s)
 
-            :param: floats : int | list - A float or list of floats to plot 
-                the trajectories of. 
+            :param: floats : int | list | dict - Floats to plot.
         """
 
         # Check that dataframes are loaded into memory
@@ -225,7 +224,7 @@ class Argo:
             self.sprof_index = self.__load_sprof_dataframe()
             self.prof_index = self.__load_prof_dataframe()
 
-        # Validate passed floats/convert to list
+        # Validate passed floats
         self.float_ids = floats
         self.__validate_floats_kwarg()
 
@@ -626,9 +625,17 @@ class Argo:
         """ A function to validate the 'floats' keyword argument. 
             The 'floats' must be a list even if it is a single float.
         """
-        # Casting to list
-        if not isinstance(self.float_ids, list):
+        # If user has passed a dictionary
+        if isinstance(self.float_ids, dict) :
+            self.float_profiles_dict = self.float_ids
+            self.float_ids = list(self.float_ids.keys())
+        # If user has passed a single float
+        elif not isinstance(self.float_ids, list) :
+            self.float_profiles_dict = None
             self.float_ids = [self.float_ids]
+        # If user has passed a list 
+        else:
+            self.float_profiles_dict = None
 
         # Finding float IDs that are not present in the index dataframes
         missing_floats = [float_id for float_id in self.float_ids if float_id not in self.prof_index['wmoid'].values]
@@ -913,17 +920,45 @@ class Argo:
             :returns: floats_profiles: pd - The dataframe with only the profiles of
                 the passed floats. 
         """
-        ## Gather bgc profiles for these floats from sprof index frame
-        bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == True)
-        floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
-        floats_bgc = self.sprof_index[self.sprof_index['wmoid'].isin(floats_bgc)]
+        # If the user has not passed a dictionary
+        if self.float_profiles_dict is None : 
+            ## Gather bgc profiles for these floats from sprof index frame
+            bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == True)
+            floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
+            floats_bgc = self.sprof_index[self.sprof_index['wmoid'].isin(floats_bgc)]
 
-        ## Gather phys profiles for these floats from prof index frame 
-        phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == False)
-        floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
-        floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
+            ## Gather phys profiles for these floats from prof index frame 
+            phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == False)
+            floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
+            floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
 
-        floats_profiles = pd.concat([floats_bgc, floats_phys])
+            floats_profiles = pd.concat([floats_bgc, floats_phys])
+
+        # If the user has passed a dictionary
+        else: 
+            # Flatten the float_dictionary into a DataFrame
+            data = []
+            for wmoid, profile_indexes in self.float_profiles_dict .items():
+                for profile_index in profile_indexes:
+                    data.append({'wmoid': wmoid, 'profile_index': profile_index})
+            # Convert the list of dictionaries into a DataFrame
+            profile_df = pd.DataFrame(data)
+
+            ## Gather specific profiles in dictonary for bgc floasts
+            bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == True)
+            floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
+            floats_bgc = self.sprof_index[(self.sprof_index['wmoid'].isin(floats_bgc))]
+            floats_bgc = pd.merge(floats_bgc, profile_df, on=['wmoid', 'profile_index'])
+            floats_bgc = floats_bgc.reset_index(drop=True)
+
+            ## Gather phys profiles for these floats from prof index frame 
+            phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == False)
+            floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
+            floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
+            floats_phys = pd.merge(floats_phys, profile_df, on=['wmoid', 'profile_index'])
+            floats_phys = floats_phys.reset_index(drop=True)
+
+            floats_profiles = pd.concat([floats_bgc, floats_phys])
 
         return floats_profiles
     
