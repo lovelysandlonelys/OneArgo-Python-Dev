@@ -3,8 +3,12 @@
 
 from Argo import Argo
 argo = Argo()
-profiles = argo.select_profiles(lon_lim=[-130,-115], lat_lim=[32.5,49], start_date='2020-1-1', type='bgc')
+profiles = argo.select_profiles(lon_lim=[-130,-115], 
+                                lat_lim=[32.5,49], 
+                                start_date='2020-01-01', 
+                                type='bgc')
 argo.trajectories(list(profiles.keys()))
+
 
 
 # # Trajectories Tests
