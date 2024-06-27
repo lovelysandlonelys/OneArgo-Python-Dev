@@ -914,12 +914,12 @@ class Argo:
                 the passed floats. 
         """
         ## Gather bgc profiles for these floats from sprof index frame
-        bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.floats)) & (self.float_is_bgc_index['is_bgc'] == True)
+        bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == True)
         floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
         floats_bgc = self.sprof_index[self.sprof_index['wmoid'].isin(floats_bgc)]
 
         ## Gather phys profiles for these floats from prof index frame 
-        phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.floats)) & (self.float_is_bgc_index['is_bgc'] == False)
+        phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == False)
         floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
         floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
 
