@@ -263,7 +263,7 @@ class Argo:
         self.__set_graph_limits(ax, 'x')
         self.__set_graph_limits(ax, 'y')
 
-        # Add Gridlines 
+        # Add grid lines 
         self.__add_grid_lines(ax)
 
         # Add Legend outside of the main plot
@@ -949,7 +949,7 @@ class Argo:
 
     
     def __add_grid_lines(self, ax)-> None: 
-        """ Function for setting the gridlines. 
+        """ Function for setting the gridlines of passed graph. 
         """
         gl = ax.gridlines(draw_labels=True, linestyle='--')
         gl.top_labels = False
