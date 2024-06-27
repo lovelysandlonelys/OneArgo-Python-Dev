@@ -247,8 +247,8 @@ class Argo:
         median_lon = np.nanmedian(sorted_lons)
         ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree(central_longitude=median_lon))
 
-        # Set aspect ratio to keep all points inside of graph
-        ax.set_aspect('auto')
+        # # Set aspect ratio to keep all points inside of graph
+        # ax.set_aspect('auto')
 
         # Add landmasses and coastlines
         ax.add_feature(cf.COASTLINE, linewidth=1.5)
@@ -261,6 +261,40 @@ class Argo:
             ax.plot(specific_float_profiles['longitude'].values, specific_float_profiles['latitude'].values, 
                     marker='o', alpha=0.7, linestyle='-', linewidth=2, transform=ccrs.Geodetic(), 
                     label=f'Float {float_id}', color=colors[i % len(colors)])
+            
+        # HF: since these two blocks are essentially the same, they
+        # should probably be put into a function with param 'x'/'y'
+        min_x, max_x = ax.get_xlim()
+        diff_x = max_x - min_x
+        if diff_x < 5.0:
+            # add padding to get at least 5 degrees of longitude
+            pad = 0.5 * (5.0 - diff_x)
+            min_x -= pad
+            max_x += pad
+            ax.set_xlim([min_x, max_x])
+        min_y, max_y = ax.get_ylim()
+        diff_y = max_y - min_y
+        if diff_y < 5.0:
+            # add padding to get at least 5 degrees of latitude
+            pad = 0.5 * (5.0 - diff_y)
+            min_y -= pad
+            max_y += pad
+            ax.set_ylim([min_y, max_y])
+
+        # # Add Gridlines 
+        # gl = ax.gridlines(draw_labels=True, linestyle='--')
+        # gl.top_labels = False
+        # gl.right_labels = False
+        # gl.xlines = True
+        # gl.ylines = True
+        # longitude_ticks = list(range(-180, 181, 2))
+        # latitude_ticks = list(range(-90, 91, 2))
+        # gl.xlocator = FixedLocator(longitude_ticks)
+        # gl.ylocator = FixedLocator(latitude_ticks)
+        # gl.xformatter = LONGITUDE_FORMATTER
+        # gl.yformatter = LATITUDE_FORMATTER
+        # gl.xlabel_style = {'size': 12, 'color': 'black'}
+        # gl.ylabel_style = {'size': 12, 'color': 'black'}
 
         # Add Gridlines 
         gl = ax.gridlines(draw_labels=True, linestyle='--')
@@ -268,8 +302,25 @@ class Argo:
         gl.right_labels = False
         gl.xlines = True
         gl.ylines = True
-        longitude_ticks = list(range(-180, 181, 2))
-        latitude_ticks = list(range(-90, 91, 2))
+        # HF this should probably also be a function for x/y
+        if diff_x > 80:
+            step_x = 15
+        elif diff_x > 30:
+            step_x = 10
+        elif diff_x > 15:
+            step_x = 5
+        else:
+            step_x = 2
+        if diff_y > 80:
+            step_y = 15
+        elif diff_y > 30:
+            step_y = 10
+        elif diff_y > 15:
+            step_y = 5
+        else:
+            step_y = 2
+        longitude_ticks = list(range(-180, 181, step_x))
+        latitude_ticks = list(range(-90, 91, step_y))
         gl.xlocator = FixedLocator(longitude_ticks)
         gl.ylocator = FixedLocator(latitude_ticks)
         gl.xformatter = LONGITUDE_FORMATTER
@@ -277,16 +328,24 @@ class Argo:
         gl.xlabel_style = {'size': 12, 'color': 'black'}
         gl.ylabel_style = {'size': 12, 'color': 'black'}
 
-        # Add Legend
-        plt.legend(loc='upper left')
+        # Add Legend outside of the main plot
+        if len(self.float_ids) > 1:
+            plt.legend(bbox_to_anchor=(1.05, 0.5), loc='center left')
 
-        #Setting Titles
-        if len(self.float_ids) > 5 : 
-            ax.set_title(f'Trajectories for Selected Floats', fontsize=18, fontweight='bold')
-        else: 
-            ax.set_title(f'Trajectories for {self.float_ids}', fontsize=18, fontweight='bold')
-        fig.text(0.5, 0.01, 'Longitude', ha='center', fontsize=15)
-        fig.text(0.01, 0.5, 'Latitude', va='center', rotation='vertical', fontsize=15)
+        # Setting Title
+        if len(self.float_ids) == 1:
+            ax.set_title(f'Trajectory for {self.float_ids}', fontsize=18,
+                         fontweight='bold')
+        elif len(self.float_ids) < 4:
+            ax.set_title(f'Trajectories for {self.float_ids}', fontsize=18,
+                         fontweight='bold')
+        else:
+            ax.set_title(f'Trajectories for Selected Floats', fontsize=18,
+                         fontweight='bold')
+        plt.tight_layout()
+
+        # fig.text(0.5, 0.01, 'Longitude', ha='center', fontsize=15)
+        # fig.text(0.01, 0.5, 'Latitude', va='center', rotation='vertical', fontsize=15)
 
         # Displaying graph
         plt.show()

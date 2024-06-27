@@ -6,6 +6,7 @@ import time
 argo = Argo()
 # argo = Argo("C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy/argo_config.json")
 
+argo.trajectories(5905105)
 argo.trajectories(5904859)
 floats = [5905105, 5904859]
 argo.trajectories(floats)
