@@ -247,9 +247,6 @@ class Argo:
         median_lon = np.nanmedian(sorted_lons)
         ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree(central_longitude=median_lon))
 
-        # # Set aspect ratio to keep all points inside of graph
-        # ax.set_aspect('auto')
-
         # Add landmasses and coastlines
         ax.add_feature(cf.COASTLINE, linewidth=1.5)
         ax.add_feature(cf.LAND, zorder=2, edgecolor='k', facecolor='lightgray')
@@ -262,71 +259,12 @@ class Argo:
                     marker='o', alpha=0.7, linestyle='-', linewidth=2, transform=ccrs.Geodetic(), 
                     label=f'Float {float_id}', color=colors[i % len(colors)])
             
-        # HF: since these two blocks are essentially the same, they
-        # should probably be put into a function with param 'x'/'y'
-        min_x, max_x = ax.get_xlim()
-        diff_x = max_x - min_x
-        if diff_x < 5.0:
-            # add padding to get at least 5 degrees of longitude
-            pad = 0.5 * (5.0 - diff_x)
-            min_x -= pad
-            max_x += pad
-            ax.set_xlim([min_x, max_x])
-        min_y, max_y = ax.get_ylim()
-        diff_y = max_y - min_y
-        if diff_y < 5.0:
-            # add padding to get at least 5 degrees of latitude
-            pad = 0.5 * (5.0 - diff_y)
-            min_y -= pad
-            max_y += pad
-            ax.set_ylim([min_y, max_y])
-
-        # # Add Gridlines 
-        # gl = ax.gridlines(draw_labels=True, linestyle='--')
-        # gl.top_labels = False
-        # gl.right_labels = False
-        # gl.xlines = True
-        # gl.ylines = True
-        # longitude_ticks = list(range(-180, 181, 2))
-        # latitude_ticks = list(range(-90, 91, 2))
-        # gl.xlocator = FixedLocator(longitude_ticks)
-        # gl.ylocator = FixedLocator(latitude_ticks)
-        # gl.xformatter = LONGITUDE_FORMATTER
-        # gl.yformatter = LATITUDE_FORMATTER
-        # gl.xlabel_style = {'size': 12, 'color': 'black'}
-        # gl.ylabel_style = {'size': 12, 'color': 'black'}
+        # Set graph limits based on passed points
+        self.__set_graph_limits(ax, 'x')
+        self.__set_graph_limits(ax, 'y')
 
         # Add Gridlines 
-        gl = ax.gridlines(draw_labels=True, linestyle='--')
-        gl.top_labels = False
-        gl.right_labels = False
-        gl.xlines = True
-        gl.ylines = True
-        # HF this should probably also be a function for x/y
-        if diff_x > 80:
-            step_x = 15
-        elif diff_x > 30:
-            step_x = 10
-        elif diff_x > 15:
-            step_x = 5
-        else:
-            step_x = 2
-        if diff_y > 80:
-            step_y = 15
-        elif diff_y > 30:
-            step_y = 10
-        elif diff_y > 15:
-            step_y = 5
-        else:
-            step_y = 2
-        longitude_ticks = list(range(-180, 181, step_x))
-        latitude_ticks = list(range(-90, 91, step_y))
-        gl.xlocator = FixedLocator(longitude_ticks)
-        gl.ylocator = FixedLocator(latitude_ticks)
-        gl.xformatter = LONGITUDE_FORMATTER
-        gl.yformatter = LATITUDE_FORMATTER
-        gl.xlabel_style = {'size': 12, 'color': 'black'}
-        gl.ylabel_style = {'size': 12, 'color': 'black'}
+        self.__add_grid_lines(ax)
 
         # Add Legend outside of the main plot
         if len(self.float_ids) > 1:
@@ -988,3 +926,65 @@ class Argo:
         floats_profiles = pd.concat([floats_bgc, floats_phys])
 
         return floats_profiles
+    
+    def __set_graph_limits(self, ax, axis: str)-> None:
+        """ A Function for setting the graph's longitude and latitude extents. 
+        """
+        if axis == 'x' :
+            min, max = ax.get_xlim()
+            diff = max - min
+        elif axis == 'y' :
+            min, max = ax.get_ylim()
+            diff = max - min
+
+        if diff < 5.0:
+            # Add padding to get at least 5 degrees of longitude
+            pad = 0.5 * (5.0 - diff)
+            min -= pad
+            max += pad
+            if axis == 'x' :
+                ax.set_xlim([min, max])
+            elif axis == 'y' :
+                ax.set_ylim([min, max])
+
+    
+    def __add_grid_lines(self, ax)-> None: 
+        """ Function for setting the gridlines. 
+        """
+        gl = ax.gridlines(draw_labels=True, linestyle='--')
+        gl.top_labels = False
+        gl.right_labels = False
+        gl.xlines = True
+        gl.ylines = True
+        step_x = self.__determine_graph_step(ax, 'x')
+        step_y = self.__determine_graph_step(ax, 'y')
+        longitude_ticks = list(range(-180, 181, step_x))
+        latitude_ticks = list(range(-90, 91, step_y))
+        gl.xlocator = FixedLocator(longitude_ticks)
+        gl.ylocator = FixedLocator(latitude_ticks)
+        gl.xformatter = LONGITUDE_FORMATTER
+        gl.yformatter = LATITUDE_FORMATTER
+        gl.xlabel_style = {'size': 12, 'color': 'black'}
+        gl.ylabel_style = {'size': 12, 'color': 'black'}
+    
+
+    def __determine_graph_step(self, ax, axis: str)-> int:
+        """ A graph to determine the step of the longitude and latitude gridlines.
+        """
+        if axis == 'x' :
+            min, max = ax.get_xlim()
+            diff = max - min
+        elif axis == 'y' :
+            min, max = ax.get_ylim()
+            diff = max - min
+
+        if diff > 80:
+            step = 15
+        elif diff > 30:
+            step = 10
+        elif diff > 15:
+            step = 5
+        else:
+            step = 2
+        
+        return step
