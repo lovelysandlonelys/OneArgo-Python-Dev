@@ -281,9 +281,6 @@ class Argo:
                          fontweight='bold')
         plt.tight_layout()
 
-        # fig.text(0.5, 0.01, 'Longitude', ha='center', fontsize=15)
-        # fig.text(0.01, 0.5, 'Latitude', va='center', rotation='vertical', fontsize=15)
-
         # Displaying graph
         plt.show()
 
