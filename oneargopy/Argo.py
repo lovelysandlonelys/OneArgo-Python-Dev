@@ -288,7 +288,7 @@ class Argo:
         # Displaying graph
         plt.show()
 
-    def load_float_data(self, floats: int | str | list)-> None: 
+    def load_float_data(self, floats: int | list, parameters: str | list = None)-> None: 
         """ A function to load float data into memory.
 
             :param: floats : int | str | list - A float or list of floats to  
@@ -303,6 +303,8 @@ class Argo:
         self.floats = floats
         self.__validate_floats_kwarg()
 
+        # Validate passed parameters
+
         # Download .nc files for passed floats
         for wmoid in self.floats : 
             # Generate filename 
@@ -315,7 +317,9 @@ class Argo:
             # Download file
             self.__download_file(file_name)
 
-        # Next Steps Here
+        # Build dataframe for info
+
+        # Read from nc files into dataframe
 
 
     #######################################################################
