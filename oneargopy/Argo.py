@@ -301,6 +301,8 @@ class Argo:
         self.__validate_floats_kwarg()
 
         # Validate passed parameters
+        self.float_parameters = parameters
+        self.__validate_float_parameters_arg()
 
         # Download .nc files for passed floats
         for wmoid in self.float_ids : 
@@ -748,6 +750,23 @@ class Argo:
 
         if self.ocean != 'A' and self.ocean != 'P' and self.ocean != 'I':
                 raise Exception(f"The only acceptable values for the 'ocean' keyword argument are 'A' (Atlantic), 'P' (Pacific), and 'I' (Indian).")
+
+
+    def __validate_float_parameters_arg(self):
+        """ A function to validate the value of the 
+            optional 'parameters' passed to 
+            load_float_data.
+        """
+        if self.download_settings.verbose: print(f"Validating passed 'parameters'...")
+        
+        # If user has passed a single parameter convert to list
+        if not isinstance(self.float_ids, list) :
+            self.float_parameters = [self.float_ids]
+
+        # Finding float IDs that are not present in the index dataframes
+        nonexistent_params = [param for param in self.float_parameters if param not in self.source_settings.avail_vars]
+        if nonexistent_params:
+            raise Exception(f"The following float IDs do not exist in the dataframes: {nonexistent_params}")
 
 
     def __prepare_selection(self):
