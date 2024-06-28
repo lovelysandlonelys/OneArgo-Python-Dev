@@ -28,6 +28,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cf
+import netCDF4
 
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from matplotlib.ticker import FixedLocator
@@ -386,8 +387,9 @@ class Argo:
     def __check_nc_update(self, file_path: Path, file_name: str)-> bool:
         """ A function to check if an .nc file needs to be updated.
 
-            :param: file_path : Path - 
-            :param: file_name : str - 
+            :param: file_path : Path - The file_path for the .nc file we
+                are checking for update.
+            :param: file_name : str - The name of the .nc file.
 
             :return: update_status : bool - A boolean value indicating
                 that the passed file should be updated.
@@ -396,11 +398,35 @@ class Argo:
         float_id = file_name.split('_')[0]
 
         # Get float's latest update date
-        float_update_date = 
+        float_update_date = self.float_stats.query(f'wmoid == {float_id}')['date_update']
+        float_update_date = np.datetime64(float_update_date.iloc[0])
+        print(f'Date Updated (s)prof: {float_update_date}')
 
         # Read date updated from .nc file
+        nc_file = netCDF4.Dataset(file_path, mode='r')
+        print(nc_file)
+        date_updated_variable = nc_file.variables['DATE_UPDATE']
+        print(f'variable name : {date_updated_variable}')
+        file_update_date = date_updated_variable[:]
+        nc_file.close()
 
-        file_update_date = 
+        print(f'file_updated from .nc: ')
+        print(file_update_date)
+        print(type(file_update_date))
+
+        # Convert the byte strings of file_update_date into a regular string
+        julian_date_str = b''.join(file_update_date).decode('utf-8')
+        year = int(julian_date_str[:4])
+        month = int(julian_date_str[4:6])
+        day = int(julian_date_str[6:8])
+        hour = int(julian_date_str[8:10])
+        minute = int(julian_date_str[10:12])
+        second = int(julian_date_str[12:14])
+
+        # Convert the Julian date to a datetime object
+        file_update_date = datetime(year, month, day, hour, minute, second).replace(tzinfo=timezone.utc)
+        file_update_date = np.datetime64(file_update_date)
+        print(f"datetime64 : {file_update_date}")
 
         # If the .nc file's update date is less than
         # the date in the index file return true
@@ -586,10 +612,15 @@ class Argo:
         """ Function to create a dataframe with float IDs and
             their is_bgc status for use in select_profiles().
         """ 
-        float_bgc_status = self.prof_index[['wmoid', 'is_bgc']].drop_duplicates()
-        float_update_status = #WORKING 
+        # Dataframe with womid, is_bgc, and date)updated
+        float_bgc_status = self.prof_index[['wmoid', 'is_bgc', 'date_update']]
+        # Only keeping rows with most recent date updated
+        float_bgc_status['date_update'] = pd.to_datetime(float_bgc_status['date_update'])
+        floats_stats = float_bgc_status.groupby('wmoid', as_index=False)['date_update'].max()
+        # Merging bgc and date_update dataframes
+        floats_stats = pd.merge(float_bgc_status, floats_stats, on=['wmoid', 'date_update']).drop_duplicates()
 
-        return float_bgc_status
+        return floats_stats
 
 
     def __display_floats(self) -> None:
