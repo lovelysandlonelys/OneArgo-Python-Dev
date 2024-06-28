@@ -971,19 +971,25 @@ class Argo:
             # Flatten the float_dictionary into a DataFrame
             data = []
             for wmoid, profile_indexes in self.float_profiles_dict.items():
-                # Calculate the differences between consecutive elements
-                nans_needed = np.diff(profile_indexes)
-                
-                for i in range(1, len(profile_indexes)):
-                    # If the difference is greater than 1, insert NaNs
-                    if nans_needed[i-1] > 1:
-                        data.append({'wmoid': wmoid, 'profile_index': np.nan})
-                    
-                    # Add the current profile index
-                    data.append({'wmoid': wmoid, 'profile_index': profile_indexes[i]})
+                if len(profile_indexes) == 1:
+                    # If there is only one profile index, add it directly
+                    data.append({'wmoid': wmoid, 'profile_index': profile_indexes[0]})
+                else:
+                    # Calculate the differences between consecutive elements
+                    nans_needed = np.diff(profile_indexes)
+                    # Add elements and nans
+                    for i in range(1, len(profile_indexes)):
+                        # If the difference is greater than 1, insert NaNs
+                        if nans_needed[i-1] > 1:
+                            data.append({'wmoid': wmoid, 'profile_index': np.nan})
+                        
+                        # Add the current profile index
+                        data.append({'wmoid': wmoid, 'profile_index': profile_indexes[i]})
 
             # Convert the list of dictionaries into a DataFrame
             profile_df = pd.DataFrame(data)
+            print("PROFILE DATAFRAME")
+            print(profile_df)
 
             # Filter only profiles included in dataframe for bgc floats
             floats_bgc = pd.merge(floats_bgc, profile_df, on=['wmoid', 'profile_index'], how='right')

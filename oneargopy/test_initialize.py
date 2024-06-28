@@ -21,10 +21,10 @@ argo.load_float_data(5905105)
 # argo.trajectories(floats)
 
 # Testing dict passing
-profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
-argo.trajectories(profiles)
-profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
-argo.trajectories(profiles)
+# profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+# argo.trajectories(profiles)
+# profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
+# argo.trajectories(profiles)
 
 # profiles = argo.select_profiles([100, 140], [30, 45])
 # argo.trajectories(list(profiles.keys()))
@@ -42,7 +42,8 @@ argo.trajectories(profiles)
 
 # Testing get by ocean basin: 
 start_time = time.time()
-argo.select_profiles(start_date='2012-01-01', end_date='2012-01-02', ocean='A')
+profiles = argo.select_profiles(start_date='2012-01-01', end_date='2012-01-02', ocean='A')
+argo.trajectories(profiles)
 elapsed_time = time.time() - start_time
 print(f'This test took: {elapsed_time}\n')
 
@@ -62,10 +63,10 @@ print(f'This test took: {elapsed_time}\n')
 # elapsed_time = time.time() - start_time
 # print(f'This test took: {elapsed_time}\n')
 
-start_time = time.time()
-argo.select_profiles(floats=[4903500, 5903611, 1, 2])
-elapsed_time = time.time() - start_time
-print(f'This test took: {elapsed_time}\n')
+# start_time = time.time()
+# argo.select_profiles(floats=[4903500, 5903611, 1, 2])
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
 
 # # Testing outside functionality
 # start_time = time.time()
@@ -81,10 +82,10 @@ print(f'This test took: {elapsed_time}\n')
 # print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
-# print(f'OUTSIDE = SPACE')
-# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='space')
-# elapsed_time = time.time() - start_time
-# print(f'This test took: {elapsed_time}\n')
+print(f'OUTSIDE = SPACE')
+argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='space')
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
 # print(f'OUTSIDE = BOTH')
