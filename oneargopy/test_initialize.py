@@ -40,18 +40,18 @@ argo.load_float_data(5905105)
 # elapsed_time = time.time() - start_time
 # print(f'This test took: {elapsed_time}\n')
 
-# Testing get by ocean basin: 
-start_time = time.time()
-profiles = argo.select_profiles(start_date='2012-01-01', end_date='2012-01-02', ocean='A')
-argo.trajectories(profiles)
-elapsed_time = time.time() - start_time
-print(f'This test took: {elapsed_time}\n')
+# # Testing get by ocean basin: 
+# start_time = time.time()
+# profiles = argo.select_profiles(start_date='2012-01-01', end_date='2012-01-02', ocean='A')
+# argo.trajectories(profiles)
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
 
-# Testing get by float id: 
-start_time = time.time()
-argo.select_profiles(start_date='2012-01-01', end_date='2013-01-01', floats=[5903611, 5903802, 5903807])
-elapsed_time = time.time() - start_time
-print(f'This test took: {elapsed_time}\n')
+# # Testing get by float id: 
+# start_time = time.time()
+# argo.select_profiles(start_date='2012-01-01', end_date='2013-01-01', floats=[5903611, 5903802, 5903807])
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
 # argo.select_profiles(floats=5903611)
@@ -82,10 +82,10 @@ print(f'This test took: {elapsed_time}\n')
 # print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
-print(f'OUTSIDE = SPACE')
-argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='space')
-elapsed_time = time.time() - start_time
-print(f'This test took: {elapsed_time}\n')
+# print(f'OUTSIDE = SPACE')
+# argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='space')
+# elapsed_time = time.time() - start_time
+# print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
 # print(f'OUTSIDE = BOTH')
