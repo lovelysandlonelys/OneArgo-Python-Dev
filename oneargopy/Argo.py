@@ -932,19 +932,26 @@ class Argo:
             # Flatten the float_dictionary into a DataFrame
             data = []
             for wmoid, profile_indexes in self.float_profiles_dict.items():
-                # Adding nan values to list if there is a gap between profiles
+                # Calculate the differences between consecutive elements
+                nans_needed = np.diff(profile_indexes)
                 
-                for profile_index in profile_indexes:
-                    data.append({'wmoid': wmoid, 'profile_index': profile_index})
+                for i in range(1, len(profile_indexes)):
+                    # If the difference is greater than 1, insert NaNs
+                    if nans_needed[i-1] > 1:
+                        data.append({'wmoid': wmoid, 'profile_index': np.nan})
+                    
+                    # Add the current profile index
+                    data.append({'wmoid': wmoid, 'profile_index': profile_indexes[i]})
+
             # Convert the list of dictionaries into a DataFrame
             profile_df = pd.DataFrame(data)
 
             # Filter only profiles included in dataframe for bgc floats
-            floats_bgc = pd.merge(floats_bgc, profile_df, on=['wmoid', 'profile_index'])
+            floats_bgc = pd.merge(floats_bgc, profile_df, on=['wmoid', 'profile_index'], how='right')
             floats_bgc = floats_bgc.reset_index(drop=True)
 
             # Filter only profiles included in the dataframe for phys floats
-            floats_phys = pd.merge(floats_phys, profile_df, on=['wmoid', 'profile_index'])
+            floats_phys = pd.merge(floats_phys, profile_df, on=['wmoid', 'profile_index'], how='right')
             floats_phys = floats_phys.reset_index(drop=True)
 
         floats_profiles = pd.concat([floats_bgc, floats_phys])
