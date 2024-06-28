@@ -400,32 +400,23 @@ class Argo:
         float_id = file_name.split('_')[0]
 
         # Get float's latest update date
-        float_update_date = self.float_stats.query(f'wmoid == {float_id}')['date_update']
-        float_update_date = np.datetime64(float_update_date.iloc[0])
+        index_update_date = pd.to_datetime(self.float_stats.loc[self.float_stats['wmoid'] == float_id, 'date_update'])
+        print(type(index_update_date))
 
         # Read date updated from .nc file
         nc_file = netCDF4.Dataset(file_path, mode='r')
-        date_updated_variable = nc_file.variables['DATE_UPDATE']
-        file_update_date = date_updated_variable[:]
+        netcdf_update_date = nc_file.variables['DATE_UPDATE'][:]
         nc_file.close()
 
         # Convert the byte strings of file_update_date into a regular string
-        julian_date_str = b''.join(file_update_date).decode('utf-8')
-        year = int(julian_date_str[:4])
-        month = int(julian_date_str[4:6])
-        day = int(julian_date_str[6:8])
-        hour = int(julian_date_str[8:10])
-        minute = int(julian_date_str[10:12])
-        second = int(julian_date_str[12:14])
-
-        # Convert the Julian date to a datetime object
-        file_update_date = datetime(year, month, day, hour, minute, second).replace(tzinfo=timezone.utc)
-        file_update_date = np.datetime64(file_update_date)
+        julian_date_str = b''.join(netcdf_update_date).decode('utf-8')
+        netcdf_update_date = datetime.strptime(julian_date_str, '%Y%m%d%H%M%S').replace(tzinfo=timezone.utc)
+        netcdf_update_date = np.datetime64(netcdf_update_date)
 
         # If the .nc file's update date is less than
         # the date in the index file return true
         # indicating that the .nc file must be updated
-        if file_update_date < float_update_date : 
+        if netcdf_update_date < index_update_date : 
             return True
         else : 
             return False
@@ -603,16 +594,16 @@ class Argo:
         self.prof_index.insert(1, "is_bgc", is_bgc)
 
     def __load_float_stats(self)-> pd:
-        """ Function to create a dataframe with float IDs and
-            their is_bgc status for use in select_profiles().
+        """ Function to create a dataframe with float IDs,
+            their is_bgc status, and their most recent update
+            date for use in select_profiles().
         """ 
         # Dataframe with womid, is_bgc, and date)updated
         float_bgc_status = self.prof_index[['wmoid', 'is_bgc', 'date_update']]
-        # Only keeping rows with most recent date updated
-        float_bgc_status['date_update'] = pd.to_datetime(float_bgc_status['date_update'])
-        floats_stats = float_bgc_status.groupby('wmoid', as_index=False)['date_update'].max()
-        # Merging bgc and date_update dataframes
-        floats_stats = pd.merge(float_bgc_status, floats_stats, on=['wmoid', 'date_update']).drop_duplicates()
+        # Group by 'wmoid' and get indices of the rows with the max 'date_update'
+        idx = float_bgc_status.groupby('wmoid')['date_update'].idxmax()
+        # Select rows using these indices
+        floats_stats = float_bgc_status.loc[idx].reset_index(drop=True)
 
         return floats_stats
 
