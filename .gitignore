@@ -5,6 +5,9 @@ Profiles/
 Tech/
 Traj/
 
+#Testing file
+temp.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
