@@ -87,9 +87,9 @@ class Argo:
         if self.download_settings.verbose: print(f'Marking bgc floats in prof_index dataframe...')
         self.__mark_bgcs_in_prof()
 
-        # Create float_is_bgc refrence index for use in select profiles
-        if self.download_settings.verbose: print(f'Creating float_is_bgc_index dataframe...')
-        self.float_is_bgc_index = self.__load_is_bgc_index()
+        # Create float_stats reference index for use in select profiles
+        if self.download_settings.verbose: print(f'Creating float_stats dataframe...')
+        self.float_stats = self.__load_float_stats()
         
         # Print number of floats
         if self.download_settings.verbose: self.__display_floats() 
@@ -305,7 +305,7 @@ class Argo:
         for wmoid in self.float_ids : 
             # Generate filename 
             ## If the float is a bgc float it will have a corresponding sprof file
-            if self.float_is_bgc_index.loc[self.float_is_bgc_index['wmoid'] == wmoid, 'is_bgc'].values[0] : 
+            if self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0] : 
                 file_name = f'{wmoid}_Sprof.nc'
             ## If the float is a phys float it will have a corresponding prof file
             else :
@@ -393,15 +393,22 @@ class Argo:
                 that the passed file should be updated.
         """
         # Pull float id from file_name
+        float_id = file_name.split('_')[0]
 
         # Get float's latest update date
+        float_update_date = 
 
         # Read date updated from .nc file
 
-        # If file_updated < float_updated return true
-        # indicating that the .nc file must be updated
+        file_update_date = 
 
-        # Else return false
+        # If the .nc file's update date is less than
+        # the date in the index file return true
+        # indicating that the .nc file must be updated
+        if file_update_date < float_update_date : 
+            return True
+        else : 
+            return False
 
 
     def __try_download(self, file_name: str, update_status: bool)-> None:
@@ -432,14 +439,14 @@ class Argo:
                     url = "".join([host, file_name, ".gz"])
                 elif file_name.endswith('.nc') :
                     # Extract float id from filename
-                    float_ID = file_name.split('_')[0]
+                    float_id = file_name.split('_')[0]
                     # Extract dac for that float id from datafrmae
-                    filtered_df = self.prof_index[self.prof_index['wmoid'] == int(float_ID)]
+                    filtered_df = self.prof_index[self.prof_index['wmoid'] == int(float_id)]
                     dac = filtered_df['dacs'].iloc[0]
                     # Add trailing forward slashes for formating
                     dac = f'{dac}/'
-                    float_ID = f'{float_ID}/'
-                    url = "".join([host,'dac/', dac, float_ID, file_name])
+                    float_id = f'{float_id}/'
+                    url = "".join([host,'dac/', dac, float_id, file_name])
 
                 if self.download_settings.verbose: print(f'Downloading {file_name} from {url}...')
                 try:
@@ -575,11 +582,13 @@ class Argo:
         is_bgc = self.prof_index['wmoid'].isin(bgc_floats)
         self.prof_index.insert(1, "is_bgc", is_bgc)
 
-    def __load_is_bgc_index(self)-> pd:
+    def __load_float_stats(self)-> pd:
         """ Function to create a dataframe with float IDs and
             their is_bgc status for use in select_profiles().
         """ 
         float_bgc_status = self.prof_index[['wmoid', 'is_bgc']].drop_duplicates()
+        float_update_status = #WORKING 
+
         return float_bgc_status
 
 
@@ -765,14 +774,14 @@ class Argo:
         else:
             if self.float_type != 'phys':
                   # Make a list of bgc floats that the user wants 
-                  bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == True)
-                  selected_floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
+                  bgc_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == True)
+                  selected_floats_bgc = self.float_stats[bgc_filter]['wmoid'].tolist()
                   # Gather bgc profiles for these floats from sprof index frame
                   self.selected_from_sprof_index = self.sprof_index[self.sprof_index['wmoid'].isin(selected_floats_bgc)]
             if self.float_type != 'bgc': 
                   # Make a list of phys floats that the user wants 
-                  phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == False)
-                  selected_floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
+                  phys_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == False)
+                  selected_floats_phys = self.float_stats[phys_filter]['wmoid'].tolist()
                   # Gather phys profiles for these floats from prof index frame
                   self.selected_from_prof_index = self.prof_index[self.prof_index['wmoid'].isin(selected_floats_phys)]
 
@@ -986,13 +995,13 @@ class Argo:
                 the passed floats. 
         """ 
         ## Gather bgc profiles for these floats from sprof index frame
-        bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == True)
-        floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
+        bgc_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == True)
+        floats_bgc = self.float_stats[bgc_filter]['wmoid'].tolist()
         floats_bgc = self.sprof_index[self.sprof_index['wmoid'].isin(floats_bgc)]
 
         ## Gather phys profiles for these floats from prof index frame 
-        phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == False)
-        floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
+        phys_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == False)
+        floats_phys = self.float_stats[phys_filter]['wmoid'].tolist()
         floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
 
         # If the user has passed a dictionary also filter by profiles
