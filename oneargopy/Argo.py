@@ -386,10 +386,11 @@ class Argo:
     def __check_nc_update(self, file_path: Path, file_name: str)-> bool:
         """ A function to check if an .nc file needs to be updated.
 
-            :param:
-            :param:
+            :param: file_path : Path - 
+            :param: file_name : str - 
 
-            :return: 
+            :return: update_status : bool - A boolean value indicating
+                that the passed file should be updated.
         """
         # Pull float id from file_name
 
@@ -397,7 +398,10 @@ class Argo:
 
         # Read date updated from .nc file
 
-        # If
+        # If file_updated < float_updated return true
+        # indicating that the .nc file must be updated
+
+        # Else return false
 
 
     def __try_download(self, file_name: str, update_status: bool)-> None:
