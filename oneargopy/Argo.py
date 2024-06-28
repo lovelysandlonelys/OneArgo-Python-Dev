@@ -284,18 +284,38 @@ class Argo:
         # Displaying graph
         plt.show()
 
-    def load_float_data(self, floats: int | list)-> None: 
+    def load_float_data(self, floats: int | list, parameters: str | list = None)-> None: 
         """ A function to load float data into memory.
-        """
 
+            :param: floats : int | str | list - A float or list of floats to  
+                load data from  
+        """
         # Check that index files are in memory
+        if not self.download_settings.keep_index_in_memory: 
+            self.sprof_index = self.__load_sprof_dataframe()
+            self.prof_index = self.__load_prof_dataframe()
 
         # Check that passed float is inside of the dataframes
+        self.floats = floats
+        self.__validate_floats_kwarg()
+
+        # Validate passed parameters
 
         # Download .nc files for passed floats
+        for wmoid in self.floats : 
+            # Generate filename 
+            ## If the float is a bgc float it will have a corresponding sprof file
+            if self.float_is_bgc_index.loc[self.float_is_bgc_index['wmoid'] == wmoid, 'is_bgc'].values[0] : 
+                file_name = f'{wmoid}_Sprof.nc'
+            ## If the float is a phys float it will have a corresponding prof file
+            else :
+                file_name = f'{wmoid}_prof.nc'
+            # Download file
+            self.__download_file(file_name)
 
-        # 
-        pass
+        # Build dataframe for info
+
+        # Read from nc files into dataframe
 
     #######################################################################
     # Private Functions
