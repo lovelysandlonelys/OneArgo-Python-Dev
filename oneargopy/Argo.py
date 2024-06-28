@@ -255,7 +255,7 @@ class Argo:
         for i, float_id in enumerate(self.float_ids): 
             specific_float_profiles = floats_profiles[floats_profiles['wmoid'] == float_id]
             ax.plot(specific_float_profiles['longitude'].values, specific_float_profiles['latitude'].values, 
-                    marker='o', alpha=0.7, linestyle='-', linewidth=2, transform=ccrs.Geodetic(), 
+                    marker='.', alpha=0.7, linestyle='-', linewidth=2, transform=ccrs.Geodetic(), 
                     label=f'Float {float_id}', color=colors[i % len(colors)])
             
         # Set graph limits based on passed points
