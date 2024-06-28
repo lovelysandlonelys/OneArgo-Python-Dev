@@ -18,10 +18,10 @@ argo = Argo()
 # argo.trajectories(floats)
 
 # Testing dict passing
-profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
-argo.trajectories(profiles)
-profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
-argo.trajectories(profiles)
+# profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+# argo.trajectories(profiles)
+# profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
+# argo.trajectories(profiles)
 
 # profiles = argo.select_profiles([100, 140], [30, 45])
 # argo.trajectories(list(profiles.keys()))
