@@ -5,7 +5,8 @@ from Argo import Argo
 import time
 argo = Argo()
 
-argo.load_float_data(5905105)
+argo.load_float_data(5905105, parameters='DOXY')
+argo.load_float_data(5904859, parameters=['DOCY', 'TEMP', 'FAKE'])
 
 # Graph for slide
 # profiles = argo.select_profiles(lon_lim=[-130,-115], 
