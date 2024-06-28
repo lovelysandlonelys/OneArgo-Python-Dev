@@ -76,7 +76,7 @@ class Argo:
         # Download files from GDAC to Index directory
         if self.download_settings.verbose: print(f'\nDownloading index files...')
         for file in self.download_settings.index_files:
-            self.__download_index_file(file)
+            self.__download_file(file)
 
         # Load the index files into dataframes
         if self.download_settings.verbose: print(f'\nTransferring index files into dataframes...')
@@ -296,13 +296,13 @@ class Argo:
             self.prof_index = self.__load_prof_dataframe()
 
         # Check that passed float is inside of the dataframes
-        self.floats = floats
+        self.float_ids = floats
         self.__validate_floats_kwarg()
 
         # Validate passed parameters
 
         # Download .nc files for passed floats
-        for wmoid in self.floats : 
+        for wmoid in self.float_ids : 
             # Generate filename 
             ## If the float is a bgc float it will have a corresponding sprof file
             if self.float_is_bgc_index.loc[self.float_is_bgc_index['wmoid'] == wmoid, 'is_bgc'].values[0] : 
@@ -316,6 +316,7 @@ class Argo:
         # Build dataframe for info
 
         # Read from nc files into dataframe
+
 
     #######################################################################
     # Private Functions
@@ -337,15 +338,18 @@ class Argo:
                     if self.download_settings.verbose: print(f'Failed to create the {directory} directory: {e}')
 
 
-    def __download_index_file(self, file_name: str) -> None:
+    def __download_file(self, file_name: str) -> None:
         """ A function to download and save an index file from GDAC sources. 
 
             :param: filename : str - The name of the file we are downloading.
         """
-        index_directory = Path(self.download_settings.base_dir.joinpath("Index"))
+        if file_name.endswith('.txt') : 
+            directory = Path(self.download_settings.base_dir.joinpath("Index"))
+        elif file_name.endswith('.nc') :
+            directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
 
         # Get the expected filepath for the file
-        file_path = index_directory.joinpath(file_name)
+        file_path = directory.joinpath(file_name)
 
         # Check if the filepath exists
         if file_path.exists():
@@ -355,11 +359,11 @@ class Argo:
                 if self.download_settings.verbose: 
                     print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
             else: 
-                txt_last_modified_time = Path(file_path).stat().st_mtime
+                last_modified_time = Path(file_path).stat().st_mtime
                 current_time = datetime.now().timestamp()
-                txt_seconds_since_modified = current_time - txt_last_modified_time
+                seconds_since_modified = current_time - last_modified_time
                 # Check if the file should be updated
-                if (txt_seconds_since_modified > self.download_settings.update):
+                if (seconds_since_modified > self.download_settings.update):
                     if self.download_settings.verbose: print(f'Updating {file_name}...')
                     self.__try_download(file_name ,True)
                 else:
@@ -379,38 +383,53 @@ class Argo:
                 are trying to update it. False if the file hasn't been 
                 downloaded yet. 
         """
-        index_directory = Path(self.download_settings.base_dir.joinpath("Index"))
+        if file_name.endswith('.txt') : 
+            directory = Path(self.download_settings.base_dir.joinpath("Index"))
+            first_save_path = directory.joinpath("".join([file_name, ".gz"]))
+            second_save_path = directory.joinpath(file_name)
+        elif file_name.endswith('.nc') :
+            directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
+            first_save_path = directory.joinpath(file_name)
+            second_save_path = None
 
         success = False
         iterations = 0
-        txt_save_path = index_directory.joinpath(file_name)
-        gz_save_path = index_directory.joinpath("".join([file_name, ".gz"]))
 
         while (not success) and (iterations < self.download_settings.max_attempts):
             # Try both hosts (preferred one is listed first in download settings)
             for host in self.source_settings.hosts:
 
-                url = "".join([host, file_name, ".gz"])
+                if file_name.endswith('.txt') : 
+                    url = "".join([host, file_name, ".gz"])
+                elif file_name.endswith('.nc') :
+                    # Extract float id from filename
+                    float_ID = file_name.split('_')[0]
+                    # Extract dac for that float id from datafrmae
+                    filtered_df = self.prof_index[self.prof_index['wmoid'] == int(float_ID)]
+                    dac = filtered_df['dacs'].iloc[0]
+                    # Add trailing forward slashes for formating
+                    dac = f'{dac}/'
+                    float_ID = f'{float_ID}/'
+                    url = "".join([host,'dac/', dac, float_ID, file_name])
 
                 if self.download_settings.verbose: print(f'Downloading {file_name} from {url}...')
-
                 try:
                     with requests.get(url, stream=True) as r:
                         r.raise_for_status()
-                        with open(gz_save_path, 'wb') as f:
+                        with open(first_save_path, 'wb') as f:
                             r.raw.decode_content = True
                             shutil.copyfileobj(r.raw, f)
-
-                    if self.download_settings.verbose: print(f'Unzipping {file_name}.gz...')
-                    with gzip.open(gz_save_path, 'rb') as gz_file:
-                        with open(txt_save_path, 'wb') as txt_file:
-                            shutil.copyfileobj(gz_file, txt_file)
                     
+                    if second_save_path is not None: 
+                        if self.download_settings.verbose: print(f'Unzipping {file_name}.gz...')
+                        with gzip.open(first_save_path, 'rb') as gz_file:
+                            with open(second_save_path, 'wb') as txt_file:
+                                shutil.copyfileobj(gz_file, txt_file)
+                        # Remove extraneous .gz file
+                        first_save_path.unlink()
+
                     success = True
                     if self.download_settings.verbose: print(f'Success!')
-
-                    # Remove extraneous .gz file
-                    gz_save_path.unlink()
                     
                     # Exit the loop if download is successful so we don't try additional
                     # sources for no reason.
@@ -418,7 +437,7 @@ class Argo:
 
                 except requests.RequestException as e:
                     print(f'Error encountered: {e}. Trying next host...')
-            
+                
             # Increment Iterations
             iterations += 1
 
@@ -428,7 +447,7 @@ class Argo:
                 print(f'WARNING: Update for {file_name} failed, you are working with out of date data.')
             else:
                 raise Exception(f'Download failed! {file_name} could not be downloaded at this time.')
-        
+
 
     def __load_sprof_dataframe(self) -> pd:
         """ A function to load the sprof index file into a dataframe for easier reference.

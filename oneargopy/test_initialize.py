@@ -2,7 +2,10 @@
 # Argo Functions
 
 from Argo import Argo
+import time
 argo = Argo()
+
+argo.load_float_data(5905105)
 
 # Graph for slide
 # profiles = argo.select_profiles(lon_lim=[-130,-115], 
@@ -18,10 +21,10 @@ argo = Argo()
 # argo.trajectories(floats)
 
 # Testing dict passing
-# profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
-# argo.trajectories(profiles)
-# profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
-# argo.trajectories(profiles)
+profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+argo.trajectories(profiles)
+profiles = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01', outside='time')
+argo.trajectories(profiles)
 
 # profiles = argo.select_profiles([100, 140], [30, 45])
 # argo.trajectories(list(profiles.keys()))
@@ -37,17 +40,17 @@ argo = Argo()
 # elapsed_time = time.time() - start_time
 # print(f'This test took: {elapsed_time}\n')
 
-# # Testing get by ocean basin: 
-# start_time = time.time()
-# argo.select_profiles(start_date='2012-01-01', end_date='2012-01-02', ocean='A')
-# elapsed_time = time.time() - start_time
-# print(f'This test took: {elapsed_time}\n')
+# Testing get by ocean basin: 
+start_time = time.time()
+argo.select_profiles(start_date='2012-01-01', end_date='2012-01-02', ocean='A')
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
 
-# # Testing get by float id: 
-# start_time = time.time()
-# argo.select_profiles(start_date='2012-01-01', end_date='2013-01-01', floats=[5903611, 5903802, 5903807])
-# elapsed_time = time.time() - start_time
-# print(f'This test took: {elapsed_time}\n')
+# Testing get by float id: 
+start_time = time.time()
+argo.select_profiles(start_date='2012-01-01', end_date='2013-01-01', floats=[5903611, 5903802, 5903807])
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
 
 # start_time = time.time()
 # argo.select_profiles(floats=5903611)
@@ -59,10 +62,10 @@ argo = Argo()
 # elapsed_time = time.time() - start_time
 # print(f'This test took: {elapsed_time}\n')
 
-# start_time = time.time()
-# argo.select_profiles(floats=[4903500, 5903611, 1, 2])
-# elapsed_time = time.time() - start_time
-# print(f'This test took: {elapsed_time}\n')
+start_time = time.time()
+argo.select_profiles(floats=[4903500, 5903611, 1, 2])
+elapsed_time = time.time() - start_time
+print(f'This test took: {elapsed_time}\n')
 
 # # Testing outside functionality
 # start_time = time.time()
