@@ -760,8 +760,8 @@ class Argo:
         if self.download_settings.verbose: print(f"Validating passed 'parameters'...")
         
         # If user has passed a single parameter convert to list
-        if not isinstance(self.float_ids, list) :
-            self.float_parameters = [self.float_ids]
+        if not isinstance(self.float_parameters, list) :
+            self.float_parameters = [self.float_parameters]
 
         # Finding float IDs that are not present in the index dataframes
         nonexistent_params = [param for param in self.float_parameters if param not in self.source_settings.avail_vars]
