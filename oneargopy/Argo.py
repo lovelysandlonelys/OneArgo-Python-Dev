@@ -400,19 +400,12 @@ class Argo:
         # Get float's latest update date
         float_update_date = self.float_stats.query(f'wmoid == {float_id}')['date_update']
         float_update_date = np.datetime64(float_update_date.iloc[0])
-        print(f'Date Updated (s)prof: {float_update_date}')
 
         # Read date updated from .nc file
         nc_file = netCDF4.Dataset(file_path, mode='r')
-        print(nc_file)
         date_updated_variable = nc_file.variables['DATE_UPDATE']
-        print(f'variable name : {date_updated_variable}')
         file_update_date = date_updated_variable[:]
         nc_file.close()
-
-        print(f'file_updated from .nc: ')
-        print(file_update_date)
-        print(type(file_update_date))
 
         # Convert the byte strings of file_update_date into a regular string
         julian_date_str = b''.join(file_update_date).decode('utf-8')
@@ -426,7 +419,6 @@ class Argo:
         # Convert the Julian date to a datetime object
         file_update_date = datetime(year, month, day, hour, minute, second).replace(tzinfo=timezone.utc)
         file_update_date = np.datetime64(file_update_date)
-        print(f"datetime64 : {file_update_date}")
 
         # If the .nc file's update date is less than
         # the date in the index file return true
