@@ -15,7 +15,7 @@ profiles = argo.select_profiles(lon_lim=[-127,-115],
                                 lat_lim=[32.5,45.5],
                                 start_date='2021-09-01',
                                 type='bgc')
-argo.trajectories(list(profiles.keys()))
+argo.trajectories(list(profiles))
 
 # Graph for slide
 # profiles = argo.select_profiles(lon_lim=[-130,-115], 
