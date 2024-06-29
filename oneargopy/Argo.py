@@ -400,8 +400,7 @@ class Argo:
         float_id = file_name.split('_')[0]
 
         # Get float's latest update date
-        index_update_date = pd.to_datetime(self.float_stats.loc[self.float_stats['wmoid'] == float_id, 'date_update'])
-        print(type(index_update_date))
+        index_update_date = pd.to_datetime(self.float_stats.loc[self.float_stats['wmoid'] == int(float_id), 'date_update'].iloc[0])
 
         # Read date updated from .nc file
         nc_file = netCDF4.Dataset(file_path, mode='r')
@@ -600,10 +599,10 @@ class Argo:
         """ 
         # Dataframe with womid, is_bgc, and date)updated
         float_bgc_status = self.prof_index[['wmoid', 'is_bgc', 'date_update']]
-        # Group by 'wmoid' and get indices of the rows with the max 'date_update'
-        idx = float_bgc_status.groupby('wmoid')['date_update'].idxmax()
-        # Select rows using these indices
-        floats_stats = float_bgc_status.loc[idx].reset_index(drop=True)
+        # Only keeping rows with most recent date updated
+        floats_stats = float_bgc_status.groupby('wmoid', as_index=False)['date_update'].max()
+        # Merging bgc and date_update dataframes
+        floats_stats = pd.merge(float_bgc_status, floats_stats, on=['wmoid', 'date_update'])
 
         return floats_stats
 
