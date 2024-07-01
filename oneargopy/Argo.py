@@ -1165,7 +1165,7 @@ class Argo:
             dataframe_columns.append(parameter + '_ADJUSTED_QC')
             dataframe_columns.append(parameter + '_ADJUSTED_ERROR')
 
-        dataframe_columns = ['WMOID', 'PROF_IDX', 'CYCLE_NUMBER', 'DIRECTION', 
+        dataframe_columns = ['WMOID', 'CYCLE_NUMBER', 'DIRECTION', 
                              'DATE', 'DATE_QC', 'JULD_LOCATION', 'LATITUDE', 
                              'LONGITUDE', 'POSITION_QC', 'PRES', 'PRES_QC', 
                              'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 
@@ -1193,37 +1193,63 @@ class Argo:
             file_paths.append(directory.joinpath(file))
 
         # List of one dimentional columns
-        columns_1d = []
+        columns_1d = ['LONGITUDE', 'LATITUDE', 'JULD_LOCATION', 'DIRECTION', 'DATE', 'DATE_QC', 'WMOID']
 
         for file in file_paths : 
             # Open File
             nc_file = netCDF4.Dataset(file, mode='r')
             # Get dimensions of variables
             number_of_profiles = nc_file.dimensions['N_PROF'].size
+            number_of_levels = nc_file.dimensions['N_LEVELS'].size
+            file_variables = nc_file.variables
+
             for column in float_data_dataframe :
                 # Check if the column is in the dataframe
+                if column in file_variables : 
+                    print(f'Reading in {column}...')
+                    # A list to store the values before transfering over to dataframe column
+                    column_values = []
+                    # Check if the column one of the one dimentional ones
+                    if column in columns_1d : 
+                        # Check if the column is DATE or DATE_QC which must be calculated
+                        if column == 'DATE' or column == 'DATE_QC' : 
+                            if column == 'DATE' : 
+                                nc_variable = nc_file.variables['JULD'][:]
+                                print(f'Calculating DATE from JULD...')
+                                print(f'One Dimensional Variable Type: {type(nc_variable)}')
+                            elif column == 'DATE_QC' : 
+                                nc_variable = nc_file.variables['JULD_QC'][:]
+                                print(f'Calculating DATE_QC from JULD_QC...')
+                                print(f'One Dimensional Variable Type: {type(nc_variable)}')
+                        # If the column isn't one that needs to be calculated
+                        else: 
+                            nc_variable = nc_file.variables[column][:]
+                            print(f'One Dimensional Variable Type: {type(nc_variable)}')
+                            for value in nc_variable : 
+                                value_repeats = [value] * number_of_levels
+                                column_values.extend(value_repeats)
 
-                # If yes start reading in data 
-                ## Check if the colomn one of the one dimentional ones
-                ### If yes repeate the correct number of times
-                ### If no then 
+                    # Otherwise the column is two dimentional
+                    else : 
+                        # column_2d is a list of lists where each list is a profile
+                        # containing measurements taken at different depths. 
+                        column_2d =nc_file.variables[column][:]
+                        print(f'Two Dimensional Variable Type: {type(column_2d)}')
+                        for profile in column_2d : 
+                            for depth in profile : 
+                                column_values.append(depth)
 
                 # If column is not in dataframe print warning and fill with nanns
-                if column != 'WMOID' and column != 'DATE' and column != 'DATE_QC' and column != 'PROF_IDX' and "_prof" not in str(file): 
-                    print(f'File: {file}')
-                    print(f'Column: {column}')
-                    nc_column = nc_file.variables[column][:]
-                    dimensions = nc_file.variables[column].dimensions
-                    shape = nc_file.variables[column].shape
-                    print(f'NC Column: {nc_column}')
-                    print(f'Dimentions: {dimensions}, {type(dimensions)}')
-                    print(f'Shape: {shape}, {type(shape)}')
-                elif column == 'DATE' or column == 'DATE_QC' :
-                    print(f'Calculating dates from .nc file...')
-                    pass
-    
-            # Close File
+                else : 
+                    print(f'WARNING: The parameter: {column} does not exist in file: {file}')
+                    #NAN STUFF
+                
+                # Add list to the right column in the dataframe
+                float_data_dataframe = float_data_dataframe.assign(column=column_values)
+
+            # Close File 
             nc_file.close()
 
-            # Handle the 'wmoid' 'cycle', and 'prof index' columns after closing one file, all rows
-            # added during that loop have the same wmoid...
+
+        print(f'Dataframe: ')
+        print(float_data_dataframe)
