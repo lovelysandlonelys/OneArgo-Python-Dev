@@ -5,7 +5,7 @@ from Argo import Argo
 import time
 argo = Argo()
 
-print(f'Passing Temp')
+print(f'Passing Doxy')
 argo.load_float_data(5905105, parameters='DOXY')
 print(f'\n\n')
 print(f'Passing temp and doxy')

@@ -1160,8 +1160,8 @@ class Argo:
 
         dataframe_columns = ['WMOID', 'CYCLE_NUMBER', 'DIRECTION', 'DATE', 
                              'DATE_QC', 'JULD_LOCATION', 'LATITUDE', 
-                             'LONGITUDE', 'POSITION_QC', 'JULD', 'JULD_QC',
-                             'PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 
+                             'LONGITUDE', 'POSITION_QC', 'PRES', 'PRES_QC', 
+                             'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 
                              'PRES_ADJUSTED_ERROR']  + dataframe_columns
         dataframe_dict = dict.fromkeys(dataframe_columns, [])
         float_data_frame = pd.DataFrame(dataframe_dict)
