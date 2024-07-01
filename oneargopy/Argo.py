@@ -1165,8 +1165,8 @@ class Argo:
             dataframe_columns.append(parameter + '_ADJUSTED_QC')
             dataframe_columns.append(parameter + '_ADJUSTED_ERROR')
 
-        dataframe_columns = ['WMOID', 'CYCLE_NUMBER', 'DIRECTION', 'DATE', 
-                             'DATE_QC', 'JULD_LOCATION', 'LATITUDE', 
+        dataframe_columns = ['WMOID', 'PROF_IDX', 'CYCLE_NUMBER', 'DIRECTION', 
+                             'DATE', 'DATE_QC', 'JULD_LOCATION', 'LATITUDE', 
                              'LONGITUDE', 'POSITION_QC', 'PRES', 'PRES_QC', 
                              'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 
                              'PRES_ADJUSTED_ERROR']  + dataframe_columns
@@ -1204,11 +1204,15 @@ class Argo:
             # Open File
             nc_file = netCDF4.Dataset(file, mode='r')
             for column in float_data_dataframe :
-                if column != 'WMOID' and column != 'DATE' and column != 'DATE_QC' and "_prof" not in str(file): 
+                if column != 'WMOID' and column != 'DATE' and column != 'DATE_QC' and column != 'PROF_IDX' and "_prof" not in str(file): 
                     print(f'File: {file}')
                     print(f'Column: {column}')
                     nc_column = nc_file.variables[column][:]
+                    dimensions = nc_file.variables[column].dimensions
+                    shape = nc_file.variables[column].shape
                     print(f'NC Column: {nc_column}')
+                    print(f'Dimentions: {dimensions}, {type(dimensions)}')
+                    print(f'Shape: {shape}, {type(shape)}')
                 elif column == 'DATE' or column == 'DATE_QC' :
                     print(f'Calculating dates from .nc file...')
                     pass
@@ -1221,5 +1225,5 @@ class Argo:
             # Close File
             nc_file.close()
 
-            # Handle the 'wmoid' column after closing one file, all rows
+            # Handle the 'wmoid' 'cycle', and 'prof index' columns after closing one file, all rows
             # added during that loop have the same wmoid...
