@@ -317,6 +317,7 @@ class Argo:
             self.__download_file(file_name)
 
         # Build dataframe for info
+        float_data_frame = self.__build_float_data_frame(floats, parameters)
 
         # Read from nc files into dataframe
 
@@ -824,7 +825,6 @@ class Argo:
             print(f'There are {num_profiles} profiles associated with these floats!\n')
 
 
-
     def __narrow_profiles_by_criteria(self)-> dict:
         """ A function to narrow down the available profiles to only those
             that meet the criteria passed to select_profiles.
@@ -1134,3 +1134,19 @@ class Argo:
             step = 2
         
         return step
+
+    def __build_float_data_frame(self, floats, parameters)-> pd:
+        """ A function to create and lable the necessary columns for 
+            the dataframe to hold information about the passed floats
+            from the downloaded .nc files. 
+
+            :param: floats : list - The floats to load information on.
+            :param: parameters : list - A list of parameters to include
+                in the dataframe
+
+            :return: pd - A dataframe to store information on the floats
+                from the .nc files in. 
+        """
+        
+
+        pass
