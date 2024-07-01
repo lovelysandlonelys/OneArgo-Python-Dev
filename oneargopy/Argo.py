@@ -305,21 +305,27 @@ class Argo:
         self.__validate_float_parameters_arg()
 
         # Download .nc files for passed floats
+        files = []
         for wmoid in self.float_ids : 
             # Generate filename 
             ## If the float is a bgc float it will have a corresponding sprof file
             if self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0] : 
                 file_name = f'{wmoid}_Sprof.nc'
+                files.append(file_name)
             ## If the float is a phys float it will have a corresponding prof file
             else :
                 file_name = f'{wmoid}_prof.nc'
+                files.append(file_name)
             # Download file
             self.__download_file(file_name)
 
         # Build dataframe for info
-        float_data_frame = self.__build_float_data_frame(self.float_ids, self.float_parameters)
+        float_data_frame = self.__build_float_data_dataframe(self.float_ids, self.float_parameters)
 
         # Read from nc files into dataframe
+        self.__fill_float_data_dataframe(float_data_frame, files)
+        print(f'Dataframe: ')
+        print(float_data_frame)
 
 
     #######################################################################
@@ -1135,7 +1141,7 @@ class Argo:
         
         return step
 
-    def __build_float_data_frame(self, float_ids, columns)-> pd:
+    def __build_float_data_dataframe(self, float_ids, columns)-> pd:
         """ A function to create and lable the necessary columns for 
             the dataframe to hold information about the passed floats
             from the downloaded .nc files. 
@@ -1147,6 +1153,7 @@ class Argo:
             :return: pd - A dataframe to store information on the floats
                 from the .nc files in. 
         """
+        print(f'Building float data dataframe...')
         print(f'The Floats: {float_ids}')
         print(f'The Parameters: {columns}')
 
@@ -1168,3 +1175,51 @@ class Argo:
         print(f'The Dataframe: {float_data_frame}')
 
         return float_data_frame
+    
+    def __fill_float_data_dataframe(self, float_data_dataframe, files)-> None: 
+        """ A Function to load data into the flaot data dataframe.
+
+            :param: float_data_dataframe : pd - The dataframe to load
+                data from the .nc files into. 
+            :param: files : list - A list of filenames to pull information
+                from.
+        """
+        print(f'Loading float data...')
+
+        # Getting the file path for downloaded .nc files
+        directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
+        file_paths = []
+        for file in files : 
+            file_paths.append(directory.joinpath(file))
+
+        # If no parameters were passed then that measn everything is on the surface
+        # and there should only be one row for each float. 
+
+        # If we don't have the PRES value then everything is moot anyway, and we
+        # can skip that profile?
+
+        # Go through each column in the dataframe for each float/file and read
+        # information from the .nc file into the dataframe.
+        for file in file_paths : 
+            # Open File
+            nc_file = netCDF4.Dataset(file, mode='r')
+            for column in float_data_dataframe :
+                if column != 'WMOID' and column != 'DATE' and column != 'DATE_QC' and "_prof" not in str(file): 
+                    print(f'File: {file}')
+                    print(f'Column: {column}')
+                    nc_column = nc_file.variables[column][:]
+                    print(f'NC Column: {nc_column}')
+                elif column == 'DATE' or column == 'DATE_QC' :
+                    # Calculate the date from JULD and date_qc from JULD_QC
+                    pass
+                elif "_prof" in str(file): 
+                    # if the column name is in a list of bgc sensor values
+                    # then fill this column with nan's for the length of one of 
+                    # the pres columns?
+                    pass
+
+            # Close File
+            nc_file.close()
+
+            # Handle the 'wmoid' column after closing one file, all rows
+            # added during that loop have the same wmoid...
