@@ -5,8 +5,11 @@ from Argo import Argo
 import time
 argo = Argo()
 
+print(f'Passing Temp')
 argo.load_float_data(5905105, parameters='DOXY')
-argo.load_float_data(5904859, parameters=['DOXY', 'TEMP'])
+print(f'\n\n')
+print(f'Passing temp and doxy')
+argo.load_float_data([5904859, 5903807], parameters=['DOXY', 'TEMP'])
 
 # Graph for slide
 # from Argo import Argo

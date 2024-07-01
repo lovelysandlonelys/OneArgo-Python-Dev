@@ -1158,15 +1158,12 @@ class Argo:
             dataframe_columns.append(parameter + '_ADJUSTED_QC')
             dataframe_columns.append(parameter + '_ADJUSTED_ERROR')
 
-        dataframe_columns = ['CYCLE_NUMBER', 'DIRECTION', 'DATE', 
+        dataframe_columns = ['WMOID', 'CYCLE_NUMBER', 'DIRECTION', 'DATE', 
                              'DATE_QC', 'JULD_LOCATION', 'LATITUDE', 
                              'LONGITUDE', 'POSITION_QC', 'JULD', 'JULD_QC',
                              'PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 
                              'PRES_ADJUSTED_ERROR']  + dataframe_columns
-        print(f'Columns: {dataframe_columns}')
         dataframe_dict = dict.fromkeys(dataframe_columns, [])
-        print(f'The Dictionary: {dataframe_dict}')
-
         float_data_frame = pd.DataFrame(dataframe_dict)
         print(f'The Dataframe: {float_data_frame}')
 
