@@ -1,21 +1,21 @@
 ############################################################################################################################
 # Argo Functions
 
-# from Argo import Argo
-# import time
-# argo = Argo()
+from Argo import Argo
+import time
+argo = Argo()
 
-# argo.load_float_data(5905105, parameters='DOXY')
-# argo.load_float_data(5904859, parameters=['DOXY', 'TEMP'])
+argo.load_float_data(5905105, parameters='DOXY')
+argo.load_float_data(5904859, parameters=['DOXY', 'TEMP'])
 
 # Graph for slide
-from Argo import Argo
-argo = Argo()
-profiles = argo.select_profiles(lon_lim=[-127,-115],
-                                lat_lim=[32.5,45.5],
-                                start_date='2021-09-01',
-                                type='bgc')
-argo.trajectories(list(profiles))
+# from Argo import Argo
+# argo = Argo()
+# profiles = argo.select_profiles(lon_lim=[-127,-115],
+#                                 lat_lim=[32.5,45.5],
+#                                 start_date='2021-09-01',
+#                                 type='bgc')
+# argo.trajectories(list(profiles))
 
 # Graph for slide
 # profiles = argo.select_profiles(lon_lim=[-130,-115], 

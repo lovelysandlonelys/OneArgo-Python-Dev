@@ -317,7 +317,7 @@ class Argo:
             self.__download_file(file_name)
 
         # Build dataframe for info
-        float_data_frame = self.__build_float_data_frame(floats, parameters)
+        float_data_frame = self.__build_float_data_frame(self.float_ids, self.float_parameters)
 
         # Read from nc files into dataframe
 
@@ -1135,18 +1135,39 @@ class Argo:
         
         return step
 
-    def __build_float_data_frame(self, floats, parameters)-> pd:
+    def __build_float_data_frame(self, float_ids, columns)-> pd:
         """ A function to create and lable the necessary columns for 
             the dataframe to hold information about the passed floats
             from the downloaded .nc files. 
 
-            :param: floats : list - The floats to load information on.
-            :param: parameters : list - A list of parameters to include
+            :param: float_ids : list - The floats to load information on.
+            :param: columns : list - A list of parameters to include
                 in the dataframe
 
             :return: pd - A dataframe to store information on the floats
                 from the .nc files in. 
         """
-        
+        print(f'The Floats: {float_ids}')
+        print(f'The Parameters: {columns}')
 
-        pass
+        dataframe_columns = []
+        for parameter in columns : 
+            dataframe_columns.append(parameter)
+            dataframe_columns.append(parameter + '_QC')
+            dataframe_columns.append(parameter + '_ADJUSTED')
+            dataframe_columns.append(parameter + '_ADJUSTED_QC')
+            dataframe_columns.append(parameter + '_ADJUSTED_ERROR')
+
+        dataframe_columns = ['CYCLE_NUMBER', 'DIRECTION', 'DATE', 
+                             'DATE_QC', 'JULD_LOCATION', 'LATITUDE', 
+                             'LONGITUDE', 'POSITION_QC', 'JULD', 'JULD_QC',
+                             'PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 
+                             'PRES_ADJUSTED_ERROR']  + dataframe_columns
+        print(f'Columns: {dataframe_columns}')
+        dataframe_dict = dict.fromkeys(dataframe_columns, [])
+        print(f'The Dictionary: {dataframe_dict}')
+
+        float_data_frame = pd.DataFrame(dataframe_dict)
+        print(f'The Dataframe: {float_data_frame}')
+
+        return float_data_frame
