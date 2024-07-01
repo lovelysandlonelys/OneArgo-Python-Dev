@@ -1210,13 +1210,13 @@ class Argo:
                     nc_column = nc_file.variables[column][:]
                     print(f'NC Column: {nc_column}')
                 elif column == 'DATE' or column == 'DATE_QC' :
-                    # Calculate the date from JULD and date_qc from JULD_QC
+                    print(f'Calculating dates from .nc file...')
                     pass
                 elif "_prof" in str(file): 
                     # if the column name is in a list of bgc sensor values
                     # then fill this column with nan's for the length of one of 
                     # the pres columns?
-                    pass
+                    print(f'Prof File')
 
             # Close File
             nc_file.close()
