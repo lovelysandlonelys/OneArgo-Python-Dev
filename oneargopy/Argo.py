@@ -1193,7 +1193,8 @@ class Argo:
             file_paths.append(directory.joinpath(file))
 
         # List of one dimentional columns
-        columns_1d = ['LONGITUDE', 'LATITUDE', 'JULD_LOCATION', 'DIRECTION', 'DATE', 'DATE_QC', 'WMOID']
+        columns_1d = ['LONGITUDE', 'LATITUDE', 'JULD_LOCATION', 'DIRECTION', 'CYCLE_NUMBER', "POSITION_QC"]
+        columns_alias = ['DATE', 'DATE_QC', 'WMOID']
 
         for file in file_paths : 
             # Open File
@@ -1204,30 +1205,19 @@ class Argo:
             file_variables = nc_file.variables
 
             for column in float_data_dataframe :
+                print(f'Reading in {column}...')
                 # Check if the column is in the dataframe
                 if column in file_variables : 
-                    print(f'Reading in {column}...')
                     # A list to store the values before transfering over to dataframe column
                     column_values = []
                     # Check if the column one of the one dimentional ones
                     if column in columns_1d : 
-                        # Check if the column is DATE or DATE_QC which must be calculated
-                        if column == 'DATE' or column == 'DATE_QC' : 
-                            if column == 'DATE' : 
-                                nc_variable = nc_file.variables['JULD'][:]
-                                print(f'Calculating DATE from JULD...')
-                                print(f'One Dimensional Variable Type: {type(nc_variable)}')
-                            elif column == 'DATE_QC' : 
-                                nc_variable = nc_file.variables['JULD_QC'][:]
-                                print(f'Calculating DATE_QC from JULD_QC...')
-                                print(f'One Dimensional Variable Type: {type(nc_variable)}')
-                        # If the column isn't one that needs to be calculated
-                        else: 
-                            nc_variable = nc_file.variables[column][:]
-                            print(f'One Dimensional Variable Type: {type(nc_variable)}')
-                            for value in nc_variable : 
-                                value_repeats = [value] * number_of_levels
-                                column_values.extend(value_repeats)
+                        nc_variable = nc_file.variables[column][:]
+                        print(f'')
+                        print(f'One Dimensional Variable Type: {type(nc_variable)}')
+                        for value in nc_variable : 
+                            value_repeats = [value] * number_of_levels
+                            column_values.extend(value_repeats)
 
                     # Otherwise the column is two dimentional
                     else : 
@@ -1241,15 +1231,30 @@ class Argo:
 
                 # If column is not in dataframe print warning and fill with nanns
                 else : 
-                    print(f'WARNING: The parameter: {column} does not exist in file: {file}')
-                    #NAN STUFF
+                    if column in columns_alias: 
+                        if column == 'DATE' : 
+                            nc_variable = nc_file.variables['JULD'][:]
+                            print(f'Calculating DATE from JULD...')
+                            print(f'One Dimensional Variable Type: {type(nc_variable)}')
+                        elif column == 'DATE_QC' : 
+                            nc_variable = nc_file.variables['JULD_QC'][:]
+                            print(f'Calculating DATE_QC from JULD_QC...')
+                            print(f'One Dimensional Variable Type: {type(nc_variable)}')
+                        elif column == 'WMOID' : 
+                            file_name = str(file.name)
+                            float_id = file_name.split('_')[0]
+                            column_values = [int(float_id)] * (number_of_profiles * number_of_levels)
+                    else :       
+                        print(f'WARNING: The parameter: {column} does not exist in file: {file}')
+                        column_values = [0] * (number_of_profiles * number_of_levels)
                 
                 # Add list to the right column in the dataframe
-                float_data_dataframe = float_data_dataframe.assign(column=column_values)
+                float_data_dataframe[column] = float_data_dataframe[column].tolist() + column_values
+                print(f'DATAFRAME: ')
+                print(float_data_dataframe)
 
             # Close File 
             nc_file.close()
 
-
-        print(f'Dataframe: ')
+        print(f'DATAFRAME: ')
         print(float_data_dataframe)
