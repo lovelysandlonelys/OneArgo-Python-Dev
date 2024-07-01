@@ -1192,18 +1192,23 @@ class Argo:
         for file in files : 
             file_paths.append(directory.joinpath(file))
 
-        # If no parameters were passed then that measn everything is on the surface
-        # and there should only be one row for each float. 
+        # List of one dimentional columns
+        columns_1d = []
 
-        # If we don't have the PRES value then everything is moot anyway, and we
-        # can skip that profile?
-
-        # Go through each column in the dataframe for each float/file and read
-        # information from the .nc file into the dataframe.
         for file in file_paths : 
             # Open File
             nc_file = netCDF4.Dataset(file, mode='r')
+            # Get dimensions of variables
+            number_of_profiles = nc_file.dimensions['N_PROF'].size
             for column in float_data_dataframe :
+                # Check if the column is in the dataframe
+
+                # If yes start reading in data 
+                ## Check if the colomn one of the one dimentional ones
+                ### If yes repeate the correct number of times
+                ### If no then 
+
+                # If column is not in dataframe print warning and fill with nanns
                 if column != 'WMOID' and column != 'DATE' and column != 'DATE_QC' and column != 'PROF_IDX' and "_prof" not in str(file): 
                     print(f'File: {file}')
                     print(f'Column: {column}')
@@ -1216,12 +1221,7 @@ class Argo:
                 elif column == 'DATE' or column == 'DATE_QC' :
                     print(f'Calculating dates from .nc file...')
                     pass
-                elif "_prof" in str(file): 
-                    # if the column name is in a list of bgc sensor values
-                    # then fill this column with nan's for the length of one of 
-                    # the pres columns?
-                    print(f'Prof File')
-
+    
             # Close File
             nc_file.close()
 
