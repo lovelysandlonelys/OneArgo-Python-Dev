@@ -285,10 +285,10 @@ class Argo:
         # Displaying graph
         plt.show()
 
-    def load_float_data(self, floats: int | list, parameters: str | list = None)-> pd: 
+    def load_float_data(self, floats: int | list | dict, parameters: str | list = None)-> pd: 
         """ A function to load float data into memory.
 
-            :param: floats : int | str | list - A float or list of floats to  
+            :param: floats : int | list | dict - A float or list of floats to  
                 load data from  
 
             :return: float_data : pd - A dataframe with requested float data. 
@@ -304,7 +304,7 @@ class Argo:
 
         # Validate passed parameters
         self.float_parameters = parameters
-        self.__validate_float_parameters_arg()
+        if self.float_parameters : self.__validate_float_parameters_arg()
 
         # Download .nc files for passed floats
         files = []
@@ -321,11 +321,8 @@ class Argo:
             # Download file
             self.__download_file(file_name)
 
-        # Build dataframe for info
-        column_list = self.__build_dataframe_column_list(self.float_parameters)
-
         # Read from nc files into dataframe
-        float_data_frame = self.__fill_float_data_dataframe(column_list, files)
+        float_data_frame = self.__fill_float_data_dataframe(files)
 
         return float_data_frame
         
@@ -758,7 +755,7 @@ class Argo:
             load_float_data.
         """
         if self.download_settings.verbose: print(f"Validating passed 'parameters'...")
-        
+
         # If user has passed a single parameter convert to list
         if not isinstance(self.float_parameters, list) :
             self.float_parameters = [self.float_parameters]
@@ -1144,58 +1141,76 @@ class Argo:
         
         return step
 
-    def __build_dataframe_column_list(self, columns)-> list:
-        """ A function to create and lable the necessary columns for 
-            the dataframe to hold information about the passed floats
-            from the downloaded .nc files. 
+    def __parameter_premutations(self, nc_file)-> list :
+        """ A function to filter the list of parameters to be loaded so 
+            that we only load parameters that are in the file.  
 
-            :param: columns : list - A list of parameters to include
-                in the dataframe
+            :param: parameters : list - A list of parameters to include
+                in the dataframe.
+            :param: nc_file : Any - The .nc file we're reading from. 
 
-            :return: list - A list to of all the columns the dataframe
-                needs to include
+            :return: list - A list to of all the parameters passed
+                that are inside of the nc_file.
         """
-        if self.download_settings.verbose: print(f'Building float data dataframe column list...')
-
-        dataframe_columns = []
-        for parameter in columns : 
-            dataframe_columns.append(parameter)
-            dataframe_columns.append(parameter + '_QC')
-            dataframe_columns.append(parameter + '_ADJUSTED')
-            dataframe_columns.append(parameter + '_ADJUSTED_QC')
-            dataframe_columns.append(parameter + '_ADJUSTED_ERROR')
-
-        dataframe_columns = ['WMOID', 'CYCLE_NUMBER', 'DIRECTION', 
-                             'DATE', 'DATE_QC', 'JULD_LOCATION', 'LATITUDE', 
-                             'LONGITUDE', 'POSITION_QC', 'PRES', 'PRES_QC', 
-                             'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 
-                             'PRES_ADJUSTED_ERROR']  + dataframe_columns
+        if self.download_settings.verbose: print(f'Building parameter column list...')
         
-        return dataframe_columns
+        # If the parameter is in the file also add it's permutations to the list
+        if isinstance(self.float_parameters, list) :
+
+            # Parameters that are in the passed .nc file
+            file_variables = nc_file.variables
+
+            # List to store parameters and their additioal associated columns
+            parameter_columns = []
+            
+            print(f'Parameters passed {self.float_parameters}')
+            for parameter in self.float_parameters : 
+                if parameter in file_variables: 
+                    print(f'Parameter {parameter} is in the file.')
+                    parameter_columns.append(parameter)
+                    parameter_columns.append(parameter + '_QC')
+                    parameter_columns.append(parameter + '_ADJUSTED')
+                    parameter_columns.append(parameter + '_ADJUSTED_QC')
+                    parameter_columns.append(parameter + '_ADJUSTED_ERROR')
+                else : 
+                    print(f'WARNING: The parameter: {parameter} does not exist in the file.')
+            
+            if len(parameter_columns) > 0 : 
+                pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 'PRES_ADJUSTED_ERROR']
+                existing_parameter_columns = pressure + parameter_columns
+                return existing_parameter_columns
+            else : 
+                return None
+        
+        else : 
+            return None
+ 
+        
 
     
-    def __fill_float_data_dataframe(self, column_list, files)-> pd: 
+    def __fill_float_data_dataframe(self, files)-> pd: 
         """ A Function to load data into the flaot data dataframe.
-
-            :param: column_list : list - The list of columns needed in frame.
-            :param: files : list - A list of filenames to pull information
-                from.
+ 
+            :param: files : list - 
 
             :return: pd : Dataframe - The dataframe of float data. 
         """
         print(f'Loading float data...')
 
-        # Getting the file path for downloaded .nc files
+        # Getting the file paths for downloaded .nc files
         directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
         file_paths = []
         for file in files : 
             file_paths.append(directory.joinpath(file))
 
-        # List of one dimentional columns
-        columns_1d = ['LONGITUDE', 'LATITUDE', 'JULD_LOCATION', 'DIRECTION', 'CYCLE_NUMBER', "POSITION_QC"]
-        special_case_columns = ['DATE', 'DATE_QC', 'WMOID']
+        # Columns that will always be in the dataframe, these columns are one dimensional
+        static_columns = ['WMOID', 'CYCLE_NUMBER', 'DIRECTION', 
+                                'DATE', 'PROF_IDX', 'DATE_QC', 'LATITUDE', 
+                                'LONGITUDE', 'POSITION_QC',]
+        # Columns that need to be calculated or derived 
+        special_case_static_columns = ['DATE', 'DATE_QC', 'WMOID', 'PROF_IDX']
 
-        # Empty Dataframe
+        # Empty Dataframe to return at end of function with all loaded data
         float_data_dataframe = pd.DataFrame()
 
         # Iterate through files
@@ -1206,83 +1221,50 @@ class Argo:
             # Open File
             nc_file = netCDF4.Dataset(file, mode='r')
             
-            # Get dimensions of variables
+            # Get dimensions of .nc file
             number_of_profiles = nc_file.dimensions['N_PROF'].size
             number_of_levels = nc_file.dimensions['N_LEVELS'].size
-            file_variables = nc_file.variables
+
+            # Narrow parameter list to only thoes that are in the file
+            parameter_columns = self.__parameter_premutations(nc_file)
             
-            # Temporary dataframe to make indexing simpler
+            # Temporary dataframe to make indexing simpler for each float
             temp_frame = pd.DataFrame()
 
-            # Iterate through parameters that must be added to the dataframe
-            for column in column_list :
+            # Iterate through static columns
+            for column in static_columns :
 
                 if self.download_settings.verbose: print(f'Reading in {column}...')
 
-                # A list to store the values before transfering over to dataframe column
-                column_values = []
-                
-                # Check if the column is in the dataframe
-                if column in file_variables : 
-                    
-                    # Check if the column one of the one dimentional ones
-                    if column in columns_1d : 
-                        nc_variable = nc_file.variables[column][:]
-                        for value in nc_variable : 
-                            value_repeats = [value] * number_of_levels
-                            column_values.extend(value_repeats)
-
-                    # Otherwise the column is two dimentional
-                    else : 
-
-                        # column_2d is a list of lists where each list is a profile
-                        # containing measurements taken at different depths. 
-                        column_2d =nc_file.variables[column][:]
-                        for profile in column_2d : 
-                            for depth in profile : 
-                                column_values.append(depth)
-
-                # If column is not in dataframe check if it is a special case
-                # column that we are deriving or if we should fill the column
-                # with 0s
+                # Customize the nc_variable if we have a special case where values need to be calculated
+                if column in special_case_static_columns : 
+                    nc_variable = self.__calculate_nc_variable_values(column, nc_file, file, number_of_profiles)
                 else : 
-                    if column in special_case_columns: 
-
-                        if column == 'DATE' : 
-
-                            if self.download_settings.verbose: print(f'Calculating DATE from JULD...')
-                            nc_variable = nc_file.variables['JULD'][:]
-                            for date in nc_variable : 
-                                reference_date = datetime(1950, 1, 1)
-                                utc_date = reference_date + timedelta(days=date)
-                                value_repeats = [utc_date] * number_of_levels
-                                column_values.extend(value_repeats)
-
-                        elif column == 'DATE_QC' : 
-
-                            nc_variable = nc_file.variables['JULD_QC'][:]
-                            for value in nc_variable : 
-                                value_repeats = [value] * number_of_levels
-                                column_values.extend(value_repeats)  
-
-                        elif column == 'WMOID' : 
-
-                            file_name = str(file.name)
-                            float_id = file_name.split('_')[0]
-                            column_values = [int(float_id)] * (number_of_profiles * number_of_levels)
-
-                    # If the column is not in the file, and is not a column we are adjusting the name of
-                    # then we print a warning to the user and fill with 0s.    
-                    else : 
-
-                        print(f'WARNING: The parameter: {column} does not exist in file: {file}')
-                        column_values = [0] * (number_of_profiles * number_of_levels)
+                    nc_variable = nc_file.variables[column][:]
                 
-                # If masked array decode
-                column_values = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in column_values]
+                # Read in varaible from .nc file
+                column_values = self.__read_from_static_nc_variable(parameter_columns, nc_variable, number_of_levels)
 
                 # Add list of values gathered for column to the temp dataframe
                 temp_frame[column] = column_values
+
+            # Iterate through parameter columns, if there are none nothing happens
+            if parameter_columns is not None :
+                for column in parameter_columns : 
+
+                    if self.download_settings.verbose: print(f'Reading in {column}...')
+
+                    # Setting nc_variable
+                    nc_variable = nc_file.variables[column][:]
+
+                    # Replacing missing variables with NaNs
+                    nc_variable = nc_variable.filled(np.nan)
+
+                    # Read in varaible from .nc file
+                    column_values = self.__read_from_paramater_nc_variable(nc_variable)
+
+                    # Add list of values gathered for column to the temp dataframe
+                    temp_frame[column] = column_values
             
             # Concatonate the final dataframe and the temp dataframe
             float_data_dataframe = pd.concat([temp_frame, float_data_dataframe], ignore_index=True)
@@ -1290,8 +1272,117 @@ class Argo:
             # Close File 
             nc_file.close()
 
-        #Clean up dataframe
-        float_data_dataframe = float_data_dataframe[float_data_dataframe['PRES'] != '--']
+        # Clean up dataframe
+
+        ## Remove rows where PRES is NaN becaus this indicates no measurmetns were taken
+        if parameter_columns is not None :
+            float_data_dataframe = float_data_dataframe[float_data_dataframe['PRES'] != np.nan]
+
+        ## Add PROF_IDX to front of frame for easier comparison
+        prof_index_column = float_data_dataframe.pop('PROF_IDX') 
+        float_data_dataframe.insert(2, 'PROF_IDX', prof_index_column) 
+
+        ## If specific profiles are specified remove profiles that are not passed
+        if self.float_profiles_dict is not None :
+            # Only include profile indecies in the dictonary
+            pass
 
         # Return dataframe
         return float_data_dataframe
+    
+    def __calculate_nc_variable_values(self, column, nc_file, file, number_of_profiles) -> list:
+        """ Function for specalized columns that must be calculated or derived. 
+
+            :param: column
+            :param: nc_file
+            :param: file
+            :param: number_of_profiles
+
+            :return: list - 
+        """
+        
+        if column == 'DATE' : 
+
+            if self.download_settings.verbose: print(f'Calculating DATE from JULD...')
+            
+            # Acessing nc varaible that we calculate date from
+            nc_variable = nc_file.variables['JULD'][:]
+            
+            # Making a list to store the calculated dates
+            new_nc_variable = []
+            
+            # Calculating the dates
+            for date in nc_variable : 
+                reference_date = datetime(1950, 1, 1)
+                utc_date = reference_date + timedelta(days=date)
+                new_nc_variable.append(utc_date)
+            
+            # Returning list of calculated lists to be added to dataframe
+            return new_nc_variable
+
+        elif column == 'DATE_QC' : 
+
+            # Acessing nc varaible that we pull date_qc from
+            nc_variable = nc_file.variables['JULD_QC'][:]
+
+            # Returning nc varaible
+            return nc_variable
+
+        elif column == 'WMOID' : 
+
+            # Parsing float id from file name
+            file_name = str(file.name)
+            float_id = file_name.split('_')[0]
+            
+            # List with the float id the same length as a one dimensional variable
+            nc_variable = [int(float_id)] * number_of_profiles
+
+            # Returning nc varaible
+            return nc_variable
+
+        elif column == 'PROF_IDX' : 
+
+            # Placeholder for logic later
+            nc_variable = [np.nan] * number_of_profiles
+
+            # Returning nc varaible
+            return nc_variable
+
+    
+    def __read_from_static_nc_variable(self, parameter_columns, nc_variable, number_of_levels)-> list : 
+
+        column_values = []
+        
+        # If there are no parameters then then we'll only need the rows to match the number of profiels in the file
+        if parameter_columns is None: 
+
+            if self.download_settings.verbose: print(f'Reading in column as one dimensional...')
+            for value in nc_variable : 
+                column_values.append(value)
+
+        # If there are parameters then the static rows need to match the number of levels 
+        else : 
+
+            if self.download_settings.verbose: print(f'Reading in column as two dimensional...')
+            for value in nc_variable : 
+                value_repeats = [value] * number_of_levels
+                column_values.extend(value_repeats)
+
+        # If the column has 'byte' strings then decode
+        column_values = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in column_values]
+
+        return column_values
+    
+
+    def __read_from_paramater_nc_variable(self, nc_variable)-> list : 
+
+        column_values = []
+
+        for profile in nc_variable : 
+            for depth in profile : 
+                column_values.append(depth)
+
+        # If the column has 'byte' strings then decode
+        column_values = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in column_values]
+
+        return column_values

@@ -5,13 +5,18 @@ from Argo import Argo
 import time
 argo = Argo()
 
+# floats = argo.select_profiles(start_date='2023-10-10', floats=5906297) # key error... on wmoid.... hnngg
+# argo.load_float_data(floats)
+
 print(f'Passing Doxy')
-data = argo.load_float_data(5905105, parameters='DOXY')
+data = argo.load_float_data(5905105)
 print(data)
+data.to_csv('output_one.txt', encoding='utf-8', index=False, na_rep='NAN')
 print(f'\n\n')
 print(f'Passing temp and doxy')
-data = argo.load_float_data([5904859, 5903807], parameters=['DOXY', 'TEMP'])
+data = argo.load_float_data([5904859, 5903807], parameters=['DOXY', 'CHLA'])
 print(data)
+data.to_csv('output_two.txt', encoding='utf-8', index=False, na_rep='NAN')
 
 # Graph for slide
 # from Argo import Argo
