@@ -285,11 +285,13 @@ class Argo:
         # Displaying graph
         plt.show()
 
-    def load_float_data(self, floats: int | list, parameters: str | list = None)-> None: 
+    def load_float_data(self, floats: int | list, parameters: str | list = None)-> pd: 
         """ A function to load float data into memory.
 
             :param: floats : int | str | list - A float or list of floats to  
                 load data from  
+
+            :return: float_data : pd - A dataframe with requested float data. 
         """
         # Check that index files are in memory
         if not self.download_settings.keep_index_in_memory: 
@@ -320,12 +322,13 @@ class Argo:
             self.__download_file(file_name)
 
         # Build dataframe for info
-        float_data_frame = self.__build_float_data_dataframe(self.float_ids, self.float_parameters)
+        column_list = self.__build_dataframe_column_list(self.float_parameters)
 
         # Read from nc files into dataframe
-        self.__fill_float_data_dataframe(float_data_frame, files)
-        print(f'Dataframe: ')
-        print(float_data_frame)
+        float_data_frame = self.__fill_float_data_dataframe(column_list, files)
+
+        return float_data_frame
+        
 
 
     #######################################################################
@@ -1141,21 +1144,18 @@ class Argo:
         
         return step
 
-    def __build_float_data_dataframe(self, float_ids, columns)-> pd:
+    def __build_dataframe_column_list(self, columns)-> list:
         """ A function to create and lable the necessary columns for 
             the dataframe to hold information about the passed floats
             from the downloaded .nc files. 
 
-            :param: float_ids : list - The floats to load information on.
             :param: columns : list - A list of parameters to include
                 in the dataframe
 
-            :return: pd - A dataframe to store information on the floats
-                from the .nc files in. 
+            :return: list - A list to of all the columns the dataframe
+                needs to include
         """
-        print(f'Building float data dataframe...')
-        print(f'The Floats: {float_ids}')
-        print(f'The Parameters: {columns}')
+        if self.download_settings.verbose: print(f'Building float data dataframe column list...')
 
         dataframe_columns = []
         for parameter in columns : 
@@ -1170,19 +1170,18 @@ class Argo:
                              'LONGITUDE', 'POSITION_QC', 'PRES', 'PRES_QC', 
                              'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 
                              'PRES_ADJUSTED_ERROR']  + dataframe_columns
-        dataframe_dict = dict.fromkeys(dataframe_columns, [])
-        float_data_frame = pd.DataFrame(dataframe_dict)
-        print(f'The Dataframe: {float_data_frame}')
+        
+        return dataframe_columns
 
-        return float_data_frame
     
-    def __fill_float_data_dataframe(self, float_data_dataframe, files)-> None: 
+    def __fill_float_data_dataframe(self, column_list, files)-> pd: 
         """ A Function to load data into the flaot data dataframe.
 
-            :param: float_data_dataframe : pd - The dataframe to load
-                data from the .nc files into. 
+            :param: column_list : list - The list of columns needed in frame.
             :param: files : list - A list of filenames to pull information
                 from.
+
+            :return: pd : Dataframe - The dataframe of float data. 
         """
         print(f'Loading float data...')
 
@@ -1194,67 +1193,105 @@ class Argo:
 
         # List of one dimentional columns
         columns_1d = ['LONGITUDE', 'LATITUDE', 'JULD_LOCATION', 'DIRECTION', 'CYCLE_NUMBER', "POSITION_QC"]
-        columns_alias = ['DATE', 'DATE_QC', 'WMOID']
+        special_case_columns = ['DATE', 'DATE_QC', 'WMOID']
 
+        # Empty Dataframe
+        float_data_dataframe = pd.DataFrame()
+
+        # Iterate through files
         for file in file_paths : 
+
+            if self.download_settings.verbose: print(f'Loading Float data from file {file}...')
+            
             # Open File
             nc_file = netCDF4.Dataset(file, mode='r')
+            
             # Get dimensions of variables
             number_of_profiles = nc_file.dimensions['N_PROF'].size
             number_of_levels = nc_file.dimensions['N_LEVELS'].size
             file_variables = nc_file.variables
+            
+            # Temporary dataframe to make indexing simpler
+            temp_frame = pd.DataFrame()
 
-            for column in float_data_dataframe :
-                print(f'Reading in {column}...')
+            # Iterate through parameters that must be added to the dataframe
+            for column in column_list :
+
+                if self.download_settings.verbose: print(f'Reading in {column}...')
+
+                # A list to store the values before transfering over to dataframe column
+                column_values = []
+                
                 # Check if the column is in the dataframe
                 if column in file_variables : 
-                    # A list to store the values before transfering over to dataframe column
-                    column_values = []
+                    
                     # Check if the column one of the one dimentional ones
                     if column in columns_1d : 
                         nc_variable = nc_file.variables[column][:]
-                        print(f'')
-                        print(f'One Dimensional Variable Type: {type(nc_variable)}')
                         for value in nc_variable : 
                             value_repeats = [value] * number_of_levels
                             column_values.extend(value_repeats)
 
                     # Otherwise the column is two dimentional
                     else : 
+
                         # column_2d is a list of lists where each list is a profile
                         # containing measurements taken at different depths. 
                         column_2d =nc_file.variables[column][:]
-                        print(f'Two Dimensional Variable Type: {type(column_2d)}')
                         for profile in column_2d : 
                             for depth in profile : 
                                 column_values.append(depth)
 
-                # If column is not in dataframe print warning and fill with nanns
+                # If column is not in dataframe check if it is a special case
+                # column that we are deriving or if we should fill the column
+                # with 0s
                 else : 
-                    if column in columns_alias: 
+                    if column in special_case_columns: 
+
                         if column == 'DATE' : 
+
+                            if self.download_settings.verbose: print(f'Calculating DATE from JULD...')
                             nc_variable = nc_file.variables['JULD'][:]
-                            print(f'Calculating DATE from JULD...')
-                            print(f'One Dimensional Variable Type: {type(nc_variable)}')
+                            for date in nc_variable : 
+                                reference_date = datetime(1950, 1, 1)
+                                utc_date = reference_date + timedelta(days=date)
+                                value_repeats = [utc_date] * number_of_levels
+                                column_values.extend(value_repeats)
+
                         elif column == 'DATE_QC' : 
+
                             nc_variable = nc_file.variables['JULD_QC'][:]
-                            print(f'Calculating DATE_QC from JULD_QC...')
-                            print(f'One Dimensional Variable Type: {type(nc_variable)}')
+                            for value in nc_variable : 
+                                value_repeats = [value] * number_of_levels
+                                column_values.extend(value_repeats)  
+
                         elif column == 'WMOID' : 
+
                             file_name = str(file.name)
                             float_id = file_name.split('_')[0]
                             column_values = [int(float_id)] * (number_of_profiles * number_of_levels)
-                    else :       
+
+                    # If the column is not in the file, and is not a column we are adjusting the name of
+                    # then we print a warning to the user and fill with 0s.    
+                    else : 
+
                         print(f'WARNING: The parameter: {column} does not exist in file: {file}')
                         column_values = [0] * (number_of_profiles * number_of_levels)
                 
-                # Add list to the right column in the dataframe
-                float_data_dataframe[column] = float_data_dataframe[column].tolist() + column_values
-                print(f'DATAFRAME: ')
-                print(float_data_dataframe)
+                # If masked array decode
+                column_values = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in column_values]
+
+                # Add list of values gathered for column to the temp dataframe
+                temp_frame[column] = column_values
+            
+            # Concatonate the final dataframe and the temp dataframe
+            float_data_dataframe = pd.concat([temp_frame, float_data_dataframe], ignore_index=True)
 
             # Close File 
             nc_file.close()
 
-        print(f'DATAFRAME: ')
-        print(float_data_dataframe)
+        #Clean up dataframe
+        float_data_dataframe = float_data_dataframe[float_data_dataframe['PRES'] != '--']
+
+        # Return dataframe
+        return float_data_dataframe
