@@ -3,20 +3,43 @@
 
 from Argo import Argo
 import time
+
+
+# Test against matlab
 argo = Argo()
 
-# floats = argo.select_profiles(start_date='2023-10-10', floats=5906297) # key error... on wmoid.... hnngg
-# argo.load_float_data(floats)
-
-print(f'Passing Doxy')
+print(f'Passing Nothing')
 data = argo.load_float_data(5905105)
 print(data)
 data.to_csv('output_one.txt', encoding='utf-8', index=False, na_rep='NAN')
 print(f'\n\n')
-print(f'Passing temp and doxy')
+
+print(f'Passing DOXY and CHLA')
 data = argo.load_float_data([5904859, 5903807], parameters=['DOXY', 'CHLA'])
 print(data)
 data.to_csv('output_two.txt', encoding='utf-8', index=False, na_rep='NAN')
+print(f'\n\n')
+
+print(f'Passing TEMP')
+data = argo.load_float_data([4903500, 5903611], parameters=['TEMP'])
+print(data)
+data.to_csv('output_two.txt', encoding='utf-8', index=False, na_rep='NAN')
+print(f'\n\n')
+
+print(f'Passing TEMP, DOXY, PRES')
+data = argo.load_float_data([5904859, 5903807, 5906297], parameters=['TEMP', 'DOXY', 'PRES'])
+print(data)
+data.to_csv('output_two.txt', encoding='utf-8', index=False, na_rep='NAN')
+print(f'\n\n')
+
+
+
+# PROFILE INDEXES TEST
+# argo = Argo()
+# floats = argo.select_profiles(start_date='2023-10-10', floats=5906297) 
+# data = argo.load_float_data(floats)
+# print(data)
+
 
 # Graph for slide
 # from Argo import Argo
@@ -383,3 +406,47 @@ data.to_csv('output_two.txt', encoding='utf-8', index=False, na_rep='NAN')
 ###########################################################################################################################
 
 ###########################################################################################################################
+
+# Iterate through dataframe
+        # for index, row in float_data_dataframe.iterrows() : 
+
+        #     # Extract float id from row
+        #     float_id = row['WMOID']
+        #     print(f'Float ID: {float_id}')
+            
+        #     # Extract float type using the float_stats dataframe
+        #     float_type = self.float_stats.loc[self.float_stats['wmoid'] == float_id, 'is_bgc'].values[0]
+        #     print(f'Dataframe: {float_type}')
+
+        #     # Assign dataframe to use
+        #     if float_type : 
+        #         dataframe = self.sprof_index 
+        #         print(f'dataframe set to sprof')
+        #     else : 
+        #         dataframe = self.prof_index
+        #         print(f'dataframe set to prof')
+
+        #     # Extract date from float_data_dataframe
+        #     nc_date = row['DATE']
+
+        #     # Extract prof_ind from index dataframe
+        #     # where float id matches and date is within a tolerance
+        #     # of date from float_data_dataframe and then assign this
+        #     # prof_idx to the float_data_dataframe for that row
+        #     tolerance = pd.Timedelta(days=2e-5)
+        #     matched_rows = dataframe[(dataframe['wmoid'] == float_id) & (np.abs(dataframe['date'] - nc_date) <= tolerance)]
+        #     if not matched_rows.empty:
+        #         prof_idx = matched_rows['profile_index'].values[0]
+        #         print(f'Profile index found: {prof_idx}')
+        #     else:
+        #         prof_idx = np.nan
+        #         print(f'No matching profile index found for float ID: {float_id} and date: {nc_date}')
+
+        #     # Assign the profile index to the float_data_dataframe for that row
+        #     float_data_dataframe.at[index, 'PROF_IDX'] = prof_idx
+            
+        # # Move profile index to start of frame for easier visual comparisoin
+        # prof_index_column = float_data_dataframe.pop('PROF_IDX') 
+        # float_data_dataframe.insert(2, 'PROF_IDX', prof_index_column) 
+
+        # return float_data_dataframe

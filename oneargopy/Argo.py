@@ -211,6 +211,7 @@ class Argo:
         print(f'Floats: {narrowed_profiles.keys()}')
         for key, value in narrowed_profiles.items():
             print(f'{key}: {value}')
+        print(f'\n\n')
 
         return narrowed_profiles
     
@@ -721,6 +722,8 @@ class Argo:
         """ A function to validate the 'floats' keyword argument. 
             The 'floats' must be a list even if it is a single float.
         """
+        if self.download_settings.verbose: print(f"Validating passed floats...")
+
         # If user has passed a dictionary
         if isinstance(self.float_ids, dict) :
             self.float_profiles_dict = self.float_ids
@@ -817,6 +820,7 @@ class Argo:
                   selected_floats_bgc = self.float_stats[bgc_filter]['wmoid'].tolist()
                   # Gather bgc profiles for these floats from sprof index frame
                   self.selected_from_sprof_index = self.sprof_index[self.sprof_index['wmoid'].isin(selected_floats_bgc)]
+    
             if self.float_type != 'bgc': 
                   # Make a list of phys floats that the user wants 
                   phys_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == False)
@@ -839,12 +843,12 @@ class Argo:
                 keys corresponding to a list of profiles that match criteria.
         """
         # Filter by time, space, and type constraints first.
-        if self.float_type == 'bgc' : 
+        if self.float_type == 'bgc' or self.selected_from_prof_index.empty : 
             # Empty df for concat
             self.selection_frame_phys = pd.DataFrame()
         else :
             self.selection_frame_phys = self.__get_in_time_and_space_constraints(self.selected_from_prof_index)
-        if self.float_type == 'phys' : 
+        if self.float_type == 'phys' or self.selected_from_sprof_index.empty : 
             # Empty df for concat
             self.selection_frame_bgc = pd.DataFrame()
         else :
@@ -932,6 +936,10 @@ class Argo:
         """ A function to create and return a true false array indicating
             profiles that fall within the date range.
         """
+        # If filtering by floats has resulted in an empty dataframe being passed
+        if dataframe_to_filter.empty: 
+            return [True] * len(dataframe_to_filter)
+
         # If the user has passed us the entire available date don't go through the whole
         # process of checking if the points of all the floats are inside the range
         beginning_of_full_range = np.datetime64(datetime(1995, 1, 1, tzinfo=timezone.utc))
@@ -1167,11 +1175,14 @@ class Argo:
             for parameter in self.float_parameters : 
                 if parameter in file_variables: 
                     print(f'Parameter {parameter} is in the file.')
-                    parameter_columns.append(parameter)
-                    parameter_columns.append(parameter + '_QC')
-                    parameter_columns.append(parameter + '_ADJUSTED')
-                    parameter_columns.append(parameter + '_ADJUSTED_QC')
-                    parameter_columns.append(parameter + '_ADJUSTED_ERROR')
+                    # We add PRES no matter what, so if the user passed it 
+                    # don't add it to the parameter list at this time.
+                    if parameter != 'PRES' : 
+                        parameter_columns.append(parameter)
+                        parameter_columns.append(parameter + '_QC')
+                        parameter_columns.append(parameter + '_ADJUSTED')
+                        parameter_columns.append(parameter + '_ADJUSTED_QC')
+                        parameter_columns.append(parameter + '_ADJUSTED_ERROR')
                 else : 
                     print(f'WARNING: The parameter: {parameter} does not exist in the file.')
             
@@ -1277,12 +1288,15 @@ class Argo:
             float_data_dataframe = float_data_dataframe[float_data_dataframe['PRES'] != np.nan]
 
         ## Fix PROF_IDX now that we have all the correct info
-        float_data_dataframe = self.__correct_prof_idx_values(float_data_dataframe, files)
+        float_data_dataframe = self.__correct_prof_idx_values(float_data_dataframe)
 
         ## If specific profiles are specified remove profiles that are not passed
         if self.float_profiles_dict is not None :
-            # Only include profile indecies in the dictonary
-            pass
+            if self.download_settings.verbose: print(f'Filtering data by selected profiles...')
+            for float in self.float_profiles_dict :
+                profiles_to_keep = self.float_profiles_dict[float]
+                float_data_dataframe = float_data_dataframe[(float_data_dataframe['PROF_IDX'].isin(profiles_to_keep)) & 
+                                                            (float_data_dataframe['WMOID'] == float)]
 
         # Return dataframe
         return float_data_dataframe
@@ -1385,31 +1399,43 @@ class Argo:
         return column_values
 
 
-    def __correct_prof_idx_values(self, float_data_dataframe, files)-> pd : 
+    def __correct_prof_idx_values(self, float_data_dataframe)-> pd : 
         """ Function to assign the correct profile index values to 
             floats in the loaded data dataframe.
         """
-        # Iterate through dataframe
-        for row in float_data_dataframe : 
+        if self.download_settings.verbose: print(f'Setting PROF_IDX to correct values...')
 
-            # Extract float id from row
-            
-            # Extract float type using the float_stats dataframe
+        # Working dataframe to alter/merge with containing only necessary columns
+        working_float_data_dataframe = float_data_dataframe[['WMOID', 'PROF_IDX', 'DATE']]
 
-            # Assign dataframe to use
-            if float_type == 'prof' : dataframe = self.prof_index
-            elif float_type =='Sprof' : dataframe = self.sprof_index
+        # Filter prof_index to drop rows where 'is_bgc' is True
+        filtered_prof_index = self.prof_index[~self.prof_index['is_bgc']]
 
-            # Extract date from float_data_dataframe
+        # Merge sprof_index and prof_index into a single dataframe 
+        # there shouldn't be any repeated profiles because we removed
+        # profiles from prof_index where is_bgc was true, meaning
+        # that any profiles that would have also been in sprof index
+        # have been removed. 
+        merged_index = pd.concat([self.sprof_index[['wmoid', 'profile_index', 'date']],
+                                  filtered_prof_index[['wmoid', 'profile_index', 'date']]])
+        
+        # Adjusting merged_index for compatibility with float_data_dataframe
+        merged_index.rename(columns = {'wmoid':'WMOID'}, inplace = True)
+        merged_index['WMOID'] = merged_index['WMOID'].astype('int64')
+        null_rows = merged_index[merged_index.isnull().any(axis=1)]
+        if self.download_settings.verbose: print(f"Dropping {len(null_rows)}/{len(merged_index)} null rows from index frames")
+        merged_index.dropna(subset=['WMOID', 'date'], inplace=True)
 
-            # Extract prof_ind from index dataframe
-            # where float id matches and date is within a tolerance
-            # of date from float_data_dataframe and then assign this
-            # prof_idx to the float_data_dataframe for that row
+        # Merge working_float_data_dataframe with merged_index on 'WMOID' and filter by date tolerance
+        tolerance = pd.Timedelta(days=2e-5)
+        merged_data = pd.merge_asof(working_float_data_dataframe.sort_values('DATE'), merged_index.sort_values('date'), 
+                                    by='WMOID', left_on='DATE', right_on='date', direction='nearest', tolerance=tolerance)
 
-            
-        # Move profile index to start of frame for easier visual comparisoin
-        prof_index_column = float_data_dataframe.pop('PROF_IDX') 
-        float_data_dataframe.insert(2, 'PROF_IDX', prof_index_column) 
+        # Assign PROF_IDX from merged_data to float_data_dataframe
+        float_data_dataframe['PROF_IDX'] = merged_data['profile_index']
+
+        # Move profile index column to the second position for easier comparison
+        prof_index_column = float_data_dataframe.pop('PROF_IDX')
+        float_data_dataframe.insert(2, 'PROF_IDX', prof_index_column)
 
         return float_data_dataframe
