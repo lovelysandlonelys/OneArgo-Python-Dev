@@ -23,13 +23,13 @@ print(f'\n\n')
 print(f'Passing TEMP')
 data = argo.load_float_data([4903500, 5903611], parameters=['TEMP'])
 print(data)
-data.to_csv('output_two.txt', encoding='utf-8', index=False, na_rep='NAN')
+data.to_csv('output_three.txt', encoding='utf-8', index=False, na_rep='NAN')
 print(f'\n\n')
 
 print(f'Passing TEMP, DOXY, PRES')
 data = argo.load_float_data([5904859, 5903807, 5906297], parameters=['TEMP', 'DOXY', 'PRES'])
 print(data)
-data.to_csv('output_two.txt', encoding='utf-8', index=False, na_rep='NAN')
+data.to_csv('output_four.txt', encoding='utf-8', index=False, na_rep='NAN')
 print(f'\n\n')
 
 
