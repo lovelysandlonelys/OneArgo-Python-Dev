@@ -1184,8 +1184,6 @@ class Argo:
         
         else : 
             return None
- 
-        
 
     
     def __fill_float_data_dataframe(self, files)-> pd: 
@@ -1278,9 +1276,8 @@ class Argo:
         if parameter_columns is not None :
             float_data_dataframe = float_data_dataframe[float_data_dataframe['PRES'] != np.nan]
 
-        ## Add PROF_IDX to front of frame for easier comparison
-        prof_index_column = float_data_dataframe.pop('PROF_IDX') 
-        float_data_dataframe.insert(2, 'PROF_IDX', prof_index_column) 
+        ## Fix PROF_IDX now that we have all the correct info
+        float_data_dataframe = self.__correct_prof_idx_values(float_data_dataframe, files)
 
         ## If specific profiles are specified remove profiles that are not passed
         if self.float_profiles_dict is not None :
@@ -1342,8 +1339,8 @@ class Argo:
 
         elif column == 'PROF_IDX' : 
 
-            # Placeholder for logic later
-            nc_variable = [np.nan] * number_of_profiles
+            # Placeholder values
+            nc_variable = [0] * number_of_profiles
 
             # Returning nc varaible
             return nc_variable
@@ -1386,3 +1383,33 @@ class Argo:
         column_values = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in column_values]
 
         return column_values
+
+
+    def __correct_prof_idx_values(self, float_data_dataframe, files)-> pd : 
+        """ Function to assign the correct profile index values to 
+            floats in the loaded data dataframe.
+        """
+        # Iterate through dataframe
+        for row in float_data_dataframe : 
+
+            # Extract float id from row
+            
+            # Extract float type using the float_stats dataframe
+
+            # Assign dataframe to use
+            if float_type == 'prof' : dataframe = self.prof_index
+            elif float_type =='Sprof' : dataframe = self.sprof_index
+
+            # Extract date from float_data_dataframe
+
+            # Extract prof_ind from index dataframe
+            # where float id matches and date is within a tolerance
+            # of date from float_data_dataframe and then assign this
+            # prof_idx to the float_data_dataframe for that row
+
+            
+        # Move profile index to start of frame for easier visual comparisoin
+        prof_index_column = float_data_dataframe.pop('PROF_IDX') 
+        float_data_dataframe.insert(2, 'PROF_IDX', prof_index_column) 
+
+        return float_data_dataframe
