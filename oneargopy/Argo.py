@@ -1293,10 +1293,16 @@ class Argo:
         ## If specific profiles are specified remove profiles that are not passed
         if self.float_profiles_dict is not None :
             if self.download_settings.verbose: print(f'Filtering data by selected profiles...')
+            profile_rows_to_keep = pd.DataFrame()
             for float in self.float_profiles_dict :
                 profiles_to_keep = self.float_profiles_dict[float]
-                float_data_dataframe = float_data_dataframe[(float_data_dataframe['PROF_IDX'].isin(profiles_to_keep)) & 
-                                                            (float_data_dataframe['WMOID'] == float)]
+                print(f'Profiles To Keep: {profiles_to_keep}')
+                new_profile_rows_to_keep = float_data_dataframe[(float_data_dataframe['PROF_IDX'].isin(profiles_to_keep)) & (float_data_dataframe['WMOID'] == float)]
+                print(f'New Rows To Keep')
+                print(new_profile_rows_to_keep)
+                profile_rows_to_keep = pd.concat([profile_rows_to_keep, new_profile_rows_to_keep], ignore_index=True)
+                
+            float_data_dataframe = profile_rows_to_keep
 
         # Return dataframe
         return float_data_dataframe
