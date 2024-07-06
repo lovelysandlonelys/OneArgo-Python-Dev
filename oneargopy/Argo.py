@@ -1414,7 +1414,7 @@ class Argo:
         float_ids_in_data_dataframe = float_data_dataframe['WMOID'].tolist()
 
         index_file = self.prof_index[self.prof_index['wmoid'].isin(float_ids_in_data_dataframe)]
-        index_file.rename(columns={'wmoid': 'WMOID', 'date': 'DATE'}, inplace = True)
+        index_file.rename(columns={'wmoid': 'WMOID', 'date': 'DATE'}, inplace=True)
 
         index_file.to_csv('index_file.csv', index=False) 
         self.prof_index.to_csv('prof_index.csv', index=False)
@@ -1428,10 +1428,6 @@ class Argo:
         rows_with_null_prof_idx = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
         print('NULL ROWS IN WORKING DATAFRAME')
         print(rows_with_null_prof_idx)
-        if not rows_with_null_prof_idx.empty : 
-            un_null = rows_with_null_prof_idx.merge(index_file, how='left', on=['WMOID', 'DATE'])
-            print('UNNULL ROWS IN WORKING DATAFRAME')
-            print(un_null)
         
         # Use np.where to assign PROF_IDX based on conditions
         float_data_dataframe['PROF_IDX'] = working_float_data_dataframe['profile_index'] # .astype('int')
