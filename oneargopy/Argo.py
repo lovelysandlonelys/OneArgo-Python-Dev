@@ -1411,9 +1411,6 @@ class Argo:
         """
         if self.download_settings.verbose: print(f'Setting PROF_IDX to correct values...')
 
-        # Working dataframe to alter/merge with containing only necessary columns
-        working_float_data_dataframe = float_data_dataframe[['WMOID', 'PROF_IDX', 'DATE']]
-
         # Filter prof_index to drop rows where 'is_bgc' is True
         filtered_prof_index = self.prof_index[~self.prof_index['is_bgc']]
 
@@ -1424,24 +1421,24 @@ class Argo:
         # have been removed. 
         merged_index = pd.concat([self.sprof_index[['wmoid', 'profile_index', 'date']],
                                   filtered_prof_index[['wmoid', 'profile_index', 'date']]])
+        merged_index.rename(columns={'wmoid': 'WMOID', 'date': 'DATE'}, inplace = True)
+
+        merged_index.to_csv('merged_index.csv', index=False) 
         
-        # Adjusting merged_index for compatibility with float_data_dataframe
-        merged_index.rename(columns = {'wmoid':'WMOID'}, inplace = True)
-        merged_index['WMOID'] = merged_index['WMOID'].astype('int64')
-        null_rows = merged_index[merged_index.isnull().any(axis=1)]
-        if self.download_settings.verbose: print(f"Dropping {len(null_rows)}/{len(merged_index)} null rows from index frames")
-        merged_index.dropna(subset=['WMOID', 'date'], inplace=True)
+        # Merge with index
+        working_float_data_dataframe = float_data_dataframe.merge(merged_index, how='left', on=['WMOID', 'DATE'])
 
-        # Merge working_float_data_dataframe with merged_index on 'WMOID' and filter by date tolerance
-        tolerance = pd.Timedelta(days=2e-5)
-        merged_data = pd.merge_asof(working_float_data_dataframe.sort_values('DATE'), merged_index.sort_values('date'), 
-                                    by='WMOID', left_on='DATE', right_on='date', direction='nearest', tolerance=tolerance)
+        working_float_data_dataframe.to_csv('working_float_data_dataframe.csv', index=False) 
 
-        # Assign PROF_IDX from merged_data to float_data_dataframe
-        float_data_dataframe['PROF_IDX'] = merged_data['profile_index']
+        rows_with_null_prof_idx = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
+        print('NULL ROWS IN WORKING DATAFRAME')
+        print(rows_with_null_prof_idx)
+        
+        # Use np.where to assign PROF_IDX based on conditions
+        float_data_dataframe['PROF_IDX'] = working_float_data_dataframe['profile_index'].astype('int')
 
         # Move profile index column to the second position for easier comparison
         prof_index_column = float_data_dataframe.pop('PROF_IDX')
-        float_data_dataframe.insert(2, 'PROF_IDX', prof_index_column)
+        float_data_dataframe.insert(1, 'PROF_IDX', prof_index_column)
 
         return float_data_dataframe

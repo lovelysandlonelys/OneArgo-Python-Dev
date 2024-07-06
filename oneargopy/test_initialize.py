@@ -8,6 +8,13 @@ import time
 # Test against matlab
 argo = Argo()
 
+print(f'Passing DOXY')
+floats = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+data = argo.load_float_data(floats, parameters='DOXY')
+print(data)
+data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='NAN')
+print(f'\n\n')
+
 # print(f'Passing Nothing')
 # data = argo.load_float_data(5905105)
 # print(data)
@@ -32,13 +39,12 @@ argo = Argo()
 # data.to_csv('output_four.txt', encoding='utf-8', index=False, na_rep='NAN')
 # print(f'\n\n')
 
-print(f'Passing DOXY')
-floats = argo.select_profiles(start_date='2024-05-01', end_date='2024-05-02', type='bgc') 
-data = argo.load_float_data(floats, parameters='DOXY')
-print(data)
-data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='NAN')
-print(f'\n\n')
-
+# print(f'Passing DOXY')
+# floats = argo.select_profiles(start_date='2024-05-01', end_date='2024-05-02', type='bgc') 
+# data = argo.load_float_data(floats, parameters='DOXY')
+# print(data)
+# data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='NAN')
+# print(f'\n\n')
 
 # PROFILE INDEXES TEST
 # argo = Argo()
@@ -456,3 +462,38 @@ print(f'\n\n')
         # float_data_dataframe.insert(2, 'PROF_IDX', prof_index_column) 
 
         # return float_data_dataframe
+
+
+####################################
+# # Working dataframe to alter/merge with containing only necessary columns
+#         working_float_data_dataframe = float_data_dataframe[['WMOID', 'DATE']]
+
+#         # Filter prof_index to drop rows where 'is_bgc' is True
+#         filtered_prof_index = self.prof_index[~self.prof_index['is_bgc']]
+
+#         # Merge sprof_index and prof_index into a single dataframe 
+#         # there shouldn't be any repeated profiles because we removed
+#         # profiles from prof_index where is_bgc was true, meaning
+#         # that any profiles that would have also been in sprof index
+#         # have been removed. 
+#         merged_index = pd.concat([self.sprof_index[['wmoid', 'profile_index', 'date']],
+#                                   filtered_prof_index[['wmoid', 'profile_index', 'date']]])
+        
+#         # Adjusting merged_index for compatibility with float_data_dataframe
+#         merged_index.rename(columns = {'wmoid':'WMOID'}, inplace = True)
+#         merged_index['WMOID'] = merged_index['WMOID'].astype('int64')
+
+#         null_rows = merged_index[merged_index.isnull().any(axis=1)]
+#         if self.download_settings.verbose: print(f"Dropping {len(null_rows)}/{len(merged_index)} null rows from index frames")
+#         merged_index.dropna(subset=['WMOID', 'DATE'], inplace=True)
+
+#         # Merge working_float_data_dataframe with merged_index on 'WMOID' and filter by date tolerance
+#         merged_data = pd.merge_asof(working_float_data_dataframe.sort_values('DATE'), merged_index.sort_values('DATE'), 
+#                                     by='WMOID', left_on='DATE', right_on='DATE', tolerance=pd.Timedelta(days=2e-5))
+
+#         # Assign PROF_IDX from merged_data to float_data_dataframe
+#         float_data_dataframe['PROF_IDX'] = merged_data['profile_index']
+
+#         # Move profile index column to the second position for easier comparison
+#         prof_index_column = float_data_dataframe.pop('PROF_IDX')
+#         float_data_dataframe.insert(1, 'PROF_IDX', prof_index_column)
