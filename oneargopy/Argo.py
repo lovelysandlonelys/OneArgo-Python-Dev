@@ -1411,34 +1411,35 @@ class Argo:
         """
         if self.download_settings.verbose: print(f'Setting PROF_IDX to correct values...')
 
-        # Filter prof_index to drop rows where 'is_bgc' is True
-        filtered_prof_index = self.prof_index[~self.prof_index['is_bgc']]
+        float_ids_in_data_dataframe = float_data_dataframe['WMOID'].tolist()
 
-        # Merge sprof_index and prof_index into a single dataframe 
-        # there shouldn't be any repeated profiles because we removed
-        # profiles from prof_index where is_bgc was true, meaning
-        # that any profiles that would have also been in sprof index
-        # have been removed. 
-        merged_index = pd.concat([self.sprof_index[['wmoid', 'profile_index', 'date']],
-                                  filtered_prof_index[['wmoid', 'profile_index', 'date']]])
-        merged_index.rename(columns={'wmoid': 'WMOID', 'date': 'DATE'}, inplace = True)
+        index_file = self.prof_index[self.prof_index['wmoid'].isin(float_ids_in_data_dataframe)]
+        index_file.rename(columns={'wmoid': 'WMOID', 'date': 'DATE'}, inplace = True)
 
-        merged_index.to_csv('merged_index.csv', index=False) 
+        index_file.to_csv('index_file.csv', index=False) 
+        self.prof_index.to_csv('prof_index.csv', index=False)
+        self.sprof_index.to_csv('sprof_index.csv', index=False)
         
         # Merge with index
-        working_float_data_dataframe = float_data_dataframe.merge(merged_index, how='left', on=['WMOID', 'DATE'])
+        working_float_data_dataframe = float_data_dataframe.merge(index_file, how='left', on=['WMOID', 'DATE'])
 
         working_float_data_dataframe.to_csv('working_float_data_dataframe.csv', index=False) 
 
         rows_with_null_prof_idx = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
         print('NULL ROWS IN WORKING DATAFRAME')
         print(rows_with_null_prof_idx)
+        if not rows_with_null_prof_idx.empty : 
+            un_null = rows_with_null_prof_idx.merge(index_file, how='left', on=['WMOID', 'DATE'])
+            print('UNNULL ROWS IN WORKING DATAFRAME')
+            print(un_null)
         
         # Use np.where to assign PROF_IDX based on conditions
-        float_data_dataframe['PROF_IDX'] = working_float_data_dataframe['profile_index'].astype('int')
+        float_data_dataframe['PROF_IDX'] = working_float_data_dataframe['profile_index'] # .astype('int')
 
         # Move profile index column to the second position for easier comparison
         prof_index_column = float_data_dataframe.pop('PROF_IDX')
         float_data_dataframe.insert(1, 'PROF_IDX', prof_index_column)
+
+        float_data_dataframe.to_csv('float_data_dataframe.csv', index=False) 
 
         return float_data_dataframe
