@@ -1294,10 +1294,10 @@ class Argo:
         if self.float_profiles_dict is not None :
             if self.download_settings.verbose: print(f'Filtering data by selected profiles...')
             profile_rows_to_keep = pd.DataFrame()
-            for float in self.float_profiles_dict :
-                profiles_to_keep = self.float_profiles_dict[float]
+            for float_id in self.float_profiles_dict :
+                profiles_to_keep = self.float_profiles_dict[float_id]
                 print(f'Profiles To Keep: {profiles_to_keep}')
-                new_profile_rows_to_keep = float_data_dataframe[(float_data_dataframe['PROF_IDX'].isin(profiles_to_keep)) & (float_data_dataframe['WMOID'] == float)]
+                new_profile_rows_to_keep = float_data_dataframe[(float_data_dataframe['PROF_IDX'].isin(profiles_to_keep)) & (float_data_dataframe['WMOID'] == float_id)]
                 print(f'New Rows To Keep')
                 print(new_profile_rows_to_keep)
                 profile_rows_to_keep = pd.concat([profile_rows_to_keep, new_profile_rows_to_keep], ignore_index=True)
@@ -1422,7 +1422,7 @@ class Argo:
         index_file.to_csv('index_file.csv', index=False)
 
         # Truncating datetime's in the float_data_dataframe for tolerence on merge
-        float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('s')
+        float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('m')
         
         # Merge with index
         working_float_data_dataframe = float_data_dataframe.merge(index_file, how='left', on=['WMOID', 'DATE'])
@@ -1433,7 +1433,7 @@ class Argo:
         rows_with_null_prof_idx.to_csv('rows_with_null_prof_idx.csv', index=False) 
         
         # Update PROF_IDX with thoes assigned from working_float_data_dataframe
-        float_data_dataframe['PROF_IDX'] = working_float_data_dataframe['profile_index'].astype('int')
+        float_data_dataframe['PROF_IDX'] = working_float_data_dataframe['profile_index'] #.astype('int')
 
         # Move profile index column to the second position for easier comparison
         prof_index_column = float_data_dataframe.pop('PROF_IDX')
