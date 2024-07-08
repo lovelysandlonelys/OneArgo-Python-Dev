@@ -1422,7 +1422,10 @@ class Argo:
         index_file.to_csv('index_file.csv', index=False)
 
         # Truncating datetime's in the float_data_dataframe for tolerence on merge
-        float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('m')
+        float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('T')
+
+        # # Rounding datetime's in the float_data_dataframe for tolerence on merge
+        # float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('T')
         
         # Merge with index
         working_float_data_dataframe = float_data_dataframe.merge(index_file, how='left', on=['WMOID', 'DATE'])
