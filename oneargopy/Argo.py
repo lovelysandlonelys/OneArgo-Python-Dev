@@ -1423,11 +1423,11 @@ class Argo:
 
         # A copy of the prof_index frame with only the flaots we are working with
         index_file = self.prof_index[self.prof_index['wmoid'].isin(float_ids_in_data_dataframe)]
-        index_file = index_file.rename(columns={'wmoid': 'WMOID', 'date': 'DATE',})
+        index_file.rename(columns={'wmoid': 'WMOID', 'date': 'DATE',}, inplace=True)
 
         # Truncating datetime's in the dataframes for tolerence on merge
         float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('min')
-        # index_file['DATE'] = index_file['DATE'].dt.floor('min')
+        index_file['DATE'] = index_file['DATE'].dt.floor('min')
 
         # Logging
         index_file.to_csv('index_file.csv', index=False)
