@@ -1421,25 +1421,33 @@ class Argo:
         # A copy of the prof_index frame with only the flaots we are working with
         index_file = self.prof_index[self.prof_index['wmoid'].isin(float_ids_in_data_dataframe)]
         index_file.loc[:, 'WMOID'] = index_file['wmoid']
-        index_file.loc[:, 'LATITUDE'] = index_file['latitude']
-        index_file.loc[:, 'LONGITUDE'] = index_file['longitude']
-        
-        # Adjusting longitude and latitude types
-        float_data_dataframe['LATITUDE'] = float_data_dataframe['LATITUDE'].astype('float').round(3)
-        float_data_dataframe['LONGITUDE'] = float_data_dataframe['LONGITUDE'].astype('float').round(3)
-        # index_file['LATITUDE'] = index_file['LATITUDE'].astype('float')
-        # index_file['LONGITUDE'] = index_file['LONGITUDE'].astype('float')
+        index_file.loc[:, 'DATE'] = index_file['date']
+
+        # Truncating datetime's in the dataframes for tolerence on merge
+        float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('min')
+        index_file.loc[:, 'DATE'] = index_file['DATE'].dt.floor('min')
 
         # Logging
         index_file.to_csv('index_file.csv', index=False)
 
+        # # Rounding datetime's in the float_data_dataframe for tolerence on merge
+        # float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('min')
+        
         # Merge with index
-        working_float_data_dataframe = float_data_dataframe.merge(index_file, how='left', on=['WMOID', 'LATITUDE', 'LONGITUDE'])
+        working_float_data_dataframe = float_data_dataframe.merge(index_file, how='left', on=['WMOID', 'DATE'])
 
         # Debugging logging
         working_float_data_dataframe.to_csv('working_float_data_dataframe.csv', index=False) 
+
         rows_with_null_prof_idx = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
         rows_with_null_prof_idx.to_csv('rows_with_null_prof_idx.csv', index=False) 
+
+        # Handeling null profile indexes
+        if not rows_with_null_prof_idx.empty : 
+            print('There are inconsitancies (sobbing)')
+
+        rows_with_null_prof_idx_after_handeling = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
+        rows_with_null_prof_idx_after_handeling.to_csv('rows_with_null_prof_idx_after_handeling.csv', index=False) 
             
         # Update PROF_IDX with thoes assigned from working_float_data_dataframe
         float_data_dataframe['PROF_IDX'] = working_float_data_dataframe['profile_index'] #.astype('int')
