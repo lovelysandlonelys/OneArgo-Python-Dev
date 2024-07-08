@@ -1285,7 +1285,9 @@ class Argo:
 
         ## Remove rows where PRES is NaN becaus this indicates no measurmetns were taken
         if parameter_columns is not None :
-            float_data_dataframe = float_data_dataframe[float_data_dataframe['PRES'] != np.nan]
+            # float_data_dataframe = float_data_dataframe[(float_data_dataframe['PRES'] != np.nan) & (float_data_dataframe['PRES_ADJUSTED'] != np.nan)]
+            float_data_dataframe = float_data_dataframe.dropna(subset=['PRES', 'PRES_ADJUSTED'])
+
 
         ## Fix PROF_IDX now that we have all the correct info
         float_data_dataframe = self.__correct_prof_idx_values(float_data_dataframe)
@@ -1406,6 +1408,9 @@ class Argo:
         # If the column has 'byte' strings then decode
         column_values = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in column_values]
 
+        # Change 'n' to 0 in columns with 'n' as a false value
+        column_values = [0 if elem == 'n' else elem for elem in column_values]
+
         return column_values
 
 
@@ -1429,9 +1434,6 @@ class Argo:
 
         # Logging
         index_file.to_csv('index_file.csv', index=False)
-
-        # # Rounding datetime's in the float_data_dataframe for tolerence on merge
-        # float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('min')
         
         # Merge with index
         working_float_data_dataframe = float_data_dataframe.merge(index_file, how='left', on=['WMOID', 'DATE'])
@@ -1444,7 +1446,15 @@ class Argo:
 
         # Handeling null profile indexes
         if not rows_with_null_prof_idx.empty : 
-            print('There are inconsitancies (sobbing)')
+            index_file.loc[:, 'LONGITUDE'] = index_file['longitude']
+            working_float_data_dataframe['LONGITUDE'] = working_float_data_dataframe['LONGITUDE'].astype('float')
+
+            matched_rows_lon = pd.merge(rows_with_null_prof_idx, index_file, how='left', on='LONGITUDE')
+            matched_rows_lon.to_csv('matched_rows_lon.csv', index=False)
+
+            # Update profile index where matches are found
+            working_float_data_dataframe.loc[working_float_data_dataframe['profile_index'].isnull(), 'profile_index'] = matched_rows_lon['profile_index']
+            
 
         rows_with_null_prof_idx_after_handeling = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
         rows_with_null_prof_idx_after_handeling.to_csv('rows_with_null_prof_idx_after_handeling.csv', index=False) 
