@@ -1390,7 +1390,7 @@ class Argo:
         column_values = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in column_values]
 
         # Change 'n' to 0 in columns with 'n' as a false value
-        column_values = [0 if elem == 'n' else elem for elem in column_values]
+        column_values = [0 if str(elem) == 'n' else elem for elem in column_values]
 
         return column_values
     
@@ -1407,7 +1407,7 @@ class Argo:
         column_values = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in column_values]
 
         # Change 'n' to 0 in columns with 'n' as a false value
-        column_values = [0 if elem == 'n' else elem for elem in column_values]
+        column_values = [0 if str(elem) == 'n' else elem for elem in column_values]
 
         return column_values
 
@@ -1423,12 +1423,11 @@ class Argo:
 
         # A copy of the prof_index frame with only the flaots we are working with
         index_file = self.prof_index[self.prof_index['wmoid'].isin(float_ids_in_data_dataframe)]
-        index_file.loc[:, 'WMOID'] = index_file['wmoid']
-        index_file.loc[:, 'DATE'] = index_file['date']
+        index_file = index_file.rename(columns={'wmoid': 'WMOID', 'date': 'DATE',})
 
         # Truncating datetime's in the dataframes for tolerence on merge
         float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('min')
-        index_file.loc[:, 'DATE'] = index_file['DATE'].dt.floor('min')
+        # index_file['DATE'] = index_file['DATE'].dt.floor('min')
 
         # Logging
         index_file.to_csv('index_file.csv', index=False)
@@ -1443,22 +1442,19 @@ class Argo:
         rows_with_null_prof_idx = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
         rows_with_null_prof_idx.to_csv('rows_with_null_prof_idx.csv', index=False) 
 
-        # Handeling null profile indexes
-        if not rows_with_null_prof_idx.empty : 
-            if self.download_settings.verbose: print(f'Setting profile index by longitude...')
-            index_file.loc[:, 'LONGITUDE'] = index_file['longitude']
-            working_float_data_dataframe['LONGITUDE'] = working_float_data_dataframe['LONGITUDE'].astype('float')
+        # # Handeling null profile indexes
+        # if not rows_with_null_prof_idx.empty : 
+        #     if self.download_settings.verbose: print(f'Setting profile index by longitude...')
+        #     index_file.loc[:, 'LONGITUDE'] = index_file['longitude']
+        #     working_float_data_dataframe['LONGITUDE'] = working_float_data_dataframe['LONGITUDE'].astype('float')
 
-            matched_rows_lon = pd.merge(rows_with_null_prof_idx, index_file, how='left', on=['WMOID', 'LONGITUDE'], suffixes=('', '_index_file'))
-            matched_rows_lon.to_csv('matched_rows_lon.csv', index=False)
+        #     matched_rows_lon = pd.merge(rows_with_null_prof_idx, index_file, how='left', on=['WMOID', 'LONGITUDE'], suffixes=('', '_index_file'))
+        #     matched_rows_lon.to_csv('matched_rows_lon.csv', index=False)
 
-            # Update profile index where matches are found
-            for idx, row in matched_rows_lon.iterrows():
-                mask = (working_float_data_dataframe['WMOID'] == row['WMOID']) & (working_float_data_dataframe['LONGITUDE'] == row['LONGITUDE']) & (working_float_data_dataframe['profile_index'].isnull())
-                working_float_data_dataframe.loc[mask, 'profile_index'] = row['profile_index_index_file']
-
-        # Logging after the second merge and update
-        working_float_data_dataframe.to_csv('working_float_data_dataframe_after_second_merge.csv', index=False)
+        #     # Update profile index where matches are found
+        #     for idx, row in matched_rows_lon.iterrows():
+        #         mask = (working_float_data_dataframe['WMOID'] == row['WMOID']) & (working_float_data_dataframe['LONGITUDE'] == row['LONGITUDE']) & (working_float_data_dataframe['profile_index'].isnull())
+        #         working_float_data_dataframe.loc[mask, 'profile_index'] = row['profile_index_index_file']
     
         rows_with_null_prof_idx_after_handeling = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
         rows_with_null_prof_idx_after_handeling.to_csv('rows_with_null_prof_idx_after_handeling.csv', index=False) 
