@@ -1411,31 +1411,35 @@ class Argo:
         """
         if self.download_settings.verbose: print(f'Setting PROF_IDX to correct values...')
 
+        # List of floats we are working with
         float_ids_in_data_dataframe = float_data_dataframe['WMOID'].tolist()
 
+        # A copy of the prof_index frame with only the flaots we are working with
         index_file = self.prof_index[self.prof_index['wmoid'].isin(float_ids_in_data_dataframe)]
         index_file.rename(columns={'wmoid': 'WMOID', 'date': 'DATE'}, inplace=True)
 
-        index_file.to_csv('index_file.csv', index=False) 
-        self.prof_index.to_csv('prof_index.csv', index=False)
-        self.sprof_index.to_csv('sprof_index.csv', index=False)
+        # Logging
+        index_file.to_csv('index_file.csv', index=False)
+
+        # Truncating datetime's in the float_data_dataframe for tolerence on merge
+        float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('s')
         
         # Merge with index
         working_float_data_dataframe = float_data_dataframe.merge(index_file, how='left', on=['WMOID', 'DATE'])
 
+        # Debugging logging
         working_float_data_dataframe.to_csv('working_float_data_dataframe.csv', index=False) 
-
         rows_with_null_prof_idx = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
-        print('NULL ROWS IN WORKING DATAFRAME')
-        print(rows_with_null_prof_idx)
+        rows_with_null_prof_idx.to_csv('rows_with_null_prof_idx.csv', index=False) 
         
-        # Use np.where to assign PROF_IDX based on conditions
-        float_data_dataframe['PROF_IDX'] = working_float_data_dataframe['profile_index'] # .astype('int')
+        # Update PROF_IDX with thoes assigned from working_float_data_dataframe
+        float_data_dataframe['PROF_IDX'] = working_float_data_dataframe['profile_index'].astype('int')
 
         # Move profile index column to the second position for easier comparison
         prof_index_column = float_data_dataframe.pop('PROF_IDX')
         float_data_dataframe.insert(1, 'PROF_IDX', prof_index_column)
 
+        # Logging
         float_data_dataframe.to_csv('float_data_dataframe.csv', index=False) 
 
         return float_data_dataframe
