@@ -542,7 +542,7 @@ class Argo:
             # Line here to suppress warning about fillna() 
             # being depreciated in future versions of pandas: 
             # with pd.option_context('future.no_silent_downcasting', True):
-        result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).astype('int8')
+        result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).infer_objects(copy=False).astype('int8')
 
         # Fill in source_settings information based off of sprof index file before removing rows
         if self.download_settings.verbose: print(f'Filling in source settings information...')
@@ -1416,11 +1416,12 @@ class Argo:
 
         # A copy of the prof_index frame with only the flaots we are working with
         index_file = self.prof_index[self.prof_index['wmoid'].isin(float_ids_in_data_dataframe)]
-        index_file = index_file.rename(columns={'wmoid': 'WMOID', 'date': 'DATE'})
+        index_file.loc[:, 'WMOID'] = index_file['wmoid']
+        index_file.loc[:, 'DATE'] = index_file['date']
 
-        # Truncating datetime's in the float_data_dataframe for tolerence on merge
+        # Truncating datetime's in the dataframes for tolerence on merge
         float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('min')
-        index_file['DATE'] = index_file['DATE'].dt.floor('min')
+        index_file.loc[:, 'DATE'] = index_file['DATE'].dt.floor('min')
 
         # Logging
         index_file.to_csv('index_file.csv', index=False)
