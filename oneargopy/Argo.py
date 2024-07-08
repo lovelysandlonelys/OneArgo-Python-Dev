@@ -1296,6 +1296,7 @@ class Argo:
             profile_rows_to_keep = pd.DataFrame()
             for float_id in self.float_profiles_dict :
                 profiles_to_keep = self.float_profiles_dict[float_id]
+                print(f'Float: {float_id}')
                 print(f'Profiles To Keep: {profiles_to_keep}')
                 new_profile_rows_to_keep = float_data_dataframe[(float_data_dataframe['PROF_IDX'].isin(profiles_to_keep)) & (float_data_dataframe['WMOID'] == float_id)]
                 print(f'New Rows To Keep')
@@ -1388,6 +1389,9 @@ class Argo:
         # If the column has 'byte' strings then decode
         column_values = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in column_values]
 
+        # Change 'n' to 0 in columns with 'n' as a false value
+        column_values = [0 if elem == 'n' else elem for elem in column_values]
+
         return column_values
     
 
@@ -1434,9 +1438,32 @@ class Argo:
 
         # Debugging logging
         working_float_data_dataframe.to_csv('working_float_data_dataframe.csv', index=False) 
+
         rows_with_null_prof_idx = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
         rows_with_null_prof_idx.to_csv('rows_with_null_prof_idx.csv', index=False) 
-        
+
+        # Handeling null profile indexes
+        if not rows_with_null_prof_idx.empty : 
+            print(f'There are rows where a profile index could not be assigned within our tolerence...')
+            # In this case we want to assign the profile index with the closest date/hour to 
+            # Example: Assigning the closest profile index based on date/hour
+            for idx, row in rows_with_null_prof_idx.iterrows():
+                closest_match = index_file[
+                    (index_file['WMOID'] == row['WMOID']) &
+                    (index_file['DATE'] >= (row['DATE'] - timedelta(hours=1))) &
+                    (index_file['DATE'] <= (row['DATE'] + timedelta(hours=1)))
+                ]
+                if not closest_match.empty:
+                    closest_profile_index = closest_match.iloc[0]['profile_index']
+                    # Assign the closest profile index to the original dataframe
+                    float_data_dataframe.at[idx, 'PROF_IDX'] = closest_profile_index
+                else:
+                    # Handle case where no close match is found, maybe assign a default or mark for further review
+                    float_data_dataframe.at[idx, 'PROF_IDX'] = -1  # Example: Assigning a default value or marking for review
+
+        rows_with_null_prof_idx_after_handeling = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
+        rows_with_null_prof_idx_after_handeling.to_csv('rows_with_null_prof_idx_after_handeling.csv', index=False) 
+            
         # Update PROF_IDX with thoes assigned from working_float_data_dataframe
         float_data_dataframe['PROF_IDX'] = working_float_data_dataframe['profile_index'] #.astype('int')
 
