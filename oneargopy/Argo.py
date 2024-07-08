@@ -1434,6 +1434,7 @@ class Argo:
         index_file.to_csv('index_file.csv', index=False)
         
         # Merge with index
+        if self.download_settings.verbose: print(f'Setting profile index by date...')
         working_float_data_dataframe = float_data_dataframe.merge(index_file, how='left', on=['WMOID', 'DATE'])
 
         # Debugging logging
@@ -1444,6 +1445,7 @@ class Argo:
 
         # Handeling null profile indexes
         if not rows_with_null_prof_idx.empty : 
+            if self.download_settings.verbose: print(f'Setting profile index by longitude...')
             index_file.loc[:, 'LONGITUDE'] = index_file['longitude']
             working_float_data_dataframe['LONGITUDE'] = working_float_data_dataframe['LONGITUDE'].astype('float')
 
@@ -1451,8 +1453,13 @@ class Argo:
             matched_rows_lon.to_csv('matched_rows_lon.csv', index=False)
 
             # Update profile index where matches are found
-            working_float_data_dataframe.loc[working_float_data_dataframe['profile_index'].isnull(), 'profile_index'] = matched_rows_lon['profile_index_index_file']
+            for idx, row in matched_rows_lon.iterrows():
+                mask = (working_float_data_dataframe['WMOID'] == row['WMOID']) & (working_float_data_dataframe['LONGITUDE'] == row['LONGITUDE']) & (working_float_data_dataframe['profile_index'].isnull())
+                working_float_data_dataframe.loc[mask, 'profile_index'] = row['profile_index_index_file']
 
+        # Logging after the second merge and update
+        working_float_data_dataframe.to_csv('working_float_data_dataframe_after_second_merge.csv', index=False)
+    
         rows_with_null_prof_idx_after_handeling = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
         rows_with_null_prof_idx_after_handeling.to_csv('rows_with_null_prof_idx_after_handeling.csv', index=False) 
             
