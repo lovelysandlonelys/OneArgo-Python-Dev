@@ -1252,6 +1252,9 @@ class Argo:
 
                 if len(profiles_to_pull) == 1 : 
                     profiles_to_pull = int(profiles_to_pull[0]) 
+                    static_length = 1
+                else : 
+                    static_length = len(profiles_to_pull)
 
             else : 
                 profiles_to_pull = list(range(1, number_of_profiles, 1))
@@ -1269,12 +1272,12 @@ class Argo:
 
                 # Customize the nc_variable if we have a special case where values need to be calculated
                 if column in special_case_static_columns : 
-                    nc_variable = self.__calculate_nc_variable_values(column, nc_file, len(profiles_to_pull))
+                    nc_variable = self.__calculate_nc_variable_values(column, nc_file, static_length, profiles_to_pull)
                 else : 
-                    nc_variable = nc_file.variables[column][profiles_to_pull,:]
+                    nc_variable = nc_file.variables[column][profiles_to_pull-1]
                 
                 # Read in varaible from .nc file
-                column_values = self.__read_from_static_nc_variable(parameter_columns, nc_variable, number_of_levels)
+                column_values = self.__read_from_static_nc_variable(parameter_columns, nc_variable, number_of_levels, static_length)
 
                 # Add list of values gathered for column to the temp dataframe
                 temp_frame[column] = column_values
@@ -1286,7 +1289,7 @@ class Argo:
                     if self.download_settings.verbose: print(f'Reading in {column}...')
 
                     # Setting nc_variable
-                    nc_variable = nc_file.variables[column][:]
+                    nc_variable = nc_file.variables[column][profiles_to_pull,:]
 
                     # Replacing missing variables with NaNs
                     nc_variable = nc_variable.filled(np.nan)
@@ -1313,7 +1316,7 @@ class Argo:
         return float_data_dataframe
     
 
-    def __calculate_nc_variable_values(self, column, nc_file, number_of_profiles) -> list:
+    def __calculate_nc_variable_values(self, column, nc_file, number_of_profiles, profiles_to_pull) -> list:
         """ Function for specalized columns that must be calculated or derived. 
 
             :param: column
@@ -1328,16 +1331,24 @@ class Argo:
             if self.download_settings.verbose: print(f'Calculating DATE from JULD...')
             
             # Acessing nc varaible that we calculate date from
-            nc_variable = nc_file.variables['JULD'][:]
+            nc_variable = nc_file.variables['JULD'][profiles_to_pull]
             
             # Making a list to store the calculated dates
             new_nc_variable = []
-            
-            # Calculating the dates
-            for date in nc_variable : 
+
+            # Check if nc_variable is 0-dimensional aka only one profile is passed
+            if getattr(nc_variable, "shape", None) == ():
+                print("nc_variable is a 0-dimensional array, handling accordingly.")
                 reference_date = datetime(1950, 1, 1)
                 utc_date = reference_date + timedelta(days=date)
                 new_nc_variable.append(utc_date)
+            
+            else :
+                # Calculating the dates
+                for date in nc_variable : 
+                    reference_date = datetime(1950, 1, 1)
+                    utc_date = reference_date + timedelta(days=date)
+                    new_nc_variable.append(utc_date)
             
             # Returning list of calculated lists to be added to dataframe
             return new_nc_variable
@@ -1345,7 +1356,7 @@ class Argo:
         elif column == 'DATE_QC' : 
 
             # Acessing nc varaible that we pull date_qc from
-            nc_variable = nc_file.variables['JULD_QC'][:]
+            nc_variable = nc_file.variables['JULD_QC'][profiles_to_pull]
 
             # Returning nc varaible
             return nc_variable
@@ -1365,18 +1376,28 @@ class Argo:
             return nc_variable
 
     
-    def __read_from_static_nc_variable(self, parameter_columns, nc_variable, number_of_levels)-> list : 
+    def __read_from_static_nc_variable(self, parameter_columns, nc_variable, number_of_levels, number_of_profiles)-> list : 
         """
         """
 
         column_values = []
-        nc_variable = list(nc_variable)
-        
+
+        print(f'This is the nc variable: {nc_variable}')
+        print(f'This is the type {type(nc_variable)}')
+        print(f'This is the shape {getattr(nc_variable, "shape", None)}')
+
+        # Check if nc_variable is 0-dimensional aka only one profile is passed
+        if getattr(nc_variable, "shape", None) == ():
+            print("nc_variable is a 0-dimensional array, handling accordingly.")
+            return [nc_variable] * (number_of_levels if parameter_columns else number_of_profiles)
+
         # If there are no parameters then then we'll only need the rows to match the number of profiels in the file
         if parameter_columns is None: 
 
             if self.download_settings.verbose: print(f'Reading in column as one dimensional...')
             for value in nc_variable : 
+                print(f'We are in parameters is none: the value being appended is {value}')
+                print(f'here is the nc variable {nc_variable}')
                 column_values.append(value)
 
         # If there are parameters then the static rows need to match the number of levels 
