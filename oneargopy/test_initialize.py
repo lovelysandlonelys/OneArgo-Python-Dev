@@ -39,12 +39,12 @@ argo = Argo()
 # data.to_csv('output_four.txt', encoding='utf-8', index=False, na_rep='NAN')
 # print(f'\n\n')
 
-print(f'Passing DOXY')
-floats = argo.select_profiles(start_date='2024-05-01', end_date='2024-05-02', type='bgc') 
-data = argo.load_float_data(floats, parameters='DOXY')
-print(data)
-data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='NAN')
-print(f'\n\n')
+# print(f'Passing DOXY')
+# floats = argo.select_profiles(start_date='2024-05-01', end_date='2024-05-02', type='bgc') 
+# data = argo.load_float_data(floats, parameters='DOXY')
+# print(data)
+# data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='NAN')
+# print(f'\n\n')
 
 # # PROFILE INDEXES TEST
 # argo = Argo()
