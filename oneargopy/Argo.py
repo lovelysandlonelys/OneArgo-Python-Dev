@@ -1234,30 +1234,34 @@ class Argo:
             number_of_profiles = nc_file.dimensions['N_PROF'].size
             number_of_levels = nc_file.dimensions['N_LEVELS'].size
 
-            if self.float_profiles_dict is not None : 
-                # Get flaot id to index dictionary
-                float_id_array = nc_file.variables['PLATFORM_NUMBER'][0]
-                float_id_array = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in float_id_array]
-                float_id_array.pop() # The last value in the array is 'masked' which we don't need to form the float_id
-                float_id = int(''.join(float_id_array))
+            # Get flaot id of current file
+            float_id_array = nc_file.variables['PLATFORM_NUMBER'][0]
+            float_id_array = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in float_id_array]
+            float_id_array.pop() # The last value in the array is 'masked' which we don't need to form the float_id
+            float_id = int(''.join(float_id_array))
 
+            # Compare against .nc range to index file range
+            profile_count = self.prof_index['wmoid'].value_counts().get(float_id, 0)
+            if profile_count > number_of_profiles : 
+                print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles.')
+                print(f'Skipping float {float_id}...')
+                continue
+
+            if self.float_profiles_dict is not None : 
                 # Get list of profiles passed in dictionary for flaot
                 profiles_to_pull = self.float_profiles_dict[float_id]
 
-                # Compare against .nc range of profiles
-                if max(profiles_to_pull) > number_of_profiles : 
-                    print(f'Profile {max(profiles_to_pull)} is out of range of float {float_id}, the .nc file only has {number_of_profiles} profiles.')
-                    print(f'Skipping float {float_id}...')
-                    continue
+                # Adjusting to index correctly from .nc file
+                profiles_to_pull = [index - 1 for index in profiles_to_pull]
 
                 if len(profiles_to_pull) == 1 : 
-                    profiles_to_pull = int(profiles_to_pull[0]) 
+                    profiles_to_pull = int(profiles_to_pull[0])
                     static_length = 1
                 else : 
                     static_length = len(profiles_to_pull)
 
             else : 
-                profiles_to_pull = list(range(1, number_of_profiles, 1))
+                profiles_to_pull = list(range(0, number_of_profiles-1, 1))
 
             # Narrow parameter list to only thoes that are in the file
             parameter_columns = self.__parameter_premutations(nc_file)
@@ -1274,7 +1278,7 @@ class Argo:
                 if column in special_case_static_columns : 
                     nc_variable = self.__calculate_nc_variable_values(column, nc_file, static_length, profiles_to_pull)
                 else : 
-                    nc_variable = nc_file.variables[column][profiles_to_pull-1]
+                    nc_variable = nc_file.variables[column][profiles_to_pull]
                 
                 # Read in varaible from .nc file
                 column_values = self.__read_from_static_nc_variable(parameter_columns, nc_variable, number_of_levels, static_length)
@@ -1306,8 +1310,12 @@ class Argo:
             # Close File 
             nc_file.close()
 
-        # Clean up dataframe
+        print(f'before cleaning up frame:')
+        print(float_data_dataframe)
+        unique_values_list = float_data_dataframe['WMOID'].unique().tolist()
+        print(f'flaots included: {unique_values_list}')
 
+        # Clean up dataframe
         if 'PRES' in float_data_dataframe.columns :
             ## Remove rows where PRES is NaN becaus this indicates no measurmetns were taken
             float_data_dataframe = float_data_dataframe.dropna(subset=['PRES', 'PRES_ADJUSTED'])
@@ -1338,9 +1346,9 @@ class Argo:
 
             # Check if nc_variable is 0-dimensional aka only one profile is passed
             if getattr(nc_variable, "shape", None) == ():
-                print("nc_variable is a 0-dimensional array, handling accordingly.")
+                if self.download_settings.verbose: print("A single profile has been selected reading in accordingly...")
                 reference_date = datetime(1950, 1, 1)
-                utc_date = reference_date + timedelta(days=nc_variable)
+                utc_date = reference_date + timedelta(days=float(nc_variable))
                 new_nc_variable.append(utc_date)
             
             else :
@@ -1382,13 +1390,9 @@ class Argo:
 
         column_values = []
 
-        print(f'This is the nc variable: {nc_variable}')
-        print(f'This is the type {type(nc_variable)}')
-        print(f'This is the shape {getattr(nc_variable, "shape", None)}')
-
         # Check if nc_variable is 0-dimensional aka only one profile is passed
         if getattr(nc_variable, "shape", None) == ():
-            print("nc_variable is a 0-dimensional array, handling accordingly.")
+            if self.download_settings.verbose: print("A single profile has been selected reading in accordingly...")
             return [nc_variable] * (number_of_levels if parameter_columns else number_of_profiles)
 
         # If there are no parameters then then we'll only need the rows to match the number of profiels in the file
@@ -1396,8 +1400,6 @@ class Argo:
 
             if self.download_settings.verbose: print(f'Reading in column as one dimensional...')
             for value in nc_variable : 
-                print(f'We are in parameters is none: the value being appended is {value}')
-                print(f'here is the nc variable {nc_variable}')
                 column_values.append(value)
 
         # If there are parameters then the static rows need to match the number of levels 
