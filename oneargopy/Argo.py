@@ -33,9 +33,6 @@ import netCDF4
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from matplotlib.ticker import FixedLocator
 
-from time import time
-import json
-
 
 class Argo:
     #######################################################################
