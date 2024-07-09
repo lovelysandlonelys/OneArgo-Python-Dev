@@ -287,7 +287,8 @@ class Argo:
         """ A function to load float data into memory.
 
             :param: floats : int | list | dict - A float or list of floats to  
-                load data from  
+                load data from. Or a dictionary specifying floats and profiles
+                to read from the .nc file. 
 
             :return: float_data : pd - A dataframe with requested float data. 
         """
@@ -324,7 +325,6 @@ class Argo:
 
         return float_data_frame
         
-
 
     #######################################################################
     # Private Functions
@@ -1234,6 +1234,28 @@ class Argo:
             number_of_profiles = nc_file.dimensions['N_PROF'].size
             number_of_levels = nc_file.dimensions['N_LEVELS'].size
 
+            if self.float_profiles_dict is not None : 
+                # Get flaot id to index dictionary
+                float_id_array = nc_file.variables['PLATFORM_NUMBER'][0]
+                float_id_array = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in float_id_array]
+                float_id_array.pop() # The last value in the array is 'masked' which we don't need to form the float_id
+                float_id = int(''.join(float_id_array))
+
+                # Get list of profiles passed in dictionary for flaot
+                profiles_to_pull = self.float_profiles_dict[float_id]
+
+                # Compare against .nc range of profiles
+                if max(profiles_to_pull) > number_of_profiles : 
+                    print(f'Profile {max(profiles_to_pull)} is out of range of float {float_id}, the .nc file only has {number_of_profiles} profiles.')
+                    print(f'Skipping float {float_id}...')
+                    continue
+
+                if len(profiles_to_pull) == 1 : 
+                    profiles_to_pull = int(profiles_to_pull[0]) 
+
+            else : 
+                profiles_to_pull = list(range(1, number_of_profiles, 1))
+
             # Narrow parameter list to only thoes that are in the file
             parameter_columns = self.__parameter_premutations(nc_file)
             
@@ -1247,9 +1269,9 @@ class Argo:
 
                 # Customize the nc_variable if we have a special case where values need to be calculated
                 if column in special_case_static_columns : 
-                    nc_variable = self.__calculate_nc_variable_values(column, nc_file, file, number_of_profiles)
+                    nc_variable = self.__calculate_nc_variable_values(column, nc_file, len(profiles_to_pull))
                 else : 
-                    nc_variable = nc_file.variables[column][:]
+                    nc_variable = nc_file.variables[column][profiles_to_pull,:]
                 
                 # Read in varaible from .nc file
                 column_values = self.__read_from_static_nc_variable(parameter_columns, nc_variable, number_of_levels)
@@ -1287,34 +1309,15 @@ class Argo:
             ## Remove rows where PRES is NaN becaus this indicates no measurmetns were taken
             float_data_dataframe = float_data_dataframe.dropna(subset=['PRES', 'PRES_ADJUSTED'])
 
-        ## Fix PROF_IDX now that we have all the correct info
-        float_data_dataframe = self.__correct_prof_idx_values(float_data_dataframe)
-
-        ## If specific profiles are specified remove profiles that are not passed
-        if self.float_profiles_dict is not None :
-            if self.download_settings.verbose: print(f'Filtering data by selected profiles...')
-            profile_rows_to_keep = pd.DataFrame()
-            for float_id in self.float_profiles_dict :
-                profiles_to_keep = self.float_profiles_dict[float_id]
-                print(f'Float: {float_id}')
-                print(f'Profiles To Keep: {profiles_to_keep}')
-                new_profile_rows_to_keep = float_data_dataframe[(float_data_dataframe['PROF_IDX'].isin(profiles_to_keep)) & (float_data_dataframe['WMOID'] == float_id)]
-                print(f'New Rows To Keep')
-                print(new_profile_rows_to_keep)
-                profile_rows_to_keep = pd.concat([profile_rows_to_keep, new_profile_rows_to_keep], ignore_index=True)
-                
-            float_data_dataframe = profile_rows_to_keep
-
         # Return dataframe
         return float_data_dataframe
     
-    
-    def __calculate_nc_variable_values(self, column, nc_file, file, number_of_profiles) -> list:
+
+    def __calculate_nc_variable_values(self, column, nc_file, number_of_profiles) -> list:
         """ Function for specalized columns that must be calculated or derived. 
 
             :param: column
             :param: nc_file
-            :param: file
             :param: number_of_profiles
 
             :return: list - 
@@ -1350,8 +1353,10 @@ class Argo:
         elif column == 'WMOID' : 
 
             # Parsing float id from file name
-            file_name = str(file.name)
-            float_id = file_name.split('_')[0]
+            float_id_array = nc_file.variables['PLATFORM_NUMBER'][0]
+            float_id_array = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in float_id_array]
+            float_id_array.pop() # The last value in the array is 'masked' which we don't need to form the float_id
+            float_id = ''.join(float_id_array)
             
             # List with the float id the same length as a one dimensional variable
             nc_variable = [int(float_id)] * number_of_profiles
@@ -1369,8 +1374,11 @@ class Argo:
 
     
     def __read_from_static_nc_variable(self, parameter_columns, nc_variable, number_of_levels)-> list : 
+        """
+        """
 
         column_values = []
+        nc_variable = list(nc_variable)
         
         # If there are no parameters then then we'll only need the rows to match the number of profiels in the file
         if parameter_columns is None: 
@@ -1411,63 +1419,3 @@ class Argo:
         column_values = [0 if str(elem) == 'n' else elem for elem in column_values]
 
         return column_values
-
-
-    def __correct_prof_idx_values(self, float_data_dataframe)-> pd : 
-        """ Function to assign the correct profile index values to 
-            floats in the loaded data dataframe.
-        """
-        if self.download_settings.verbose: print(f'Setting PROF_IDX to correct values...')
-
-        # List of floats we are working with
-        float_ids_in_data_dataframe = float_data_dataframe['WMOID'].tolist()
-
-        # A copy of the prof_index frame with only the flaots we are working with
-        index_file = self.prof_index[self.prof_index['wmoid'].isin(float_ids_in_data_dataframe)]
-        index_file.rename(columns={'wmoid': 'WMOID', 'date': 'DATE',}, inplace=True)
-
-        # Truncating datetime's in the dataframes for tolerence on merge
-        float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('min')
-        # index_file['DATE'] = index_file['DATE'].dt.floor('min')
-
-        # Logging
-        index_file.to_csv('index_file.csv', index=False)
-        
-        # Merge with index
-        if self.download_settings.verbose: print(f'Setting profile index by date...')
-        working_float_data_dataframe = float_data_dataframe.merge(index_file, how='left', on=['WMOID', 'DATE'])
-
-        # Debugging logging
-        working_float_data_dataframe.to_csv('working_float_data_dataframe.csv', index=False) 
-
-        rows_with_null_prof_idx = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
-        rows_with_null_prof_idx.to_csv('rows_with_null_prof_idx.csv', index=False) 
-
-        # # Handeling null profile indexes
-        # if not rows_with_null_prof_idx.empty : 
-        #     if self.download_settings.verbose: print(f'Setting profile index by longitude...')
-        #     index_file.loc[:, 'LONGITUDE'] = index_file['longitude']
-        #     working_float_data_dataframe['LONGITUDE'] = working_float_data_dataframe['LONGITUDE'].astype('float')
-
-        #     matched_rows_lon = pd.merge(rows_with_null_prof_idx, index_file, how='left', on=['WMOID', 'LONGITUDE'], suffixes=('', '_index_file'))
-        #     matched_rows_lon.to_csv('matched_rows_lon.csv', index=False)
-
-        #     # Update profile index where matches are found
-        #     for idx, row in matched_rows_lon.iterrows():
-        #         mask = (working_float_data_dataframe['WMOID'] == row['WMOID']) & (working_float_data_dataframe['LONGITUDE'] == row['LONGITUDE']) & (working_float_data_dataframe['profile_index'].isnull())
-        #         working_float_data_dataframe.loc[mask, 'profile_index'] = row['profile_index_index_file']
-    
-        # rows_with_null_prof_idx_after_handeling = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
-        # rows_with_null_prof_idx_after_handeling.to_csv('rows_with_null_prof_idx_after_handeling.csv', index=False) 
-            
-        # Update PROF_IDX with thoes assigned from working_float_data_dataframe
-        float_data_dataframe['PROF_IDX'] = working_float_data_dataframe['profile_index'] #.astype('int')
-
-        # Move profile index column to the second position for easier comparison
-        prof_index_column = float_data_dataframe.pop('PROF_IDX')
-        float_data_dataframe.insert(1, 'PROF_IDX', prof_index_column)
-
-        # Logging
-        float_data_dataframe.to_csv('float_data_dataframe.csv', index=False) 
-
-        return float_data_dataframe
