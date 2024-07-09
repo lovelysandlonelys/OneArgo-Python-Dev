@@ -289,6 +289,9 @@ class Argo:
             :param: floats : int | list | dict - A float or list of floats to  
                 load data from. Or a dictionary specifying floats and profiles
                 to read from the .nc file. 
+            :param: parameters : str | list - An optional parameter to list parameters
+                that the user would like included in the dataframe. If the parameter is not
+                in the float passed then only the surface level of the profile will be included.
 
             :return: float_data : pd - A dataframe with requested float data. 
         """
@@ -718,6 +721,8 @@ class Argo:
     def __validate_floats_kwarg(self):
         """ A function to validate the 'floats' keyword argument. 
             The 'floats' must be a list even if it is a single float.
+            If the floats passed are in a dictionary we separate the keys
+            from the dictionary for flexibility.
         """
         if self.download_settings.verbose: print(f"Validating passed floats...")
 
@@ -1197,14 +1202,15 @@ class Argo:
             return None
 
     
-    def __fill_float_data_dataframe(self, files)-> pd: 
+    def __fill_float_data_dataframe(self, files: list)-> pd: 
         """ A Function to load data into the flaot data dataframe.
  
-            :param: files : list - 
+            :param: files : list - A list of files to read in data from.
 
-            :return: pd : Dataframe - The dataframe of float data. 
+            :return: pd : Dataframe - The dataframe of float data with rows 
+                where mesurments were not collected excluded.
         """
-        print(f'Loading float data...')
+        if self.download_settings.verbose: print(f'Loading float data...')
 
         # Getting the file paths for downloaded .nc files
         directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
@@ -1224,7 +1230,6 @@ class Argo:
 
         # Iterate through files
         for file in file_paths : 
-
             if self.download_settings.verbose: print(f'Loading Float data from file {file}...')
             
             # Open File
@@ -1240,30 +1245,34 @@ class Argo:
             float_id_array.pop() # The last value in the array is 'masked' which we don't need to form the float_id
             float_id = int(''.join(float_id_array))
 
-            # Compare against .nc range to index file range
+            # Get the range of profiles from the index file
             profile_count = self.prof_index['wmoid'].value_counts().get(float_id, 0)
+
+            # Compare against .nc range to index file range
             if profile_count > number_of_profiles : 
                 print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles.')
                 print(f'Skipping float {float_id}...')
                 continue
 
+            # Manage passed profiles if necessary
             if self.float_profiles_dict is not None : 
-                # Get list of profiles passed in dictionary for flaot
+                # Get list of profiles passed in dictionary for float
                 profiles_to_pull = self.float_profiles_dict[float_id]
 
-                # Adjusting to index correctly from .nc file
+                # Adjusting profile to index correctly from .nc file arrays
                 profiles_to_pull = [index - 1 for index in profiles_to_pull]
 
+                # The case for if we are pulling a single profile
                 if len(profiles_to_pull) == 1 : 
                     profiles_to_pull = int(profiles_to_pull[0])
                     static_length = 1
                 else : 
                     static_length = len(profiles_to_pull)
-
+            # If no profiles are passed then we want to pull all of the profiles from the flaot
             else : 
                 profiles_to_pull = list(range(0, number_of_profiles-1, 1))
 
-            # Narrow parameter list to only thoes that are in the file
+            # Narrow parameter list to only thoes that are in the current file
             parameter_columns = self.__parameter_premutations(nc_file)
             
             # Temporary dataframe to make indexing simpler for each float
@@ -1310,26 +1319,23 @@ class Argo:
             # Close File 
             nc_file.close()
 
-        print(f'before cleaning up frame:')
-        print(float_data_dataframe)
-        unique_values_list = float_data_dataframe['WMOID'].unique().tolist()
-        print(f'flaots included: {unique_values_list}')
-
         # Clean up dataframe
         if 'PRES' in float_data_dataframe.columns :
-            ## Remove rows where PRES is NaN becaus this indicates no measurmetns were taken
+            if self.download_settings.verbose: print(f'Dropping rows where no mesurments were taken...')
             float_data_dataframe = float_data_dataframe.dropna(subset=['PRES', 'PRES_ADJUSTED'])
 
         # Return dataframe
         return float_data_dataframe
     
 
-    def __calculate_nc_variable_values(self, column, nc_file, number_of_profiles, profiles_to_pull) -> list:
+    def __calculate_nc_variable_values(self, column: str, nc_file, number_of_profiles: int, profiles_to_pull: list) -> list:
         """ Function for specalized columns that must be calculated or derived. 
 
-            :param: column
+            :param: files : list - A list of files to read in data from.
+            :param: column : str - The name of the column of the dataframe we want information
             :param: nc_file
             :param: number_of_profiles
+            :param: profiles_to_pull
 
             :return: list - 
         """
@@ -1423,9 +1429,13 @@ class Argo:
 
         column_values = []
 
-        for profile in nc_variable : 
-            for depth in profile : 
-                column_values.append(depth)
+        # Check if nc_variable is 0-dimensional aka only one profile is passed
+        if getattr(nc_variable, "shape", None) == ():
+            column_values.append(nc_variable)
+        else : 
+            for profile in nc_variable : 
+                for depth in profile : 
+                    column_values.append(depth)
 
         # If the column has 'byte' strings then decode
         column_values = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in column_values]
