@@ -1214,10 +1214,10 @@ class Argo:
 
         # Columns that will always be in the dataframe, these columns are one dimensional
         static_columns = ['WMOID', 'CYCLE_NUMBER', 'DIRECTION', 
-                                'DATE', 'PROF_IDX', 'DATE_QC', 'LATITUDE', 
+                                'DATE', 'DATE_QC', 'LATITUDE', 
                                 'LONGITUDE', 'POSITION_QC',]
         # Columns that need to be calculated or derived 
-        special_case_static_columns = ['DATE', 'DATE_QC', 'WMOID', 'PROF_IDX']
+        special_case_static_columns = ['DATE', 'DATE_QC', 'WMOID']
 
         # Empty Dataframe to return at end of function with all loaded data
         float_data_dataframe = pd.DataFrame()
@@ -1360,14 +1360,6 @@ class Argo:
             
             # List with the float id the same length as a one dimensional variable
             nc_variable = [int(float_id)] * number_of_profiles
-
-            # Returning nc varaible
-            return nc_variable
-
-        elif column == 'PROF_IDX' : 
-
-            # Placeholder values
-            nc_variable = [0] * number_of_profiles
 
             # Returning nc varaible
             return nc_variable
