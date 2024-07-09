@@ -1340,7 +1340,7 @@ class Argo:
             if getattr(nc_variable, "shape", None) == ():
                 print("nc_variable is a 0-dimensional array, handling accordingly.")
                 reference_date = datetime(1950, 1, 1)
-                utc_date = reference_date + timedelta(days=date)
+                utc_date = reference_date + timedelta(days=nc_variable)
                 new_nc_variable.append(utc_date)
             
             else :
