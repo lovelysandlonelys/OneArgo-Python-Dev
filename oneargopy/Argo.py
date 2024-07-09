@@ -1030,6 +1030,7 @@ class Argo:
 
         return selected_profiles
     
+
     def __filter_by_floats(self)-> pd:
         """ Function to pull profiles of floats passed to trajectories() and return 
             a dataframe with floats from sprof and prof index frames. 
@@ -1084,6 +1085,7 @@ class Argo:
 
         return floats_profiles
     
+
     def __set_graph_limits(self, ax, axis: str)-> None:
         """ A Function for setting the graph's longitude and latitude extents. 
         """
@@ -1145,6 +1147,7 @@ class Argo:
             step = 2
         
         return step
+
 
     def __parameter_premutations(self, nc_file)-> list :
         """ A function to filter the list of parameters to be loaded so 
@@ -1304,6 +1307,7 @@ class Argo:
 
         # Return dataframe
         return float_data_dataframe
+    
     
     def __calculate_nc_variable_values(self, column, nc_file, file, number_of_profiles) -> list:
         """ Function for specalized columns that must be calculated or derived. 
