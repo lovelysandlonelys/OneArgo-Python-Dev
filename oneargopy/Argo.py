@@ -1427,7 +1427,7 @@ class Argo:
 
         # Truncating datetime's in the dataframes for tolerence on merge
         float_data_dataframe['DATE'] = float_data_dataframe['DATE'].dt.floor('min')
-        index_file['DATE'] = index_file['DATE'].dt.floor('min')
+        # index_file['DATE'] = index_file['DATE'].dt.floor('min')
 
         # Logging
         index_file.to_csv('index_file.csv', index=False)
@@ -1456,8 +1456,8 @@ class Argo:
         #         mask = (working_float_data_dataframe['WMOID'] == row['WMOID']) & (working_float_data_dataframe['LONGITUDE'] == row['LONGITUDE']) & (working_float_data_dataframe['profile_index'].isnull())
         #         working_float_data_dataframe.loc[mask, 'profile_index'] = row['profile_index_index_file']
     
-        rows_with_null_prof_idx_after_handeling = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
-        rows_with_null_prof_idx_after_handeling.to_csv('rows_with_null_prof_idx_after_handeling.csv', index=False) 
+        # rows_with_null_prof_idx_after_handeling = working_float_data_dataframe[working_float_data_dataframe['profile_index'].isnull()]
+        # rows_with_null_prof_idx_after_handeling.to_csv('rows_with_null_prof_idx_after_handeling.csv', index=False) 
             
         # Update PROF_IDX with thoes assigned from working_float_data_dataframe
         float_data_dataframe['PROF_IDX'] = working_float_data_dataframe['profile_index'] #.astype('int')
