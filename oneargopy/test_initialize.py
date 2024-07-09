@@ -2,7 +2,65 @@
 # Argo Functions
 
 from Argo import Argo
+import time
+
+
+# Test against matlab
 argo = Argo()
+
+# print(f'Passing DOXY')
+# floats = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+# data = argo.load_float_data(floats, parameters='DOXY')
+# print(data)
+# data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='NAN')
+# print(f'\n\n')
+
+# print(f'Passing Nothing')
+# data = argo.load_float_data(5905105)
+# print(data)
+# data.to_csv('output_one.txt', encoding='utf-8', index=False, na_rep='NAN')
+# print(f'\n\n')
+
+# print(f'Passing DOXY and CHLA')
+# data = argo.load_float_data([5904859, 5903807], parameters=['DOXY', 'CHLA'])
+# print(data)
+# data.to_csv('output_two.txt', encoding='utf-8', index=False, na_rep='NAN')
+# print(f'\n\n')
+
+# print(f'Passing TEMP')
+# data = argo.load_float_data([4903500, 5903611], parameters=['TEMP'])
+# print(data)
+# data.to_csv('output_three.txt', encoding='utf-8', index=False, na_rep='NAN')
+# print(f'\n\n')
+
+# print(f'Passing TEMP, DOXY, PRES')
+# data = argo.load_float_data([5904859, 5903807, 5906297], parameters=['TEMP', 'DOXY', 'PRES'])
+# print(data)
+# data.to_csv('output_four.txt', encoding='utf-8', index=False, na_rep='NAN')
+# print(f'\n\n')
+
+print(f'Passing DOXY')
+floats = argo.select_profiles(start_date='2024-05-01', end_date='2024-05-02', type='bgc') 
+data = argo.load_float_data(floats, parameters='DOXY')
+print(data)
+data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='NAN')
+print(f'\n\n')
+
+# # PROFILE INDEXES TEST
+# argo = Argo()
+# floats = argo.select_profiles(start_date='2023-10-10', floats=5906297) 
+# data = argo.load_float_data(floats)
+# print(data)
+
+
+# Graph for slide
+# from Argo import Argo
+# argo = Argo()
+# profiles = argo.select_profiles(lon_lim=[-127,-115],
+#                                 lat_lim=[32.5,45.5],
+#                                 start_date='2021-09-01',
+#                                 type='bgc')
+# argo.trajectories(list(profiles))
 
 # Graph for slide
 profiles = argo.select_profiles(lon_lim=[-130,-115], 
@@ -39,7 +97,8 @@ argo.trajectories(profiles)
 
 # # Testing get by ocean basin: 
 # start_time = time.time()
-# argo.select_profiles(start_date='2012-01-01', end_date='2012-01-02', ocean='A')
+# profiles = argo.select_profiles(start_date='2012-01-01', end_date='2012-01-02', ocean='A')
+# argo.trajectories(profiles)
 # elapsed_time = time.time() - start_time
 # print(f'This test took: {elapsed_time}\n')
 
@@ -359,3 +418,82 @@ argo.trajectories(profiles)
 ###########################################################################################################################
 
 ###########################################################################################################################
+
+# Iterate through dataframe
+        # for index, row in float_data_dataframe.iterrows() : 
+
+        #     # Extract float id from row
+        #     float_id = row['WMOID']
+        #     print(f'Float ID: {float_id}')
+            
+        #     # Extract float type using the float_stats dataframe
+        #     float_type = self.float_stats.loc[self.float_stats['wmoid'] == float_id, 'is_bgc'].values[0]
+        #     print(f'Dataframe: {float_type}')
+
+        #     # Assign dataframe to use
+        #     if float_type : 
+        #         dataframe = self.sprof_index 
+        #         print(f'dataframe set to sprof')
+        #     else : 
+        #         dataframe = self.prof_index
+        #         print(f'dataframe set to prof')
+
+        #     # Extract date from float_data_dataframe
+        #     nc_date = row['DATE']
+
+        #     # Extract prof_ind from index dataframe
+        #     # where float id matches and date is within a tolerance
+        #     # of date from float_data_dataframe and then assign this
+        #     # prof_idx to the float_data_dataframe for that row
+        #     tolerance = pd.Timedelta(days=2e-5)
+        #     matched_rows = dataframe[(dataframe['wmoid'] == float_id) & (np.abs(dataframe['date'] - nc_date) <= tolerance)]
+        #     if not matched_rows.empty:
+        #         prof_idx = matched_rows['profile_index'].values[0]
+        #         print(f'Profile index found: {prof_idx}')
+        #     else:
+        #         prof_idx = np.nan
+        #         print(f'No matching profile index found for float ID: {float_id} and date: {nc_date}')
+
+        #     # Assign the profile index to the float_data_dataframe for that row
+        #     float_data_dataframe.at[index, 'PROF_IDX'] = prof_idx
+            
+        # # Move profile index to start of frame for easier visual comparisoin
+        # prof_index_column = float_data_dataframe.pop('PROF_IDX') 
+        # float_data_dataframe.insert(2, 'PROF_IDX', prof_index_column) 
+
+        # return float_data_dataframe
+
+
+####################################
+# # Working dataframe to alter/merge with containing only necessary columns
+#         working_float_data_dataframe = float_data_dataframe[['WMOID', 'DATE']]
+
+#         # Filter prof_index to drop rows where 'is_bgc' is True
+#         filtered_prof_index = self.prof_index[~self.prof_index['is_bgc']]
+
+#         # Merge sprof_index and prof_index into a single dataframe 
+#         # there shouldn't be any repeated profiles because we removed
+#         # profiles from prof_index where is_bgc was true, meaning
+#         # that any profiles that would have also been in sprof index
+#         # have been removed. 
+#         merged_index = pd.concat([self.sprof_index[['wmoid', 'profile_index', 'date']],
+#                                   filtered_prof_index[['wmoid', 'profile_index', 'date']]])
+        
+#         # Adjusting merged_index for compatibility with float_data_dataframe
+#         merged_index.rename(columns = {'wmoid':'WMOID'}, inplace = True)
+#         merged_index['WMOID'] = merged_index['WMOID'].astype('int64')
+
+#         null_rows = merged_index[merged_index.isnull().any(axis=1)]
+#         if self.download_settings.verbose: print(f"Dropping {len(null_rows)}/{len(merged_index)} null rows from index frames")
+#         merged_index.dropna(subset=['WMOID', 'DATE'], inplace=True)
+
+#         # Merge working_float_data_dataframe with merged_index on 'WMOID' and filter by date tolerance
+#         merged_data = pd.merge_asof(working_float_data_dataframe.sort_values('DATE'), merged_index.sort_values('DATE'), 
+#                                     by='WMOID', left_on='DATE', right_on='DATE', tolerance=pd.Timedelta(days=2e-5))
+
+#         # Assign PROF_IDX from merged_data to float_data_dataframe
+#         float_data_dataframe['PROF_IDX'] = merged_data['profile_index']
+
+#         # Move profile index column to the second position for easier comparison
+#         prof_index_column = float_data_dataframe.pop('PROF_IDX')
+#         float_data_dataframe.insert(1, 'PROF_IDX', prof_index_column)
