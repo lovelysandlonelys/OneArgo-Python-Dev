@@ -802,7 +802,7 @@ class Argo:
             self.sprof_index = self.__load_sprof_dataframe()
             self.prof_index = self.__load_prof_dataframe()
 
-        # We can only validate flaots after the dataframes are loaded into memory
+        # We can only validate floats after the dataframes are loaded into memory
         if self.float_ids : self.__validate_floats_kwarg()
 
         # If we aren't filtering from specific floats assign selected frames
@@ -1199,12 +1199,12 @@ class Argo:
 
     
     def __fill_float_data_dataframe(self, files: list)-> pd: 
-        """ A Function to load data into the flaot data dataframe.
+        """ A Function to load data into the float data dataframe.
  
             :param: files : list - A list of files to read in data from.
 
             :return: pd : Dataframe - The dataframe of float data with rows 
-                where mesurments were not collected excluded.
+                where measurements were not collected excluded.
         """
         if self.download_settings.verbose: print(f'Loading float data...')
 
@@ -1233,7 +1233,7 @@ class Argo:
             number_of_profiles = nc_file.dimensions['N_PROF'].size
             number_of_levels = nc_file.dimensions['N_LEVELS'].size
 
-            # Get flaot id of current file
+            # Get float id of current file
             float_id_array = nc_file.variables['PLATFORM_NUMBER'][0]
             float_id_array = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in float_id_array]
             float_id_array.pop() # The last value in the array is 'masked' which we don't need to form the float_id
@@ -1245,7 +1245,7 @@ class Argo:
             # Compare against .nc range to index file range
             if profile_count > number_of_profiles : 
                 print(f'Skipping float {float_id}...')
-                print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles for flaot {float_id}..')
+                print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles for float {float_id}..')
                 continue
 
             # Manage passed profiles if necessary
@@ -1262,7 +1262,7 @@ class Argo:
                     static_length = 1
                 else : 
                     static_length = len(profiles_to_pull)
-            # If no profiles are passed then we want to pull all of the profiles from the flaot
+            # If no profiles are passed then we want to pull all of the profiles from the float
             else : 
                 profiles_to_pull = list(range(0, number_of_profiles-1, 1))
                 static_length = number_of_profiles - 1
@@ -1284,7 +1284,7 @@ class Argo:
                 else : 
                     nc_variable = nc_file.variables[column][profiles_to_pull]
                 
-                # Read in varaible from .nc file
+                # Read in variable from .nc file
                 column_values = self.__read_from_static_nc_variable(parameter_columns, nc_variable, number_of_levels, static_length)
 
                 # Add list of values gathered for column to the temp dataframe
@@ -1300,7 +1300,7 @@ class Argo:
                     # Replacing missing variables with NaNs
                     nc_variable = nc_variable.filled(np.nan)
 
-                    # Read in varaible from .nc file
+                    # Read in variable from .nc file
                     column_values = self.__read_from_paramater_nc_variable(nc_variable)
 
                     # Add list of values gathered for column to the temp dataframe
@@ -1316,7 +1316,7 @@ class Argo:
 
         # Clean up dataframe
         if 'PRES' in float_data_dataframe.columns :
-            if self.download_settings.verbose: print(f'Dropping rows where no mesurments were taken...')
+            if self.download_settings.verbose: print(f'Dropping rows where no measurements were taken...')
             float_data_dataframe = float_data_dataframe.dropna(subset=['PRES', 'PRES_ADJUSTED'])
 
         # Return dataframe
@@ -1330,14 +1330,14 @@ class Argo:
             :param: column : str - The name of the column of the dataframe we want information.
             :param: nc_file - The NC file object to read from.
             :param: number_of_profiles : int - The number of profiles expected to be read in.
-            :param: profiles_to_pull : The indexes of the profiels we're pulling form the NC file.
+            :param: profiles_to_pull : The indexes of the profiles we're pulling form the NC file.
 
             :return: list - The nc_variable adjusted for special cases. 
         """
         
         if column == 'DATE' : 
             
-            # Acessing nc varaible that we calculate date from
+            # Acessing nc variables that we calculate date from
             nc_variable = nc_file.variables['JULD'][profiles_to_pull]
             
             # Making a list to store the calculated dates
@@ -1362,10 +1362,10 @@ class Argo:
 
         elif column == 'DATE_QC' : 
 
-            # Acessing nc varaible that we pull date_qc from
+            # Acessing nc variable that we pull date_qc from
             nc_variable = nc_file.variables['JULD_QC'][profiles_to_pull]
 
-            # Returning nc varaible
+            # Returning nc variable
             return nc_variable
 
         elif column == 'WMOID' : 
@@ -1379,7 +1379,7 @@ class Argo:
             # List with the float id the same length as a one dimensional variable
             nc_variable = [int(float_id)] * number_of_profiles
 
-            # Returning nc varaible
+            # Returning nc variable
             return nc_variable
 
     
@@ -1389,9 +1389,9 @@ class Argo:
             :param: parameter_columns : list - The list of parameter columns in the .nc file. This
                 determines how many times the static variables should be repeated to match the expected
                 length of the dataframe. 
-            :param: nc_variable - The .nc varaible we're reading from.
+            :param: nc_variable - The .nc variable we're reading from.
             :param: number_of_levels : int - The number of depth levels the float compleated per profile. 
-            :param: number_of_profiles : int - The number of profiels being pulled from a float. 
+            :param: number_of_profiles : int - The number of profiles being pulled from a float. 
 
             :return: list - The list of values for that nc_variable. 
         """
@@ -1403,7 +1403,7 @@ class Argo:
 
             column_values = [nc_variable] * (number_of_levels if parameter_columns else number_of_profiles)
 
-        # If there are no parameters then then we'll only need the rows to match the number of profiels in the file
+        # If there are no parameters then then we'll only need the rows to match the number of profiles in the file
         elif parameter_columns is None:
             print(f'nc variable: {nc_variable}')
             for value in nc_variable : 
@@ -1430,7 +1430,7 @@ class Argo:
     def __read_from_paramater_nc_variable(self, nc_variable)-> list :
         """ A function to read in data from two dimentional parameters in the passed .nc file.
 
-            :param: nc_variable - The nc varaible we're reading from
+            :param: nc_variable - The nc variable we're reading from
 
             :return: list - A list of values pulled from the nc variable passed.
         """
