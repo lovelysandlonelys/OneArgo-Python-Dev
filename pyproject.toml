@@ -12,12 +12,13 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "example_package_YOUR_USERNAME_HERE"
+name = "oneargopy"
 version = "0.0.1"
 authors = [
-  { name="Example Author", email="author@example.com" },
+  { name="Savannah Stephenson", email="stephensonsavannah@ymail.com" },
+  { name="Hartmut Frenzel", email="" },
 ]
-description = "A small example package"
+description = "A beta version of oneargopy to test packaging with pip."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
@@ -27,5 +28,5 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pypa/sampleproject"
-Issues = "https://github.com/pypa/sampleproject/issues"
+Homepage = "https://github.com/lovelysandlonelys/OneArgo-Python-Dev"
+Issues = "https://github.com/lovelysandlonelys/OneArgo-Python-Dev/issues"

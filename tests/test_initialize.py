@@ -1,12 +1,12 @@
 ############################################################################################################################
 # Argo Functions
-
+import sys
+sys.path.append('../src/oneargopy')
 from Argo import Argo
-import time
-
 
 # Test against matlab
-argo = Argo()
+# argo = Argo()
+argo = Argo('C:/Users/steph/Dev/OneArgo-Python-Dev/argo_config.json')
 
 # print(f'Passing DOXY')
 # floats = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
