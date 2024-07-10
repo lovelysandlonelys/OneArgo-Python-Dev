@@ -1312,8 +1312,6 @@ class Argo:
             # Close File 
             nc_file.close()
 
-        print(f'before dropping rows: {float_data_dataframe}')
-
         # Clean up dataframe
         if 'PRES' in float_data_dataframe.columns :
             if self.download_settings.verbose: print(f'Dropping rows where no measurements were taken...')
@@ -1405,10 +1403,8 @@ class Argo:
 
         # If there are no parameters then then we'll only need the rows to match the number of profiles in the file
         elif parameter_columns is None:
-            print(f'nc variable: {nc_variable}')
+
             for value in nc_variable : 
-                print(f'we are in the for loop for parameters being none')
-                print(f' appending: {value}')
                 column_values.append(value)
 
         # If there are parameters then the static rows need to match the number of levels 
