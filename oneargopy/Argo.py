@@ -1165,8 +1165,6 @@ class Argo:
             :return: list - A list to of all the parameters passed
                 that are inside of the nc_file.
         """
-        if self.download_settings.verbose: print(f'Building parameter column list...')
-        
         # If the parameter is in the file also add it's permutations to the list
         if isinstance(self.float_parameters, list) :
 
@@ -1176,10 +1174,8 @@ class Argo:
             # List to store parameters and their additioal associated columns
             parameter_columns = []
             
-            print(f'Parameters passed {self.float_parameters}')
             for parameter in self.float_parameters : 
                 if parameter in file_variables: 
-                    print(f'Parameter {parameter} is in the file.')
                     # We add PRES no matter what, so if the user passed it 
                     # don't add it to the parameter list at this time.
                     if parameter != 'PRES' : 
@@ -1229,9 +1225,7 @@ class Argo:
         float_data_dataframe = pd.DataFrame()
 
         # Iterate through files
-        for file in file_paths : 
-            if self.download_settings.verbose: print(f'Loading Float data from file {file}...')
-            
+        for file in file_paths :             
             # Open File
             nc_file = netCDF4.Dataset(file, mode='r')
             
@@ -1250,8 +1244,8 @@ class Argo:
 
             # Compare against .nc range to index file range
             if profile_count > number_of_profiles : 
-                print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles.')
                 print(f'Skipping float {float_id}...')
+                print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles for flaot {float_id}..')
                 continue
 
             # Manage passed profiles if necessary
@@ -1271,6 +1265,7 @@ class Argo:
             # If no profiles are passed then we want to pull all of the profiles from the flaot
             else : 
                 profiles_to_pull = list(range(0, number_of_profiles-1, 1))
+                static_length = number_of_profiles - 1
 
             # Narrow parameter list to only thoes that are in the current file
             parameter_columns = self.__parameter_premutations(nc_file)
@@ -1278,10 +1273,10 @@ class Argo:
             # Temporary dataframe to make indexing simpler for each float
             temp_frame = pd.DataFrame()
 
+            if self.download_settings.verbose: print(f'Loading Float data from float {float_id} with {static_length} profiles...')
+
             # Iterate through static columns
             for column in static_columns :
-
-                if self.download_settings.verbose: print(f'Reading in {column}...')
 
                 # Customize the nc_variable if we have a special case where values need to be calculated
                 if column in special_case_static_columns : 
@@ -1298,8 +1293,6 @@ class Argo:
             # Iterate through parameter columns, if there are none nothing happens
             if parameter_columns is not None :
                 for column in parameter_columns : 
-
-                    if self.download_settings.verbose: print(f'Reading in {column}...')
 
                     # Setting nc_variable
                     nc_variable = nc_file.variables[column][profiles_to_pull,:]
@@ -1332,17 +1325,15 @@ class Argo:
         """ Function for specalized columns that must be calculated or derived. 
 
             :param: files : list - A list of files to read in data from.
-            :param: column : str - The name of the column of the dataframe we want information
-            :param: nc_file
-            :param: number_of_profiles
-            :param: profiles_to_pull
+            :param: column : str - The name of the column of the dataframe we want information.
+            :param: nc_file - The NC file object to read from.
+            :param: number_of_profiles : int - The number of profiles expected to be read in.
+            :param: profiles_to_pull : The indexes of the profiels we're pulling form the NC file.
 
-            :return: list - 
+            :return: list - The nc_variable adjusted for special cases. 
         """
         
         if column == 'DATE' : 
-
-            if self.download_settings.verbose: print(f'Calculating DATE from JULD...')
             
             # Acessing nc varaible that we calculate date from
             nc_variable = nc_file.variables['JULD'][profiles_to_pull]
@@ -1352,7 +1343,7 @@ class Argo:
 
             # Check if nc_variable is 0-dimensional aka only one profile is passed
             if getattr(nc_variable, "shape", None) == ():
-                if self.download_settings.verbose: print("A single profile has been selected reading in accordingly...")
+              
                 reference_date = datetime(1950, 1, 1)
                 utc_date = reference_date + timedelta(days=float(nc_variable))
                 new_nc_variable.append(utc_date)
@@ -1390,28 +1381,35 @@ class Argo:
             return nc_variable
 
     
-    def __read_from_static_nc_variable(self, parameter_columns, nc_variable, number_of_levels, number_of_profiles)-> list : 
-        """
+    def __read_from_static_nc_variable(self, parameter_columns: list, nc_variable, number_of_levels: int, number_of_profiles: int)-> list : 
+        """ A function to read in data from one dimentional parameters in the passed .nc file. 
+
+            :param: parameter_columns : list - The list of parameter columns in the .nc file. This
+                determines how many times the static variables should be repeated to match the expected
+                length of the dataframe. 
+            :param: nc_variable - The .nc varaible we're reading from.
+            :param: number_of_levels : int - The number of depth levels the float compleated per profile. 
+            :param: number_of_profiles : int - The number of profiels being pulled from a float. 
+
+            :return: list - The list of values for that nc_variable. 
         """
 
         column_values = []
 
         # Check if nc_variable is 0-dimensional aka only one profile is passed
         if getattr(nc_variable, "shape", None) == ():
-            if self.download_settings.verbose: print("A single profile has been selected reading in accordingly...")
-            return [nc_variable] * (number_of_levels if parameter_columns else number_of_profiles)
+
+            column_values = [nc_variable] * (number_of_levels if parameter_columns else number_of_profiles)
 
         # If there are no parameters then then we'll only need the rows to match the number of profiels in the file
-        if parameter_columns is None: 
-
-            if self.download_settings.verbose: print(f'Reading in column as one dimensional...')
+        elif parameter_columns is None:
+         
             for value in nc_variable : 
                 column_values.append(value)
 
         # If there are parameters then the static rows need to match the number of levels 
         else : 
-
-            if self.download_settings.verbose: print(f'Reading in column as two dimensional...')
+        
             for value in nc_variable : 
                 value_repeats = [value] * number_of_levels
                 column_values.extend(value_repeats)
@@ -1425,18 +1423,20 @@ class Argo:
         return column_values
     
 
-    def __read_from_paramater_nc_variable(self, nc_variable)-> list : 
+    def __read_from_paramater_nc_variable(self, nc_variable)-> list :
+        """ A function to read in data from two dimentional parameters in the passed .nc file.
+
+            :param: nc_variable - The nc varaible we're reading from
+
+            :return: list - A list of values pulled from the nc variable passed.
+        """
 
         column_values = []
 
-        print(f'this is where we messin up')
-        print(f'nc vriable: {nc_variable}')
-        print(nc_variable.shape)
-
         # Check if nc_variable is 0-dimensional aka only one profile is passed
-        if getattr(nc_variable, "shape", 'ndarray') == ():
+        if nc_variable.ndim == 1 :
             for profile in nc_variable : 
-                    column_values.append(depth)
+                    column_values.append(profile)
         else : 
             for profile in nc_variable : 
                 for depth in profile : 
