@@ -1429,9 +1429,14 @@ class Argo:
 
         column_values = []
 
+        print(f'this is where we messin up')
+        print(f'nc vriable: {nc_variable}')
+        print(nc_variable.shape)
+
         # Check if nc_variable is 0-dimensional aka only one profile is passed
-        if getattr(nc_variable, "shape", None) == ():
-            column_values.append(nc_variable)
+        if getattr(nc_variable, "shape", 'ndarray') == ():
+            for profile in nc_variable : 
+                    column_values.append(depth)
         else : 
             for profile in nc_variable : 
                 for depth in profile : 
