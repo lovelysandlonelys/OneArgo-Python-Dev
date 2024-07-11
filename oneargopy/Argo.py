@@ -1242,14 +1242,14 @@ class Argo:
             # Get the range of profiles from the index file
             profile_count = self.prof_index['wmoid'].value_counts().get(float_id, 0)
 
-            # Compare against .nc range to index file range
-            if profile_count > number_of_profiles : 
-                print(f'Skipping float {float_id}...')
-                print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles for float {float_id}..')
-                continue
-
             # Manage passed profiles if necessary
             if self.float_profiles_dict is not None : 
+
+                if profile_count > number_of_profiles : 
+                    print(f'Skipping float {float_id}...')
+                    print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles for float {float_id}..')
+                    continue
+
                 # Get list of profiles passed in dictionary for float
                 profiles_to_pull = self.float_profiles_dict[float_id]
 
@@ -1264,8 +1264,8 @@ class Argo:
                     static_length = len(profiles_to_pull)
             # If no profiles are passed then we want to pull all of the profiles from the float
             else : 
-                profiles_to_pull = list(range(0, number_of_profiles-1, 1))
-                static_length = number_of_profiles - 1
+                profiles_to_pull = list(range(0, number_of_profiles, 1))
+                static_length = number_of_profiles
 
             # Narrow parameter list to only thoes that are in the current file
             parameter_columns = self.__parameter_premutations(nc_file)
