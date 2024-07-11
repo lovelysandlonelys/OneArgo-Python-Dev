@@ -1,2 +1,2 @@
-from oneargopy.Argo import Argo
-from oneargopy.Settings import DownloadSettings, AnalysisSettings, SourceSettings
+from .Argo import Argo
+from .Settings import DownloadSettings, AnalysisSettings, SourceSettings

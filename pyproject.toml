@@ -13,7 +13,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "oneargopy"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="Savannah Stephenson", email="stephensonsavannah@ymail.com" },
   { name="Hartmut Frenzel", email="hartmut.frenzel@noaa.gov" },

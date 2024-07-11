@@ -14,7 +14,7 @@
 # Imports
 
 # Local
-from Settings import DownloadSettings, SourceSettings
+from .Settings import DownloadSettings, SourceSettings
 
 # System
 from pathlib import Path
