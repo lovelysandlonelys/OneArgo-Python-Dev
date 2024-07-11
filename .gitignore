@@ -10,6 +10,10 @@ temp.py
 float_data_dataframe.csv
 index_file.csv
 output.txt
+output_one.txt
+output_two.txt
+output_three.txt
+output_four.txt
 output_five.txt
 rows_with_null_prof_idx.csv
 rows_with_null_prof_idx_after_handeling.csv
