@@ -1316,10 +1316,25 @@ class Argo:
             float_data_dataframe = float_data_dataframe.dropna(subset=['PRES', 'PRES_ADJUSTED'])
 
         # Converting bytes to ints/chars
-        float_data_dataframe = float_data_dataframe.applymap(lambda x: int(x.decode('utf-8')) if isinstance(x, bytes) and x.decode('utf-8').isdigit() else 0 if (x == b'n' or x == b'') else x.decode('utf-8') if isinstance(x, bytes) else x)
-
+        float_data_dataframe = float_data_dataframe.applymap(self.__decode_and_convert)
+        
         # Return dataframe
         return float_data_dataframe
+    
+    # Function to handle decoding and type conversion
+    def __decode_and_convert(self, x):
+        if isinstance(x, np.ma.core.MaskedArray): 
+            x = x.item()
+        if isinstance(x, bytes):
+            decoded = x.decode('utf-8')
+            if decoded.isdigit():
+                return int(decoded)
+            elif decoded == 'n' or decoded == '':
+                return 0
+            else:
+                return decoded
+        else:
+            return x
     
 
     def __calculate_nc_variable_values(self, column: str, nc_file, number_of_profiles: int, profiles_to_pull: list) -> list:
