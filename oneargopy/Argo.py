@@ -183,9 +183,9 @@ class Argo:
         if self.download_settings.verbose: print(f'Validating parameters...')
         self.__validate_lon_lat_limits()
         self.__validate_start_end_dates()
-        if self.outside : self.__validate_outside_kwarg()
-        if self.float_type : self.__validate_type_kwarg()
-        if self.ocean : self.__validate_ocean_kwarg()
+        if self.outside: self.__validate_outside_kwarg()
+        if self.float_type: self.__validate_type_kwarg()
+        if self.ocean: self.__validate_ocean_kwarg()
         # if self.sensor : self.__validate_sensor_kwarg()
 
         # Load correct dataframes according to self.float_type and self.float_ids
@@ -306,18 +306,18 @@ class Argo:
 
         # Validate passed parameters
         self.float_parameters = parameters
-        if self.float_parameters : self.__validate_float_parameters_arg()
+        if self.float_parameters: self.__validate_float_parameters_arg()
 
         # Download .nc files for passed floats
         files = []
-        for wmoid in self.float_ids : 
+        for wmoid in self.float_ids: 
             # Generate filename 
             ## If the float is a bgc float it will have a corresponding sprof file
             if self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0] : 
                 file_name = f'{wmoid}_Sprof.nc'
                 files.append(file_name)
             ## If the float is a phys float it will have a corresponding prof file
-            else :
+            else:
                 file_name = f'{wmoid}_prof.nc'
                 files.append(file_name)
             # Download file
@@ -354,9 +354,9 @@ class Argo:
 
             :param: filename : str - The name of the file we are downloading.
         """
-        if file_name.endswith('.txt') : 
+        if file_name.endswith('.txt'): 
             directory = Path(self.download_settings.base_dir.joinpath("Index"))
-        elif file_name.endswith('.nc') :
+        elif file_name.endswith('.nc'):
             directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
 
         # Get the expected filepath for the file
@@ -370,7 +370,7 @@ class Argo:
                 if self.download_settings.verbose: 
                     print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
             else: 
-                if file_name.endswith('.txt') : 
+                if file_name.endswith('.txt'): 
                     last_modified_time = Path(file_path).stat().st_mtime
                     current_time = datetime.now().timestamp()
                     seconds_since_modified = current_time - last_modified_time
@@ -380,7 +380,7 @@ class Argo:
                         self.__try_download(file_name ,True)
                     else:
                         if self.download_settings.verbose: print(f'{file_name} does not need to be updated yet.')
-                elif file_name.endswith('.nc') :
+                elif file_name.endswith('.nc'):
                     # Check if the file should be updated
                     if (self.__check_nc_update(file_path, file_name)):
                         if self.download_settings.verbose: print(f'Updating {file_name}...')
@@ -423,9 +423,9 @@ class Argo:
         # If the .nc file's update date is less than
         # the date in the index file return true
         # indicating that the .nc file must be updated
-        if netcdf_update_date < index_update_date : 
+        if netcdf_update_date < index_update_date: 
             return True
-        else : 
+        else: 
             return False
 
 
@@ -437,11 +437,11 @@ class Argo:
                 are trying to update it. False if the file hasn't been 
                 downloaded yet. 
         """
-        if file_name.endswith('.txt') : 
+        if file_name.endswith('.txt'): 
             directory = Path(self.download_settings.base_dir.joinpath("Index"))
             first_save_path = directory.joinpath("".join([file_name, ".gz"]))
             second_save_path = directory.joinpath(file_name)
-        elif file_name.endswith('.nc') :
+        elif file_name.endswith('.nc'):
             directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
             first_save_path = directory.joinpath(file_name)
             second_save_path = None
@@ -453,9 +453,9 @@ class Argo:
             # Try both hosts (preferred one is listed first in download settings)
             for host in self.source_settings.hosts:
 
-                if file_name.endswith('.txt') : 
+                if file_name.endswith('.txt'): 
                     url = "".join([host, file_name, ".gz"])
-                elif file_name.endswith('.nc') :
+                elif file_name.endswith('.nc'):
                     # Extract float id from filename
                     float_id = file_name.split('_')[0]
                     # Extract dac for that float id from datafrmae
@@ -727,11 +727,11 @@ class Argo:
         if self.download_settings.verbose: print(f"Validating passed floats...")
 
         # If user has passed a dictionary
-        if isinstance(self.float_ids, dict) :
+        if isinstance(self.float_ids, dict):
             self.float_profiles_dict = self.float_ids
             self.float_ids = list(self.float_ids.keys())
         # If user has passed a single float
-        elif not isinstance(self.float_ids, list) :
+        elif not isinstance(self.float_ids, list):
             self.float_profiles_dict = None
             self.float_ids = [self.float_ids]
         # If user has passed a list 
@@ -762,7 +762,7 @@ class Argo:
         if self.download_settings.verbose: print(f"Validating passed 'parameters'...")
 
         # If user has passed a single parameter convert to list
-        if not isinstance(self.float_parameters, list) :
+        if not isinstance(self.float_parameters, list):
             self.float_parameters = [self.float_parameters]
 
         # Finding float IDs that are not present in the index dataframes
@@ -803,7 +803,7 @@ class Argo:
             self.prof_index = self.__load_prof_dataframe()
 
         # We can only validate floats after the dataframes are loaded into memory
-        if self.float_ids : self.__validate_floats_kwarg()
+        if self.float_ids: self.__validate_floats_kwarg()
 
         # If we aren't filtering from specific floats assign selected frames
         # to the whole index frames
@@ -845,15 +845,15 @@ class Argo:
                 keys corresponding to a list of profiles that match criteria.
         """
         # Filter by time, space, and type constraints first.
-        if self.float_type == 'bgc' or self.selected_from_prof_index.empty : 
+        if self.float_type == 'bgc' or self.selected_from_prof_index.empty: 
             # Empty df for concat
             self.selection_frame_phys = pd.DataFrame()
-        else :
+        else:
             self.selection_frame_phys = self.__get_in_time_and_space_constraints(self.selected_from_prof_index)
-        if self.float_type == 'phys' or self.selected_from_sprof_index.empty : 
+        if self.float_type == 'phys' or self.selected_from_sprof_index.empty: 
             # Empty df for concat
             self.selection_frame_bgc = pd.DataFrame()
-        else :
+        else:
             self.selection_frame_bgc = self.__get_in_time_and_space_constraints(self.selected_from_sprof_index)
         
         # Set the selection frame
@@ -872,7 +872,7 @@ class Argo:
         
         # Filter by other constraints, these functions will use self.selection_frame 
         # so we don't have to pass a frame
-        if self.ocean : self.__get_in_ocean_basin()
+        if self.ocean: self.__get_in_ocean_basin()
         # other narrowing functions that act on created selection frame...
 
         # Convert the working dataframe into a dictionary
@@ -990,7 +990,7 @@ class Argo:
             constraints = floats_in_time_and_space & profiles_in_time
             selection_frame = dataframe_to_filter[constraints]
         
-        elif self.outside == None : 
+        elif self.outside == None: 
             print(f'Applying outside=None constraints...')
             constraints = floats_in_time_and_space & profiles_in_space & profiles_in_time
             selection_frame = dataframe_to_filter[constraints]
@@ -1054,7 +1054,7 @@ class Argo:
         floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
 
         # If the user has passed a dictionary also filter by profiles
-        if self.float_profiles_dict is not None : 
+        if self.float_profiles_dict is not None: 
             # Flatten the float_dictionary into a DataFrame
             data = []
             for wmoid, profile_indexes in self.float_profiles_dict.items():
@@ -1094,10 +1094,10 @@ class Argo:
     def __set_graph_limits(self, ax, axis: str)-> None:
         """ A Function for setting the graph's longitude and latitude extents. 
         """
-        if axis == 'x' :
+        if axis == 'x':
             min, max = ax.get_xlim()
             diff = max - min
-        elif axis == 'y' :
+        elif axis == 'y':
             min, max = ax.get_ylim()
             diff = max - min
 
@@ -1106,9 +1106,9 @@ class Argo:
             pad = 0.5 * (5.0 - diff)
             min -= pad
             max += pad
-            if axis == 'x' :
+            if axis == 'x':
                 ax.set_xlim([min, max])
-            elif axis == 'y' :
+            elif axis == 'y':
                 ax.set_ylim([min, max])
 
     
@@ -1135,10 +1135,10 @@ class Argo:
     def __determine_graph_step(self, ax, axis: str)-> int:
         """ A graph to determine the step of the longitude and latitude gridlines.
         """
-        if axis == 'x' :
+        if axis == 'x':
             min, max = ax.get_xlim()
             diff = max - min
-        elif axis == 'y' :
+        elif axis == 'y':
             min, max = ax.get_ylim()
             diff = max - min
 
@@ -1154,7 +1154,7 @@ class Argo:
         return step
 
 
-    def __parameter_premutations(self, nc_file)-> list :
+    def __parameter_premutations(self, nc_file)-> list:
         """ A function to filter the list of parameters to be loaded so 
             that we only load parameters that are in the file.  
 
@@ -1166,7 +1166,7 @@ class Argo:
                 that are inside of the nc_file.
         """
         # If the parameter is in the file also add it's permutations to the list
-        if isinstance(self.float_parameters, list) :
+        if isinstance(self.float_parameters, list):
 
             # Parameters that are in the passed .nc file
             file_variables = nc_file.variables
@@ -1174,27 +1174,27 @@ class Argo:
             # List to store parameters and their additioal associated columns
             parameter_columns = []
             
-            for parameter in self.float_parameters : 
+            for parameter in self.float_parameters: 
                 if parameter in file_variables: 
                     # We add PRES no matter what, so if the user passed it 
                     # don't add it to the parameter list at this time.
-                    if parameter != 'PRES' : 
+                    if parameter != 'PRES': 
                         parameter_columns.append(parameter)
                         parameter_columns.append(parameter + '_QC')
                         parameter_columns.append(parameter + '_ADJUSTED')
                         parameter_columns.append(parameter + '_ADJUSTED_QC')
                         parameter_columns.append(parameter + '_ADJUSTED_ERROR')
-                else : 
+                else: 
                     print(f'WARNING: The parameter: {parameter} does not exist in the file.')
             
-            if len(parameter_columns) > 0 : 
+            if len(parameter_columns) > 0: 
                 pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 'PRES_ADJUSTED_ERROR']
                 existing_parameter_columns = pressure + parameter_columns
                 return existing_parameter_columns
-            else : 
+            else: 
                 return None
         
-        else : 
+        else: 
             return None
 
     
@@ -1211,7 +1211,7 @@ class Argo:
         # Getting the file paths for downloaded .nc files
         directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
         file_paths = []
-        for file in files : 
+        for file in files: 
             file_paths.append(directory.joinpath(file))
 
         # Columns that will always be in the dataframe, these columns are one dimensional
@@ -1225,7 +1225,7 @@ class Argo:
         float_data_dataframe = pd.DataFrame()
 
         # Iterate through files
-        for file in file_paths :             
+        for file in file_paths:             
             # Open File
             nc_file = netCDF4.Dataset(file, mode='r')
             
@@ -1243,9 +1243,9 @@ class Argo:
             profile_count = self.prof_index['wmoid'].value_counts().get(float_id, 0)
 
             # Manage passed profiles if necessary
-            if self.float_profiles_dict is not None : 
+            if self.float_profiles_dict is not None: 
 
-                if profile_count > number_of_profiles : 
+                if profile_count > number_of_profiles: 
                     print(f'Skipping float {float_id}...')
                     print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles for float {float_id}..')
                     continue
@@ -1257,13 +1257,13 @@ class Argo:
                 profiles_to_pull = [index - 1 for index in profiles_to_pull]
 
                 # The case for if we are pulling a single profile
-                if len(profiles_to_pull) == 1 : 
+                if len(profiles_to_pull) == 1: 
                     profiles_to_pull = int(profiles_to_pull[0])
                     static_length = 1
-                else : 
+                else: 
                     static_length = len(profiles_to_pull)
             # If no profiles are passed then we want to pull all of the profiles from the float
-            else : 
+            else: 
                 profiles_to_pull = list(range(0, number_of_profiles, 1))
                 static_length = number_of_profiles
 
@@ -1276,12 +1276,12 @@ class Argo:
             if self.download_settings.verbose: print(f'Loading Float data from float {float_id} with {static_length} profiles...')
 
             # Iterate through static columns
-            for column in static_columns :
+            for column in static_columns:
 
                 # Customize the nc_variable if we have a special case where values need to be calculated
-                if column in special_case_static_columns : 
+                if column in special_case_static_columns: 
                     nc_variable = self.__calculate_nc_variable_values(column, nc_file, static_length, profiles_to_pull)
-                else : 
+                else: 
                     nc_variable = nc_file.variables[column][profiles_to_pull]
                 
                 # Read in variable from .nc file
@@ -1291,8 +1291,8 @@ class Argo:
                 temp_frame[column] = column_values
 
             # Iterate through parameter columns, if there are none nothing happens
-            if parameter_columns is not None :
-                for column in parameter_columns : 
+            if parameter_columns is not None:
+                for column in parameter_columns: 
 
                     # Setting nc_variable
                     nc_variable = nc_file.variables[column][profiles_to_pull,:]
@@ -1313,7 +1313,7 @@ class Argo:
             nc_file.close()
 
         # Clean up dataframe
-        if 'PRES' in float_data_dataframe.columns :
+        if 'PRES' in float_data_dataframe.columns:
             if self.download_settings.verbose: print(f'Dropping rows where no measurements were taken...')
             float_data_dataframe = float_data_dataframe.dropna(subset=['PRES', 'PRES_ADJUSTED'])
 
@@ -1348,9 +1348,9 @@ class Argo:
                 utc_date = reference_date + timedelta(days=float(nc_variable))
                 new_nc_variable.append(utc_date)
             
-            else :
+            else:
                 # Calculating the dates
-                for date in nc_variable : 
+                for date in nc_variable: 
                     reference_date = datetime(1950, 1, 1)
                     utc_date = reference_date + timedelta(days=date)
                     new_nc_variable.append(utc_date)
@@ -1358,7 +1358,7 @@ class Argo:
             # Returning list of calculated lists to be added to dataframe
             return new_nc_variable
 
-        elif column == 'DATE_QC' : 
+        elif column == 'DATE_QC': 
 
             # Acessing nc variable that we pull date_qc from
             nc_variable = nc_file.variables['JULD_QC'][profiles_to_pull]
@@ -1366,7 +1366,7 @@ class Argo:
             # Returning nc variable
             return nc_variable
 
-        elif column == 'WMOID' : 
+        elif column == 'WMOID': 
 
             # Parsing float id from file name
             float_id_array = nc_file.variables['PLATFORM_NUMBER'][0]
@@ -1381,7 +1381,7 @@ class Argo:
             return nc_variable
 
     
-    def __read_from_static_nc_variable(self, parameter_columns: list, nc_variable, number_of_levels: int, number_of_profiles: int)-> list : 
+    def __read_from_static_nc_variable(self, parameter_columns: list, nc_variable, number_of_levels: int, number_of_profiles: int)-> list: 
         """ A function to read in data from one dimentional parameters in the passed .nc file. 
 
             :param: parameter_columns : list - The list of parameter columns in the .nc file. This
@@ -1404,13 +1404,13 @@ class Argo:
         # If there are no parameters then then we'll only need the rows to match the number of profiles in the file
         elif parameter_columns is None:
 
-            for value in nc_variable : 
+            for value in nc_variable: 
                 column_values.append(value)
 
         # If there are parameters then the static rows need to match the number of levels 
-        else : 
+        else: 
         
-            for value in nc_variable : 
+            for value in nc_variable: 
                 value_repeats = [value] * number_of_levels
                 column_values.extend(value_repeats)
 
@@ -1423,7 +1423,7 @@ class Argo:
         return column_values
     
 
-    def __read_from_paramater_nc_variable(self, nc_variable)-> list :
+    def __read_from_paramater_nc_variable(self, nc_variable)-> list:
         """ A function to read in data from two dimentional parameters in the passed .nc file.
 
             :param: nc_variable - The nc variable we're reading from
@@ -1434,12 +1434,12 @@ class Argo:
         column_values = []
 
         # Check if nc_variable is 0-dimensional aka only one profile is passed
-        if nc_variable.ndim == 1 :
-            for profile in nc_variable : 
+        if nc_variable.ndim == 1:
+            for profile in nc_variable: 
                     column_values.append(profile)
-        else : 
-            for profile in nc_variable : 
-                for depth in profile : 
+        else: 
+            for profile in nc_variable: 
+                for depth in profile: 
                     column_values.append(depth)
 
         # If the column has 'byte' strings then decode
