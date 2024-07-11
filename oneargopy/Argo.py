@@ -1235,9 +1235,7 @@ class Argo:
 
             # Get float id of current file
             float_id_array = nc_file.variables['PLATFORM_NUMBER'][0]
-            float_id_array = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in float_id_array]
-            float_id_array.pop() # The last value in the array is 'masked' which we don't need to form the float_id
-            float_id = int(''.join(float_id_array))
+            float_id = int(float_id_array.data.tobytes().decode('utf-8').strip('\x00'))
 
             # Get the range of profiles from the index file
             profile_count = self.prof_index['wmoid'].value_counts().get(float_id, 0)
@@ -1286,7 +1284,7 @@ class Argo:
                 
                 # Read in variable from .nc file
                 column_values = self.__read_from_static_nc_variable(parameter_columns, nc_variable, number_of_levels, static_length)
-
+                
                 # Add list of values gathered for column to the temp dataframe
                 temp_frame[column] = column_values
 
@@ -1316,6 +1314,9 @@ class Argo:
         if 'PRES' in float_data_dataframe.columns:
             if self.download_settings.verbose: print(f'Dropping rows where no measurements were taken...')
             float_data_dataframe = float_data_dataframe.dropna(subset=['PRES', 'PRES_ADJUSTED'])
+
+        # Converting bytes to ints/chars
+        float_data_dataframe = float_data_dataframe.applymap(lambda x: int(x.decode('utf-8')) if isinstance(x, bytes) and x.decode('utf-8').isdigit() else 0 if (x == b'n' or x == b'') else x.decode('utf-8') if isinstance(x, bytes) else x)
 
         # Return dataframe
         return float_data_dataframe
@@ -1370,9 +1371,7 @@ class Argo:
 
             # Parsing float id from file name
             float_id_array = nc_file.variables['PLATFORM_NUMBER'][0]
-            float_id_array = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in float_id_array]
-            float_id_array.pop() # The last value in the array is 'masked' which we don't need to form the float_id
-            float_id = ''.join(float_id_array)
+            float_id = int(float_id_array.data.tobytes().decode('utf-8').strip('\x00'))
             
             # List with the float id the same length as a one dimensional variable
             nc_variable = [int(float_id)] * number_of_profiles
@@ -1414,12 +1413,6 @@ class Argo:
                 value_repeats = [value] * number_of_levels
                 column_values.extend(value_repeats)
 
-        # If the column has 'byte' strings then decode
-        column_values = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in column_values]
-
-        # Change 'n' to 0 in columns with 'n' as a false value
-        column_values = [0 if str(elem) == 'n' else elem for elem in column_values]
-
         return column_values
     
 
@@ -1441,11 +1434,5 @@ class Argo:
             for profile in nc_variable: 
                 for depth in profile: 
                     column_values.append(depth)
-
-        # If the column has 'byte' strings then decode
-        column_values = [elem.decode('utf-8') if isinstance(elem, bytes) else elem for elem in column_values]
-
-        # Change 'n' to 0 in columns with 'n' as a false value
-        column_values = [0 if str(elem) == 'n' else elem for elem in column_values]
 
         return column_values
