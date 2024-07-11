@@ -1191,13 +1191,10 @@ class Argo:
                         variable_columns.append(variable + '_ADJUSTED_ERROR')
                 else: 
                     print(f'WARNING: The variable: {variable} does not exist in the file.')
-            
-            if len(variable_columns) > 0: 
-                pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 'PRES_ADJUSTED_ERROR']
-                existing_variable_columns = pressure + variable_columns
-                return existing_variable_columns
-            else: 
-                return None
+             
+            pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 'PRES_ADJUSTED_ERROR']
+            existing_variable_columns = pressure + variable_columns
+            return existing_variable_columns
         
         else: 
             return None
@@ -1222,7 +1219,7 @@ class Argo:
         # Columns that will always be in the dataframe, these columns are one dimensional
         static_columns = ['WMOID', 'CYCLE_NUMBER', 'DIRECTION', 
                                 'DATE', 'DATE_QC', 'LATITUDE', 
-                                'LONGITUDE', 'POSITION_QC',]
+                                'LONGITUDE', 'POSITION_QC']
         # Columns that need to be calculated or derived 
         special_case_static_columns = ['DATE', 'DATE_QC', 'WMOID']
 
