@@ -1320,7 +1320,7 @@ class Argo:
                 temp_frame = temp_frame.dropna(subset=['PRES', 'PRES_ADJUSTED'])
             
             # Concatonate the final dataframe and the temp dataframe
-            float_data_dataframe = pd.concat([temp_frame, float_data_dataframe], ignore_index=True)
+            float_data_dataframe = pd.concat([float_data_dataframe, temp_frame], ignore_index=True)
 
             # Close File 
             nc_file.close()
