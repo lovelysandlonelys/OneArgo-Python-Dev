@@ -1323,6 +1323,13 @@ class Argo:
     
     # Function to handle decoding and type conversion
     def __decode_and_convert(self, x):
+        """ A function to apply to the float_data_dataframe to decode
+            masked array and byte values in the dataframe. 
+
+            :param: x - A value in the dataframe to check for decoding.
+
+            :return: x - The decoded value. 
+        """
         if isinstance(x, np.ma.core.MaskedArray): 
             x = x.item()
         if isinstance(x, bytes):
