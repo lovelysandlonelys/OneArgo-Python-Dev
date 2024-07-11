@@ -1191,10 +1191,13 @@ class Argo:
                         variable_columns.append(variable + '_ADJUSTED_ERROR')
                 else: 
                     print(f'WARNING: The variable: {variable} does not exist in the file.')
-             
-            pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 'PRES_ADJUSTED_ERROR']
-            existing_variable_columns = pressure + variable_columns
-            return existing_variable_columns
+            
+            if len(variable_columns) > 0: 
+                pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 'PRES_ADJUSTED_ERROR']
+                existing_variable_columns = pressure + variable_columns
+                return existing_variable_columns
+            else: 
+                return None
         
         else: 
             return None
@@ -1310,17 +1313,17 @@ class Argo:
 
                     # Add list of values gathered for column to the temp dataframe
                     temp_frame[column] = column_values
+
+            # Clean up dataframe
+            if 'PRES' in temp_frame.columns:
+                if self.download_settings.verbose: print(f'Dropping rows where no measurements were taken for {float_id}...')
+                temp_frame = temp_frame.dropna(subset=['PRES', 'PRES_ADJUSTED'])
             
             # Concatonate the final dataframe and the temp dataframe
             float_data_dataframe = pd.concat([temp_frame, float_data_dataframe], ignore_index=True)
 
             # Close File 
             nc_file.close()
-
-        # Clean up dataframe
-        if 'PRES' in float_data_dataframe.columns:
-            if self.download_settings.verbose: print(f'Dropping rows where no measurements were taken...')
-            float_data_dataframe = float_data_dataframe.dropna(subset=['PRES', 'PRES_ADJUSTED'])
 
         # Converting bytes to ints/chars
         float_data_dataframe = float_data_dataframe.applymap(self.__decode_and_convert)
