@@ -16,7 +16,7 @@ name = "oneargopy"
 version = "0.0.1"
 authors = [
   { name="Savannah Stephenson", email="stephensonsavannah@ymail.com" },
-  { name="Hartmut Frenzel", email="" },
+  { name="Hartmut Frenzel", email="hartmut.frenzel@noaa.gov" },
 ]
 description = "A beta version of oneargopy to test packaging with pip."
 readme = "README.md"
