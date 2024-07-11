@@ -308,17 +308,24 @@ class Argo:
         self.float_parameters = parameters
         if self.float_parameters: self.__validate_float_parameters_arg()
 
+        # Check if the user has passed only phys float variables
+        if self.float_parameters is not None: 
+            phys_variables = ['TEMP', 'PSAL', 'PRES']
+            only_phys = all(x in phys_variables for x in self.float_parameters)
+        else: 
+            only_phys = False
+
         # Download .nc files for passed floats
         files = []
-        for wmoid in self.float_ids: 
-            # Generate filename 
-            ## If the float is a bgc float it will have a corresponding sprof file
-            if self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0] : 
-                file_name = f'{wmoid}_Sprof.nc'
-                files.append(file_name)
-            ## If the float is a phys float it will have a corresponding prof file
-            else:
+        for wmoid in self.float_ids:  
+            # If the float is a phys float, or if the user has provided no variables 
+            # or only phys variables then there will be a corresponding prof file
+            if (not self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0]) or (self.float_parameters == None) or (only_phys): 
                 file_name = f'{wmoid}_prof.nc'
+                files.append(file_name)
+            # If the float is a bgc float it will have a corresponding sprof file
+            elif self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0]: 
+                file_name = f'{wmoid}_Sprof.nc'
                 files.append(file_name)
             # Download file
             self.__download_file(file_name)
@@ -1238,7 +1245,12 @@ class Argo:
             float_id = int(float_id_array.data.tobytes().decode('utf-8').strip('\x00'))
 
             # Get the range of profiles from the index file
-            profile_count = self.prof_index['wmoid'].value_counts().get(float_id, 0)
+            # If the file ends in Sprof then use the sprof index for profile count
+            if 'Sprof' in str(file):
+                profile_count = self.sprof_index['wmoid'].value_counts().get(float_id, 0)
+            # Else use the prof index for profile count
+            else:
+                profile_count = self.prof_index['wmoid'].value_counts().get(float_id, 0)
 
             # Manage passed profiles if necessary
             if self.float_profiles_dict is not None: 
