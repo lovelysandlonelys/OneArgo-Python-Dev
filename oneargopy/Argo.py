@@ -283,14 +283,14 @@ class Argo:
         # Displaying graph
         plt.show()
 
-    def load_float_data(self, floats: int | list | dict, parameters: str | list = None)-> pd: 
+    def load_float_data(self, floats: int | list | dict, variables: str | list = None)-> pd: 
         """ A function to load float data into memory.
 
             :param: floats : int | list | dict - A float or list of floats to  
                 load data from. Or a dictionary specifying floats and profiles
                 to read from the .nc file. 
-            :param: parameters : str | list - An optional parameter to list parameters
-                that the user would like included in the dataframe. If the parameter is not
+            :param: variables : str | list - An optional parameter to list variables
+                that the user would like included in the dataframe. If the variable is not
                 in the float passed then only the surface level of the profile will be included.
 
             :return: float_data : pd - A dataframe with requested float data. 
@@ -304,14 +304,14 @@ class Argo:
         self.float_ids = floats
         self.__validate_floats_kwarg()
 
-        # Validate passed parameters
-        self.float_parameters = parameters
-        if self.float_parameters: self.__validate_float_parameters_arg()
+        # Validate passed variables
+        self.float_variables = variables
+        if self.float_variables: self.__validate_float_variables_arg()
 
         # Check if the user has passed only phys float variables
-        if self.float_parameters is not None: 
+        if self.float_variables is not None: 
             phys_variables = ['TEMP', 'PSAL', 'PRES']
-            only_phys = all(x in phys_variables for x in self.float_parameters)
+            only_phys = all(x in phys_variables for x in self.float_variables)
         else: 
             only_phys = False
 
@@ -320,7 +320,7 @@ class Argo:
         for wmoid in self.float_ids:  
             # If the float is a phys float, or if the user has provided no variables 
             # or only phys variables then there will be a corresponding prof file
-            if (not self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0]) or (self.float_parameters == None) or (only_phys): 
+            if (not self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0]) or (self.float_variables == None) or (only_phys): 
                 file_name = f'{wmoid}_prof.nc'
                 files.append(file_name)
             # If the float is a bgc float it will have a corresponding sprof file
@@ -761,21 +761,21 @@ class Argo:
                 raise Exception(f"The only acceptable values for the 'ocean' keyword argument are 'A' (Atlantic), 'P' (Pacific), and 'I' (Indian).")
 
 
-    def __validate_float_parameters_arg(self):
+    def __validate_float_variables_arg(self):
         """ A function to validate the value of the 
-            optional 'parameters' passed to 
+            optional 'variables' passed to 
             load_float_data.
         """
-        if self.download_settings.verbose: print(f"Validating passed 'parameters'...")
+        if self.download_settings.verbose: print(f"Validating passed 'variables'...")
 
-        # If user has passed a single parameter convert to list
-        if not isinstance(self.float_parameters, list):
-            self.float_parameters = [self.float_parameters]
+        # If user has passed a single variable convert to list
+        if not isinstance(self.float_variables, list):
+            self.float_variables = [self.float_variables]
 
         # Finding float IDs that are not present in the index dataframes
-        nonexistent_params = [param for param in self.float_parameters if param not in self.source_settings.avail_vars]
-        if nonexistent_params:
-            raise Exception(f"The following float IDs do not exist in the dataframes: {nonexistent_params}")
+        nonexistent_vars = [x for x in self.float_variables if x not in self.source_settings.avail_vars]
+        if nonexistent_vars:
+            raise Exception(f"The following float IDs do not exist in the dataframes: {nonexistent_vars}")
 
 
     def __prepare_selection(self):
@@ -1161,43 +1161,41 @@ class Argo:
         return step
 
 
-    def __parameter_premutations(self, nc_file)-> list:
-        """ A function to filter the list of parameters to be loaded so 
-            that we only load parameters that are in the file.  
+    def __variable_premutations(self, nc_file)-> list:
+        """ A function to filter the list of variables to be loaded so 
+            that we only load variables that are in the file.  
 
-            :param: parameters : list - A list of parameters to include
-                in the dataframe.
             :param: nc_file : Any - The .nc file we're reading from. 
 
-            :return: list - A list to of all the parameters passed
+            :return: list - A list to of all the variables passed
                 that are inside of the nc_file.
         """
-        # If the parameter is in the file also add it's permutations to the list
-        if isinstance(self.float_parameters, list):
+        # If the variables is in the file also add it's permutations to the list
+        if isinstance(self.float_variables, list):
 
             # Parameters that are in the passed .nc file
             file_variables = nc_file.variables
 
-            # List to store parameters and their additioal associated columns
-            parameter_columns = []
+            # List to store variables and their additioal associated columns
+            variable_columns = []
             
-            for parameter in self.float_parameters: 
-                if parameter in file_variables: 
+            for variable in self.float_variables: 
+                if variable in file_variables: 
                     # We add PRES no matter what, so if the user passed it 
-                    # don't add it to the parameter list at this time.
-                    if parameter != 'PRES': 
-                        parameter_columns.append(parameter)
-                        parameter_columns.append(parameter + '_QC')
-                        parameter_columns.append(parameter + '_ADJUSTED')
-                        parameter_columns.append(parameter + '_ADJUSTED_QC')
-                        parameter_columns.append(parameter + '_ADJUSTED_ERROR')
+                    # don't add it to the variable list at this time.
+                    if variable != 'PRES': 
+                        variable_columns.append(variable)
+                        variable_columns.append(variable + '_QC')
+                        variable_columns.append(variable + '_ADJUSTED')
+                        variable_columns.append(variable + '_ADJUSTED_QC')
+                        variable_columns.append(variable + '_ADJUSTED_ERROR')
                 else: 
-                    print(f'WARNING: The parameter: {parameter} does not exist in the file.')
+                    print(f'WARNING: The variable: {variable} does not exist in the file.')
             
-            if len(parameter_columns) > 0: 
+            if len(variable_columns) > 0: 
                 pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 'PRES_ADJUSTED_ERROR']
-                existing_parameter_columns = pressure + parameter_columns
-                return existing_parameter_columns
+                existing_variable_columns = pressure + variable_columns
+                return existing_variable_columns
             else: 
                 return None
         
@@ -1277,8 +1275,8 @@ class Argo:
                 profiles_to_pull = list(range(0, number_of_profiles, 1))
                 static_length = number_of_profiles
 
-            # Narrow parameter list to only thoes that are in the current file
-            parameter_columns = self.__parameter_premutations(nc_file)
+            # Narrow variable list to only thoes that are in the current file
+            variable_columns = self.__variable_premutations(nc_file)
             
             # Temporary dataframe to make indexing simpler for each float
             temp_frame = pd.DataFrame()
@@ -1295,14 +1293,14 @@ class Argo:
                     nc_variable = nc_file.variables[column][profiles_to_pull]
                 
                 # Read in variable from .nc file
-                column_values = self.__read_from_static_nc_variable(parameter_columns, nc_variable, number_of_levels, static_length)
+                column_values = self.__read_from_static_nc_variable(variable_columns, nc_variable, number_of_levels, static_length)
                 
                 # Add list of values gathered for column to the temp dataframe
                 temp_frame[column] = column_values
 
-            # Iterate through parameter columns, if there are none nothing happens
-            if parameter_columns is not None:
-                for column in parameter_columns: 
+            # Iterate through variable columns, if there are none nothing happens
+            if variable_columns is not None:
+                for column in variable_columns: 
 
                     # Setting nc_variable
                     nc_variable = nc_file.variables[column][profiles_to_pull,:]
@@ -1414,10 +1412,10 @@ class Argo:
             return nc_variable
 
     
-    def __read_from_static_nc_variable(self, parameter_columns: list, nc_variable, number_of_levels: int, number_of_profiles: int)-> list: 
-        """ A function to read in data from one dimentional parameters in the passed .nc file. 
+    def __read_from_static_nc_variable(self, variable_columns: list, nc_variable, number_of_levels: int, number_of_profiles: int)-> list: 
+        """ A function to read in data from one dimentional variables in the passed .nc file. 
 
-            :param: parameter_columns : list - The list of parameter columns in the .nc file. This
+            :param: variable_columns : list - The list of variable columns in the .nc file. This
                 determines how many times the static variables should be repeated to match the expected
                 length of the dataframe. 
             :param: nc_variable - The .nc variable we're reading from.
@@ -1432,15 +1430,15 @@ class Argo:
         # Check if nc_variable is 0-dimensional aka only one profile is passed
         if getattr(nc_variable, "shape", None) == ():
 
-            column_values = [nc_variable] * (number_of_levels if parameter_columns else number_of_profiles)
+            column_values = [nc_variable] * (number_of_levels if variable_columns else number_of_profiles)
 
-        # If there are no parameters then then we'll only need the rows to match the number of profiles in the file
-        elif parameter_columns is None:
+        # If there are no variables then then we'll only need the rows to match the number of profiles in the file
+        elif variable_columns is None:
 
             for value in nc_variable: 
                 column_values.append(value)
 
-        # If there are parameters then the static rows need to match the number of levels 
+        # If there are variables then the static rows need to match the number of levels 
         else: 
         
             for value in nc_variable: 
@@ -1451,7 +1449,7 @@ class Argo:
     
 
     def __read_from_paramater_nc_variable(self, nc_variable)-> list:
-        """ A function to read in data from two dimentional parameters in the passed .nc file.
+        """ A function to read in data from two dimentional variables in the passed .nc file.
 
             :param: nc_variable - The nc variable we're reading from
 
