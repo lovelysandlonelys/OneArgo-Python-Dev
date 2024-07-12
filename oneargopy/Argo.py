@@ -1226,7 +1226,7 @@ class Argo:
         # Columns that need to be calculated or derived 
         special_case_static_columns = ['DATE', 'DATE_QC', 'WMOID']
 
-        # Empty Dataframe to return at end of function with all loaded data
+        # Dataframe to return at end of function with all loaded data added
         float_data_dataframe = pd.DataFrame()
 
         # Iterate through files
