@@ -415,13 +415,9 @@ class Argo:
         index_update_date = pd.to_datetime(self.float_stats.loc[self.float_stats['wmoid'] == int(float_id), 'date_update'].iloc[0])
 
         # Read DATE_UPDATE from .nc file
-        try: 
-            nc_file = netCDF4.Dataset(file_path, mode='r')
-            netcdf_update_date = nc_file.variables['DATE_UPDATE'][:]
-            nc_file.close()
-        except OSError:
-            # File could not be read
-            return True
+        nc_file = netCDF4.Dataset(file_path, mode='r')
+        netcdf_update_date = nc_file.variables['DATE_UPDATE'][:]
+        nc_file.close()
 
         # Convert the byte strings of file_update_date into a regular string
         julian_date_str = b''.join(netcdf_update_date).decode('utf-8')
