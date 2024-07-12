@@ -319,7 +319,7 @@ class Argo:
         files = []
         for wmoid in self.float_ids:  
             # If the float is a phys float, or if the user has provided no variables 
-            # or only phys variables then there will be a corresponding prof file
+            # or only phys variables then then use the corresponding prof file
             if (not self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0]) or (self.float_variables == None) or (only_phys): 
                 file_name = f'{wmoid}_prof.nc'
                 files.append(file_name)
