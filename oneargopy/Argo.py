@@ -202,15 +202,12 @@ class Argo:
             del self.prof_index
             del self.selection_frame
 
-        if self.download_settings.verbose: print(f'Profiles Selected!\n\n')
-
-        # Printing Dict, likely to remove after testing period
-        print(f'Floats: {narrowed_profiles.keys()}')
-        for key, value in narrowed_profiles.items():
-            print(f'{key}: {value}')
-        print(f'\n\n')
+        if self.download_settings.verbose: 
+            print(f'Profiles Selected!')
+            print(f'Floats: {narrowed_profiles.keys()}\n')
 
         return narrowed_profiles
+    
     
     def trajectories(self, floats: int | list | dict)-> None: 
         """ This function plots the trajectories of one or more specified float(s)
