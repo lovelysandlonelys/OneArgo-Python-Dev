@@ -208,7 +208,7 @@ class Argo:
 
         return narrowed_profiles
     
-    
+
     def trajectories(self, floats: int | list | dict)-> None: 
         """ This function plots the trajectories of one or more specified float(s)
 
@@ -985,22 +985,22 @@ class Argo:
         # Filter passed dataframe by time and space constraints to 
         # create a new dataframe to return as part of the selection frame
         if self.outside == 'time': 
-            print(f'Applying outside={self.outside} constraints...')
+            if self.download_settings.verbose: print(f'Applying outside={self.outside} constraints...')
             constraints = floats_in_time_and_space & profiles_in_space
             selection_frame = dataframe_to_filter[constraints]
        
         elif self.outside == 'space': 
-            print(f'Applying outside={self.outside} constraints...')
+            if self.download_settings.verbose: print(f'Applying outside={self.outside} constraints...')
             constraints = floats_in_time_and_space & profiles_in_time
             selection_frame = dataframe_to_filter[constraints]
         
         elif self.outside == None: 
-            print(f'Applying outside=None constraints...')
+            if self.download_settings.verbose: print(f'Applying outside=None constraints...')
             constraints = floats_in_time_and_space & profiles_in_space & profiles_in_time
             selection_frame = dataframe_to_filter[constraints]
         
         elif self.outside == 'both': 
-            print(f'Applying outside={self.outside} constraints...')
+            if self.download_settings.verbose: print(f'Applying outside={self.outside} constraints...')
             constraints = floats_in_time_and_space
             selection_frame = dataframe_to_filter[constraints]
         
