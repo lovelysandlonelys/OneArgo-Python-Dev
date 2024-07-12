@@ -1250,7 +1250,7 @@ class Argo:
             else:
                 profile_count = self.prof_index['wmoid'].value_counts().get(float_id, 0)
 
-            # Manage passed profiles if necessary
+            # Load only passed profiles if requested (floats is a dictionary)
             if self.float_profiles_dict is not None: 
 
                 if profile_count > number_of_profiles: 
