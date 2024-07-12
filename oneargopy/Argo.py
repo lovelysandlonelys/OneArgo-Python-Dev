@@ -310,7 +310,7 @@ class Argo:
 
         # Check if the user has passed only phys float variables
         if self.float_variables is not None: 
-            phys_variables = ['TEMP', 'PSAL', 'PRES']
+            phys_variables = ['TEMP', 'PSAL', 'PRES', 'CNDC']
             only_phys = all(x in phys_variables for x in self.float_variables)
         else: 
             only_phys = False
