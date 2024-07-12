@@ -1299,8 +1299,12 @@ class Argo:
                         # Replace b'n' and b' ' with b'0' so that all values are numbers
                         modified_column = [b'0' if item == b'n' or item == b' ' else item 
                                            for item in column_values]
-                        # these columns (DATE_QC and POSITION_QC) are always present, convert to int8
+                        # These columns (DATE_QC and POSITION_QC) are always present, convert to int8
                         column_values = np.char.decode(modified_column, 'utf-8').astype('int8')
+
+                if column == 'DIRECTION': 
+                    # The DIRECTION column is always present, convert to char
+                    column_values = np.char.decode(column_values, 'utf-8')
 
                 # Add list of values gathered for column to the temp dataframe
                 temp_frame[column] = column_values
@@ -1322,7 +1326,7 @@ class Argo:
                         # Replace b'n' and b' ' with b'0' so that all values are numbers
                         modified_column = [b'0' if item == b'n' or item == b' ' else item
                                            for item in column_values]
-                        # floats that do not have this column will have NaN here; convert to float
+                        # Floats that do not have this column will have NaN here; convert to float
                         column_values = np.char.decode(modified_column, 'utf-8').astype('float')
 
                     # Add list of values gathered for column to the temp dataframe
@@ -1341,6 +1345,7 @@ class Argo:
 
         # Return dataframe
         return float_data_dataframe
+    
 
     def __calculate_nc_variable_values(self, column: str, nc_file, number_of_profiles: int, profiles_to_pull: list) -> list:
         """ Function for specalized columns that must be calculated or derived. 
