@@ -1295,6 +1295,13 @@ class Argo:
                 # Read in variable from .nc file
                 column_values = self.__read_from_static_nc_variable(variable_columns, nc_variable, number_of_levels, static_length)
                 
+                if column.endswith('_QC'):
+                        # Replace b'n' and b' ' with b'0' so that all values are numbers
+                        modified_column = [b'0' if item == b'n' or item == b' ' else item 
+                                           for item in column_values]
+                        # these columns (DATE_QC and POSITION_QC) are always present, convert to int8
+                        column_values = np.char.decode(modified_column, 'utf-8').astype('int8')
+
                 # Add list of values gathered for column to the temp dataframe
                 temp_frame[column] = column_values
 
@@ -1311,6 +1318,13 @@ class Argo:
                     # Read in variable from .nc file
                     column_values = self.__read_from_paramater_nc_variable(nc_variable)
 
+                    if column.endswith('_QC'):
+                        # Replace b'n' and b' ' with b'0' so that all values are numbers
+                        modified_column = [b'0' if item == b'n' or item == b' ' else item
+                                           for item in column_values]
+                        # floats that do not have this column will have NaN here; convert to float
+                        column_values = np.char.decode(modified_column, 'utf-8').astype('float')
+
                     # Add list of values gathered for column to the temp dataframe
                     temp_frame[column] = column_values
 
@@ -1325,34 +1339,8 @@ class Argo:
             # Close File 
             nc_file.close()
 
-        # Converting bytes to ints/chars
-        float_data_dataframe = float_data_dataframe.applymap(self.__decode_and_convert)
-        
         # Return dataframe
         return float_data_dataframe
-    
-    # Function to handle decoding and type conversion
-    def __decode_and_convert(self, x):
-        """ A function to apply to the float_data_dataframe to decode
-            masked array and byte values in the dataframe. 
-
-            :param: x - A value in the dataframe to check for decoding.
-
-            :return: x - The decoded value. 
-        """
-        if isinstance(x, np.ma.core.MaskedArray): 
-            x = x.item()
-        if isinstance(x, bytes):
-            decoded = x.decode('utf-8')
-            if decoded.isdigit():
-                return int(decoded)
-            elif decoded == 'n' or decoded == '':
-                return 0
-            else:
-                return decoded
-        else:
-            return x
-    
 
     def __calculate_nc_variable_values(self, column: str, nc_file, number_of_profiles: int, profiles_to_pull: list) -> list:
         """ Function for specalized columns that must be calculated or derived. 
