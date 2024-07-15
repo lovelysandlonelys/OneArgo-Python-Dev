@@ -453,6 +453,17 @@ class Argo:
         success = False
         iterations = 0
 
+        # Determining float id if file is an .nc file
+        if file_name.endswith('.nc'):
+            # Extract float id from filename
+            float_id = file_name.split('_')[0]
+            # Extract dac for that float id from datafrmae
+            filtered_df = self.prof_index[self.prof_index['wmoid'] == int(float_id)]
+            dac = filtered_df['dacs'].iloc[0]
+            # Add trailing forward slashes for formating
+            dac = f'{dac}/'
+            float_id = f'{float_id}/'
+
         while (not success) and (iterations < self.download_settings.max_attempts):
             # Try both hosts (preferred one is listed first in download settings)
             for host in self.source_settings.hosts:
@@ -460,14 +471,6 @@ class Argo:
                 if file_name.endswith('.txt'): 
                     url = "".join([host, file_name, ".gz"])
                 elif file_name.endswith('.nc'):
-                    # Extract float id from filename
-                    float_id = file_name.split('_')[0]
-                    # Extract dac for that float id from datafrmae
-                    filtered_df = self.prof_index[self.prof_index['wmoid'] == int(float_id)]
-                    dac = filtered_df['dacs'].iloc[0]
-                    # Add trailing forward slashes for formating
-                    dac = f'{dac}/'
-                    float_id = f'{float_id}/'
                     url = "".join([host,'dac/', dac, float_id, file_name])
 
                 if self.download_settings.verbose: print(f'Downloading {file_name} from {url}...')
@@ -485,13 +488,23 @@ class Argo:
                                 shutil.copyfileobj(gz_file, txt_file)
                         # Remove extraneous .gz file
                         first_save_path.unlink()
-
-                    success = True
-                    if self.download_settings.verbose: print(f'Success!')
+                        success = True
+                    elif file_name.endswith('.nc'): 
+                        # Check that the file can be read, only keep download if file can be read/acessed
+                        try: 
+                            nc_file = netCDF4.Dataset(first_save_path, mode='r')
+                            nc_file.close()
+                            success = True
+                        except OSError:
+                            # The file could not be read
+                            if self.download_settings.verbose:
+                                print(f'{first_save_path} cannot be read; trying again...')
+                    if success: 
+                        if self.download_settings.verbose: print(f'Success!')
                     
-                    # Exit the loop if download is successful so we don't try additional
-                    # sources for no reason.
-                    break 
+                        # Exit the loop if download is successful so we don't try additional
+                        # sources for no reason.
+                        break 
 
                 except requests.RequestException as e:
                     print(f'Error encountered: {e}. Trying next host...')
