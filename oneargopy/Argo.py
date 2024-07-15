@@ -367,24 +367,26 @@ class Argo:
         # Check if the filepath exists
         if file_path.exists():
 
-            # Check if the settings allow for updates of index files
-            if self.download_settings.update == 0:
-                if self.download_settings.verbose: 
-                    print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
-            else: 
-                if file_name.endswith('.txt'): 
-                    last_modified_time = Path(file_path).stat().st_mtime
-                    current_time = datetime.now().timestamp()
-                    seconds_since_modified = current_time - last_modified_time
-                    # Check if the file should be updated
-                    if (seconds_since_modified > self.download_settings.update):
-                        if self.download_settings.verbose: print(f'Updating {file_name}...')
-                        self.__try_download(file_name ,True)
-                    else:
-                        if self.download_settings.verbose: print(f'{file_name} does not need to be updated yet.')
+            # Check if .txt file needs to be updated
+            if file_name.endswith('.txt') :
+                # Check if the settings allow for updates of index files
+                if self.download_settings.update == 0:
+                    if self.download_settings.verbose: 
+                        print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
+                else: 
+                    if file_name.endswith('.txt'): 
+                        last_modified_time = Path(file_path).stat().st_mtime
+                        current_time = datetime.now().timestamp()
+                        seconds_since_modified = current_time - last_modified_time
+                        # Check if the file should be updated
+                        if (seconds_since_modified > self.download_settings.update):
+                            if self.download_settings.verbose: print(f'Updating {file_name}...')
+                            self.__try_download(file_name ,True)
+                        else:
+                            if self.download_settings.verbose: print(f'{file_name} does not need to be updated yet.')
            
-           # Check if an .nc file needs to be updated
-            if file_name.endswith('.nc'):
+           # Check if .nc file needs to be updated
+            elif file_name.endswith('.nc'):
                 # Check if the file should be updated using function
                 if (self.__check_nc_update(file_path, file_name)):
                     if self.download_settings.verbose: print(f'Updating {file_name}...')
