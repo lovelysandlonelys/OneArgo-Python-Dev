@@ -482,6 +482,8 @@ class Argo:
                             shutil.copyfileobj(r.raw, f)
                     
                     if second_save_path is not None: 
+                        # If the file has a second save path it was first downloaded as a .gz file
+                        # so it must be unzipped. 
                         if self.download_settings.verbose: print(f'Unzipping {file_name}.gz...')
                         with gzip.open(first_save_path, 'rb') as gz_file:
                             with open(second_save_path, 'wb') as txt_file:
@@ -489,6 +491,7 @@ class Argo:
                         # Remove extraneous .gz file
                         first_save_path.unlink()
                         success = True
+
                     elif file_name.endswith('.nc'): 
                         # Check that the file can be read, only keep download if file can be read/acessed
                         try: 
