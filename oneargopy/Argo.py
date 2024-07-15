@@ -621,18 +621,27 @@ class Argo:
         is_bgc = self.prof_index['wmoid'].isin(bgc_floats)
         self.prof_index.insert(1, "is_bgc", is_bgc)
 
+
     def __load_float_stats(self)-> pd:
         """ Function to create a dataframe with float IDs,
             their is_bgc status, and their most recent update
             date for use in select_profiles().
         """ 
-        # Dataframe with womid, is_bgc, and date)updated
-        float_bgc_status = self.prof_index[['wmoid', 'is_bgc', 'date_update']]
-        # Only keeping rows with most recent date updated
-        floats_stats = float_bgc_status.groupby('wmoid', as_index=False)['date_update'].max()
-        # Merging bgc and date_update dataframes
-        floats_stats = pd.merge(float_bgc_status, floats_stats, on=['wmoid', 'date_update'])
+        # Dataframe with womid and date updated for both prof and sprof
+        float_bgc_status_prof = self.prof_index[self.prof_index['is_bgc'] == False][['wmoid', 'date_update']]
+        float_bgc_status_sprof = self.sprof_index[['wmoid', 'date_update']]
 
+        # Only keeping rows with most recent date updated 
+        floats_stats_prof = float_bgc_status_prof.groupby('wmoid', as_index=False)['date_update'].max()
+        floats_stats_sprof = float_bgc_status_sprof.groupby('wmoid', as_index=False)['date_update'].max()
+        
+        # Adding the is_bgc column
+        floats_stats_sprof['is_bgc'] = True
+        floats_stats_prof['is_bgc'] = False
+
+        # Combining the two dataframes for one refrence frame for all floats
+        floats_stats = pd.concat([floats_stats_sprof, floats_stats_prof]).sort_values(by='wmoid')
+        
         return floats_stats
 
 
