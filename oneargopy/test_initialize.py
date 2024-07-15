@@ -8,7 +8,7 @@ import time
 # Test against matlab
 argo = Argo()
 
-data = argo.load_float_data(5903611)
+data = argo.load_float_data(5903611, variables='TEMP')
 data.to_csv('sprof_as_prof.txt', encoding='utf-8', index=False, na_rep='nan')
 
 data = argo.load_float_data(5903611, variables='DOXY')
