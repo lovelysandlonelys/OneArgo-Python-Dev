@@ -1382,7 +1382,6 @@ class Argo:
 
             # Check if nc_variable is 0-dimensional aka only one profile is passed
             if getattr(nc_variable, "shape", None) == ():
-              
                 reference_date = datetime(1950, 1, 1)
                 utc_date = reference_date + timedelta(days=float(nc_variable))
                 new_nc_variable.append(utc_date)
