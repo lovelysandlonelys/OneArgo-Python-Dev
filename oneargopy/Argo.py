@@ -413,10 +413,10 @@ class Argo:
         float_id = file_name.split('_')[0]
 
         # Get float's latest update date
-        if self.prof_index.loc[self.prof_index['wmoid'] == float_id, 'is_bgc'].any() and file_name.endswith('_prof.nc'): 
-            # use the prof update date for the sprof float because the user didn't pass any bgc sensors
-            dates_for_float = self.prof_index[self.prof_index['wmoid'] == float_id]
-            index_update_date = dates_for_float['date_update'].drop_duplicates().max()
+        if self.prof_index.loc[self.prof_index['wmoid'] == int(float_id), 'is_bgc'].any() and file_name.endswith('_prof.nc'): 
+            # Use the prof update date for the sprof float because the user didn't pass any bgc sensors
+            dates_for_float = self.prof_index[self.prof_index['wmoid'] == int(float_id)]
+            index_update_date = pd.to_datetime(dates_for_float['date_update'].drop_duplicates().max())
         else:
             index_update_date = pd.to_datetime(self.float_stats.loc[self.float_stats['wmoid'] == int(float_id), 'date_update'].iloc[0])
 
