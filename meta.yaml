@@ -1,0 +1,42 @@
+package:
+  name: oneargopy
+  version: '0.0.4'
+
+source:
+  url: https://test-files.pythonhosted.org/packages/source/o/oneargopy/oneargopy-0.0.4.tar.gz
+  sha256: cc268c0db3882344b0615b66a83a46d5aced5c644133740cc8de11807104a308
+
+build:
+  noarch: python
+  script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -v"
+
+requirements:
+  host:
+    - python
+    - pip
+    
+  run:
+    - python >=3.8
+    - numpy
+    - pandas
+    - pathlib
+    - requests
+    - matplotlib
+    - cartopy
+    - netcdf4
+
+test:
+  imports:
+    - oneargopy
+
+about:
+  home: https://github.com/lovelysandlonelys/OneArgo-Python-Dev
+  license: MIT License
+  summary: A beta version of oneargopy to test packaging with conda.
+  description: |
+    A beta version of oneargopy to test packaging with conda.
+
+  extra:
+  recipe-maintainers:
+    - lovelysandlonelys
+
