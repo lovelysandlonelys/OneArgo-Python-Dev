@@ -631,6 +631,8 @@ class Argo:
         """ Function to create a dataframe with float IDs,
             their is_bgc status, and their most recent update
             date for use in select_profiles().
+            Data for physical floats are taken from the prof index
+            file and data for BGC floats are taken from the Sprof index file.
         """ 
         # Dataframe with womid and date updated for both prof and sprof
         float_bgc_status_prof = self.prof_index[self.prof_index['is_bgc'] == False][['wmoid', 'date_update']]
