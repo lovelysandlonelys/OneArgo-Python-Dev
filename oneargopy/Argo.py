@@ -319,7 +319,7 @@ class Argo:
                 file_name = f'{wmoid}_prof.nc'
                 files.append(file_name)
             # If the float is a bgc float it will have a corresponding sprof file
-            elif self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0]: 
+            else: 
                 file_name = f'{wmoid}_Sprof.nc'
                 files.append(file_name)
             # Download file
@@ -414,7 +414,7 @@ class Argo:
 
         # Get float's latest update date
         if self.prof_index.loc[self.prof_index['wmoid'] == int(float_id), 'is_bgc'].any() and file_name.endswith('_prof.nc'): 
-            # Use the prof update date for the sprof float because the user didn't pass any bgc sensors
+            # Use the prof update date for the bgc float because the user didn't pass any bgc sensors
             dates_for_float = self.prof_index[self.prof_index['wmoid'] == int(float_id)]
             index_update_date = pd.to_datetime(dates_for_float['date_update'].drop_duplicates().max())
         else:
