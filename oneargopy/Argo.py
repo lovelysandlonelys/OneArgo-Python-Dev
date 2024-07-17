@@ -334,6 +334,10 @@ class Argo:
     def section_plots()-> None:
         """ A function to graph...
         """
+        # Validated passed dataframe
+        # Validate passed variables
+        # Determine Unique WMOID 
+        # Make one plot for each float/variable combination
         pass
         
 
