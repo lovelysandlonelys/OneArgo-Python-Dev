@@ -329,6 +329,12 @@ class Argo:
         float_data_frame = self.__fill_float_data_dataframe(files)
 
         return float_data_frame
+    
+
+    def section_plots()-> None:
+        """ A function to graph...
+        """
+        pass
         
 
     #######################################################################
