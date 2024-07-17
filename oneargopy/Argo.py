@@ -28,12 +28,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cf
+import netCDF4
 
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from matplotlib.ticker import FixedLocator
-
-from time import time
-import json
 
 
 class Argo:
@@ -76,7 +74,7 @@ class Argo:
         # Download files from GDAC to Index directory
         if self.download_settings.verbose: print(f'\nDownloading index files...')
         for file in self.download_settings.index_files:
-            self.__download_index_file(file)
+            self.__download_file(file)
 
         # Load the index files into dataframes
         if self.download_settings.verbose: print(f'\nTransferring index files into dataframes...')
@@ -87,9 +85,9 @@ class Argo:
         if self.download_settings.verbose: print(f'Marking bgc floats in prof_index dataframe...')
         self.__mark_bgcs_in_prof()
 
-        # Create float_is_bgc refrence index for use in select profiles
-        if self.download_settings.verbose: print(f'Creating float_is_bgc_index dataframe...')
-        self.float_is_bgc_index = self.__load_is_bgc_index()
+        # Create float_stats reference index for use in select profiles
+        if self.download_settings.verbose: print(f'Creating float_stats dataframe...')
+        self.float_stats = self.__load_float_stats()
         
         # Print number of floats
         if self.download_settings.verbose: self.__display_floats() 
@@ -185,9 +183,9 @@ class Argo:
         if self.download_settings.verbose: print(f'Validating parameters...')
         self.__validate_lon_lat_limits()
         self.__validate_start_end_dates()
-        if self.outside : self.__validate_outside_kwarg()
-        if self.float_type : self.__validate_type_kwarg()
-        if self.ocean : self.__validate_ocean_kwarg()
+        if self.outside: self.__validate_outside_kwarg()
+        if self.float_type: self.__validate_type_kwarg()
+        if self.ocean: self.__validate_ocean_kwarg()
         # if self.sensor : self.__validate_sensor_kwarg()
 
         # Load correct dataframes according to self.float_type and self.float_ids
@@ -204,15 +202,11 @@ class Argo:
             del self.prof_index
             del self.selection_frame
 
-        if self.download_settings.verbose: print(f'Profiles Selected!\n\n')
-
-        # Printing Dict, likely to remove after testing period
-        print(f'Floats: {narrowed_profiles.keys()}')
-        for key, value in narrowed_profiles.items():
-            print(f'{key}: {value}')
+        if self.download_settings.verbose: print(f'Floats Selected: {narrowed_profiles.keys()}\n')
 
         return narrowed_profiles
     
+
     def trajectories(self, floats: int | list | dict)-> None: 
         """ This function plots the trajectories of one or more specified float(s)
 
@@ -284,18 +278,58 @@ class Argo:
         # Displaying graph
         plt.show()
 
-    def load_float_data(self, floats: int | list)-> None: 
+    def load_float_data(self, floats: int | list | dict, variables: str | list = None)-> pd: 
         """ A function to load float data into memory.
-        """
 
+            :param: floats : int | list | dict - A float or list of floats to  
+                load data from. Or a dictionary specifying floats and profiles
+                to read from the .nc file. 
+            :param: variables : str | list - An optional parameter to list variables
+                that the user would like included in the dataframe. If the variable is not
+                in the float passed then only the surface level of the profile will be included.
+
+            :return: float_data : pd - A dataframe with requested float data. 
+        """
         # Check that index files are in memory
+        if not self.download_settings.keep_index_in_memory: 
+            self.sprof_index = self.__load_sprof_dataframe()
+            self.prof_index = self.__load_prof_dataframe()
 
         # Check that passed float is inside of the dataframes
+        self.float_ids = floats
+        self.__validate_floats_kwarg()
+
+        # Validate passed variables
+        self.float_variables = variables
+        if self.float_variables: self.__validate_float_variables_arg()
+
+        # Check if the user has passed only phys float variables
+        if self.float_variables is not None: 
+            phys_variables = ['TEMP', 'PSAL', 'PRES', 'CNDC']
+            only_phys = all(x in phys_variables for x in self.float_variables)
+        else: 
+            only_phys = False
 
         # Download .nc files for passed floats
+        files = []
+        for wmoid in self.float_ids:  
+            # If the float is a phys float, or if the user has provided no variables 
+            # or only phys variables then then use the corresponding prof file
+            if (not self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0]) or (self.float_variables == None) or (only_phys): 
+                file_name = f'{wmoid}_prof.nc'
+                files.append(file_name)
+            # If the float is a bgc float it will have a corresponding sprof file
+            else: 
+                file_name = f'{wmoid}_Sprof.nc'
+                files.append(file_name)
+            # Download file
+            self.__download_file(file_name)
 
-        # 
-        pass
+        # Read from nc files into dataframe
+        float_data_frame = self.__fill_float_data_dataframe(files)
+
+        return float_data_frame
+        
 
     #######################################################################
     # Private Functions
@@ -317,38 +351,92 @@ class Argo:
                     if self.download_settings.verbose: print(f'Failed to create the {directory} directory: {e}')
 
 
-    def __download_index_file(self, file_name: str) -> None:
+    def __download_file(self, file_name: str) -> None:
         """ A function to download and save an index file from GDAC sources. 
 
             :param: filename : str - The name of the file we are downloading.
         """
-        index_directory = Path(self.download_settings.base_dir.joinpath("Index"))
+        if file_name.endswith('.txt'): 
+            directory = Path(self.download_settings.base_dir.joinpath("Index"))
+        elif file_name.endswith('.nc'):
+            directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
 
         # Get the expected filepath for the file
-        file_path = index_directory.joinpath(file_name)
+        file_path = directory.joinpath(file_name)
 
         # Check if the filepath exists
         if file_path.exists():
 
-            # Check if the settings allow for updates
-            if self.download_settings.update == 0:
-                if self.download_settings.verbose: 
-                    print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
-            else: 
-                txt_last_modified_time = Path(file_path).stat().st_mtime
-                current_time = datetime.now().timestamp()
-                txt_seconds_since_modified = current_time - txt_last_modified_time
-                # Check if the file should be updated
-                if (txt_seconds_since_modified > self.download_settings.update):
+            # Check if .txt file needs to be updated
+            if file_name.endswith('.txt') :
+                # Check if the settings allow for updates of index files
+                if self.download_settings.update == 0:
+                    if self.download_settings.verbose: 
+                        print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
+                else: 
+                    last_modified_time = Path(file_path).stat().st_mtime
+                    current_time = datetime.now().timestamp()
+                    seconds_since_modified = current_time - last_modified_time
+                    # Check if the file should be updated
+                    if (seconds_since_modified > self.download_settings.update):
+                        if self.download_settings.verbose: print(f'Updating {file_name}...')
+                        self.__try_download(file_name ,True)
+                    else:
+                        if self.download_settings.verbose: print(f'{file_name} does not need to be updated yet.')
+           
+           # Check if .nc file needs to be updated
+            elif file_name.endswith('.nc'):
+                # Check if the file should be updated using function
+                if (self.__check_nc_update(file_path, file_name)):
                     if self.download_settings.verbose: print(f'Updating {file_name}...')
                     self.__try_download(file_name ,True)
                 else:
                     if self.download_settings.verbose: print(f'{file_name} does not need to be updated yet.')
-
+       
         # if the file doesn't exist then download it
         else: 
             if self.download_settings.verbose: print(f'{file_name} needs to be downloaded.')
             self.__try_download(file_name, False)
+
+    
+    def __check_nc_update(self, file_path: Path, file_name: str)-> bool:
+        """ A function to check if an .nc file needs to be updated.
+
+            :param: file_path : Path - The file_path for the .nc file we
+                are checking for update.
+            :param: file_name : str - The name of the .nc file.
+
+            :return: update_status : bool - A boolean value indicating
+                that the passed file should be updated.
+        """
+        # Pull float id from file_name
+        float_id = file_name.split('_')[0]
+
+        # Get float's latest update date
+        if self.prof_index.loc[self.prof_index['wmoid'] == int(float_id), 'is_bgc'].any() and file_name.endswith('_prof.nc'): 
+            # Use the prof update date for the bgc float because the user didn't pass any bgc sensors
+            dates_for_float = self.prof_index[self.prof_index['wmoid'] == int(float_id)]
+            index_update_date = pd.to_datetime(dates_for_float['date_update'].drop_duplicates().max())
+        else:
+            index_update_date = pd.to_datetime(self.float_stats.loc[self.float_stats['wmoid'] == int(float_id), 'date_update'].iloc[0])
+
+        # Read DATE_UPDATE from .nc file
+        nc_file = netCDF4.Dataset(file_path, mode='r')
+        netcdf_update_date = nc_file.variables['DATE_UPDATE'][:]
+        nc_file.close()
+
+        # Convert the byte strings of file_update_date into a regular string
+        julian_date_str = b''.join(netcdf_update_date).decode('utf-8')
+        netcdf_update_date = datetime.strptime(julian_date_str, '%Y%m%d%H%M%S').replace(tzinfo=timezone.utc)
+        netcdf_update_date = np.datetime64(netcdf_update_date)
+
+        # If the .nc file's update date is less than
+        # the date in the index file return true
+        # indicating that the .nc file must be updated
+        if netcdf_update_date < index_update_date: 
+            return True
+        else: 
+            return False
 
 
     def __try_download(self, file_name: str, update_status: bool)-> None:
@@ -359,46 +447,77 @@ class Argo:
                 are trying to update it. False if the file hasn't been 
                 downloaded yet. 
         """
-        index_directory = Path(self.download_settings.base_dir.joinpath("Index"))
+        if file_name.endswith('.txt'): 
+            directory = Path(self.download_settings.base_dir.joinpath("Index"))
+            first_save_path = directory.joinpath("".join([file_name, ".gz"]))
+            second_save_path = directory.joinpath(file_name)
+        elif file_name.endswith('.nc'):
+            directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
+            first_save_path = directory.joinpath(file_name)
+            second_save_path = None
 
         success = False
         iterations = 0
-        txt_save_path = index_directory.joinpath(file_name)
-        gz_save_path = index_directory.joinpath("".join([file_name, ".gz"]))
+
+        # Determining float id if file is an .nc file
+        if file_name.endswith('.nc'):
+            # Extract float id from filename
+            float_id = file_name.split('_')[0]
+            # Extract dac for that float id from datafrmae
+            filtered_df = self.prof_index[self.prof_index['wmoid'] == int(float_id)]
+            dac = filtered_df['dacs'].iloc[0]
+            # Add trailing forward slashes for formating
+            dac = f'{dac}/'
+            float_id = f'{float_id}/'
 
         while (not success) and (iterations < self.download_settings.max_attempts):
             # Try both hosts (preferred one is listed first in download settings)
             for host in self.source_settings.hosts:
 
-                url = "".join([host, file_name, ".gz"])
+                if file_name.endswith('.txt'): 
+                    url = "".join([host, file_name, ".gz"])
+                elif file_name.endswith('.nc'):
+                    url = "".join([host,'dac/', dac, float_id, file_name])
 
                 if self.download_settings.verbose: print(f'Downloading {file_name} from {url}...')
-
                 try:
                     with requests.get(url, stream=True) as r:
                         r.raise_for_status()
-                        with open(gz_save_path, 'wb') as f:
+                        with open(first_save_path, 'wb') as f:
                             r.raw.decode_content = True
                             shutil.copyfileobj(r.raw, f)
-
-                    if self.download_settings.verbose: print(f'Unzipping {file_name}.gz...')
-                    with gzip.open(gz_save_path, 'rb') as gz_file:
-                        with open(txt_save_path, 'wb') as txt_file:
-                            shutil.copyfileobj(gz_file, txt_file)
                     
-                    success = True
-                    if self.download_settings.verbose: print(f'Success!')
+                    if second_save_path is not None: 
+                        # If the file has a second save path it was first downloaded as a .gz file
+                        # so it must be unzipped. 
+                        if self.download_settings.verbose: print(f'Unzipping {file_name}.gz...')
+                        with gzip.open(first_save_path, 'rb') as gz_file:
+                            with open(second_save_path, 'wb') as txt_file:
+                                shutil.copyfileobj(gz_file, txt_file)
+                        # Remove extraneous .gz file
+                        first_save_path.unlink()
+                        success = True
 
-                    # Remove extraneous .gz file
-                    gz_save_path.unlink()
+                    elif file_name.endswith('.nc'): 
+                        # Check that the file can be read, only keep download if file can be read/acessed
+                        try: 
+                            nc_file = netCDF4.Dataset(first_save_path, mode='r')
+                            nc_file.close()
+                            success = True
+                        except OSError:
+                            # The file could not be read
+                            if self.download_settings.verbose:
+                                print(f'{first_save_path} cannot be read; trying again...')
+                    if success: 
+                        if self.download_settings.verbose: print(f'Success!')
                     
-                    # Exit the loop if download is successful so we don't try additional
-                    # sources for no reason.
-                    break 
+                        # Exit the loop if download is successful so we don't try additional
+                        # sources for no reason.
+                        break 
 
                 except requests.RequestException as e:
                     print(f'Error encountered: {e}. Trying next host...')
-            
+                
             # Increment Iterations
             iterations += 1
 
@@ -408,7 +527,7 @@ class Argo:
                 print(f'WARNING: Update for {file_name} failed, you are working with out of date data.')
             else:
                 raise Exception(f'Download failed! {file_name} could not be downloaded at this time.')
-        
+
 
     def __load_sprof_dataframe(self) -> pd:
         """ A function to load the sprof index file into a dataframe for easier reference.
@@ -449,7 +568,7 @@ class Argo:
             # Line here to suppress warning about fillna() 
             # being depreciated in future versions of pandas: 
             # with pd.option_context('future.no_silent_downcasting', True):
-        result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).astype('int8')
+        result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).infer_objects(copy=False).astype('int8')
 
         # Fill in source_settings information based off of sprof index file before removing rows
         if self.download_settings.verbose: print(f'Filling in source settings information...')
@@ -507,12 +626,30 @@ class Argo:
         is_bgc = self.prof_index['wmoid'].isin(bgc_floats)
         self.prof_index.insert(1, "is_bgc", is_bgc)
 
-    def __load_is_bgc_index(self)-> pd:
-        """ Function to create a dataframe with float IDs and
-            their is_bgc status for use in select_profiles().
+
+    def __load_float_stats(self)-> pd:
+        """ Function to create a dataframe with float IDs,
+            their is_bgc status, and their most recent update
+            date for use in select_profiles().
+            Data for physical floats are taken from the prof index
+            file and data for BGC floats are taken from the Sprof index file.
         """ 
-        float_bgc_status = self.prof_index[['wmoid', 'is_bgc']].drop_duplicates()
-        return float_bgc_status
+        # Dataframe with womid and date updated for both prof and sprof
+        float_bgc_status_prof = self.prof_index[self.prof_index['is_bgc'] == False][['wmoid', 'date_update']]
+        float_bgc_status_sprof = self.sprof_index[['wmoid', 'date_update']]
+
+        # Only keeping rows with most recent date updated 
+        floats_stats_prof = float_bgc_status_prof.groupby('wmoid', as_index=False)['date_update'].max()
+        floats_stats_sprof = float_bgc_status_sprof.groupby('wmoid', as_index=False)['date_update'].max()
+        
+        # Adding the is_bgc column
+        floats_stats_sprof['is_bgc'] = True
+        floats_stats_prof['is_bgc'] = False
+
+        # Combining the two dataframes for one refrence frame for all floats
+        floats_stats = pd.concat([floats_stats_sprof, floats_stats_prof]).sort_values(by='wmoid')
+
+        return floats_stats
 
 
     def __display_floats(self) -> None:
@@ -621,13 +758,17 @@ class Argo:
     def __validate_floats_kwarg(self):
         """ A function to validate the 'floats' keyword argument. 
             The 'floats' must be a list even if it is a single float.
+            If the floats passed are in a dictionary we separate the keys
+            from the dictionary for flexibility.
         """
+        if self.download_settings.verbose: print(f"Validating passed floats...")
+
         # If user has passed a dictionary
-        if isinstance(self.float_ids, dict) :
+        if isinstance(self.float_ids, dict):
             self.float_profiles_dict = self.float_ids
             self.float_ids = list(self.float_ids.keys())
         # If user has passed a single float
-        elif not isinstance(self.float_ids, list) :
+        elif not isinstance(self.float_ids, list):
             self.float_profiles_dict = None
             self.float_ids = [self.float_ids]
         # If user has passed a list 
@@ -648,6 +789,23 @@ class Argo:
 
         if self.ocean != 'A' and self.ocean != 'P' and self.ocean != 'I':
                 raise Exception(f"The only acceptable values for the 'ocean' keyword argument are 'A' (Atlantic), 'P' (Pacific), and 'I' (Indian).")
+
+
+    def __validate_float_variables_arg(self):
+        """ A function to validate the value of the 
+            optional 'variables' passed to 
+            load_float_data.
+        """
+        if self.download_settings.verbose: print(f"Validating passed 'variables'...")
+
+        # If user has passed a single variable convert to list
+        if not isinstance(self.float_variables, list):
+            self.float_variables = [self.float_variables]
+
+        # Finding float IDs that are not present in the index dataframes
+        nonexistent_vars = [x for x in self.float_variables if x not in self.source_settings.avail_vars]
+        if nonexistent_vars:
+            raise Exception(f"The following float IDs do not exist in the dataframes: {nonexistent_vars}")
 
 
     def __prepare_selection(self):
@@ -681,8 +839,8 @@ class Argo:
             self.sprof_index = self.__load_sprof_dataframe()
             self.prof_index = self.__load_prof_dataframe()
 
-        # We can only validate flaots after the dataframes are loaded into memory
-        if self.float_ids : self.__validate_floats_kwarg()
+        # We can only validate floats after the dataframes are loaded into memory
+        if self.float_ids: self.__validate_floats_kwarg()
 
         # If we aren't filtering from specific floats assign selected frames
         # to the whole index frames
@@ -697,14 +855,15 @@ class Argo:
         else:
             if self.float_type != 'phys':
                   # Make a list of bgc floats that the user wants 
-                  bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == True)
-                  selected_floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
+                  bgc_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == True)
+                  selected_floats_bgc = self.float_stats[bgc_filter]['wmoid'].tolist()
                   # Gather bgc profiles for these floats from sprof index frame
                   self.selected_from_sprof_index = self.sprof_index[self.sprof_index['wmoid'].isin(selected_floats_bgc)]
+    
             if self.float_type != 'bgc': 
                   # Make a list of phys floats that the user wants 
-                  phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == False)
-                  selected_floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
+                  phys_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == False)
+                  selected_floats_phys = self.float_stats[phys_filter]['wmoid'].tolist()
                   # Gather phys profiles for these floats from prof index frame
                   self.selected_from_prof_index = self.prof_index[self.prof_index['wmoid'].isin(selected_floats_phys)]
 
@@ -715,7 +874,6 @@ class Argo:
             print(f'There are {num_profiles} profiles associated with these floats!\n')
 
 
-
     def __narrow_profiles_by_criteria(self)-> dict:
         """ A function to narrow down the available profiles to only those
             that meet the criteria passed to select_profiles.
@@ -724,15 +882,15 @@ class Argo:
                 keys corresponding to a list of profiles that match criteria.
         """
         # Filter by time, space, and type constraints first.
-        if self.float_type == 'bgc' : 
+        if self.float_type == 'bgc' or self.selected_from_prof_index.empty: 
             # Empty df for concat
             self.selection_frame_phys = pd.DataFrame()
-        else :
+        else:
             self.selection_frame_phys = self.__get_in_time_and_space_constraints(self.selected_from_prof_index)
-        if self.float_type == 'phys' : 
+        if self.float_type == 'phys' or self.selected_from_sprof_index.empty: 
             # Empty df for concat
             self.selection_frame_bgc = pd.DataFrame()
-        else :
+        else:
             self.selection_frame_bgc = self.__get_in_time_and_space_constraints(self.selected_from_sprof_index)
         
         # Set the selection frame
@@ -751,7 +909,7 @@ class Argo:
         
         # Filter by other constraints, these functions will use self.selection_frame 
         # so we don't have to pass a frame
-        if self.ocean : self.__get_in_ocean_basin()
+        if self.ocean: self.__get_in_ocean_basin()
         # other narrowing functions that act on created selection frame...
 
         # Convert the working dataframe into a dictionary
@@ -817,6 +975,10 @@ class Argo:
         """ A function to create and return a true false array indicating
             profiles that fall within the date range.
         """
+        # If filtering by floats has resulted in an empty dataframe being passed
+        if dataframe_to_filter.empty: 
+            return [True] * len(dataframe_to_filter)
+
         # If the user has passed us the entire available date don't go through the whole
         # process of checking if the points of all the floats are inside the range
         beginning_of_full_range = np.datetime64(datetime(1995, 1, 1, tzinfo=timezone.utc))
@@ -856,22 +1018,22 @@ class Argo:
         # Filter passed dataframe by time and space constraints to 
         # create a new dataframe to return as part of the selection frame
         if self.outside == 'time': 
-            print(f'Applying outside={self.outside} constraints...')
+            if self.download_settings.verbose: print(f'Applying outside={self.outside} constraints...')
             constraints = floats_in_time_and_space & profiles_in_space
             selection_frame = dataframe_to_filter[constraints]
        
         elif self.outside == 'space': 
-            print(f'Applying outside={self.outside} constraints...')
+            if self.download_settings.verbose: print(f'Applying outside={self.outside} constraints...')
             constraints = floats_in_time_and_space & profiles_in_time
             selection_frame = dataframe_to_filter[constraints]
         
-        elif self.outside == None : 
-            print(f'Applying outside=None constraints...')
+        elif self.outside == None: 
+            if self.download_settings.verbose: print(f'Applying outside=None constraints...')
             constraints = floats_in_time_and_space & profiles_in_space & profiles_in_time
             selection_frame = dataframe_to_filter[constraints]
         
         elif self.outside == 'both': 
-            print(f'Applying outside={self.outside} constraints...')
+            if self.download_settings.verbose: print(f'Applying outside={self.outside} constraints...')
             constraints = floats_in_time_and_space
             selection_frame = dataframe_to_filter[constraints]
         
@@ -910,6 +1072,7 @@ class Argo:
 
         return selected_profiles
     
+
     def __filter_by_floats(self)-> pd:
         """ Function to pull profiles of floats passed to trajectories() and return 
             a dataframe with floats from sprof and prof index frames. 
@@ -918,33 +1081,39 @@ class Argo:
                 the passed floats. 
         """ 
         ## Gather bgc profiles for these floats from sprof index frame
-        bgc_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == True)
-        floats_bgc = self.float_is_bgc_index[bgc_filter]['wmoid'].tolist()
+        bgc_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == True)
+        floats_bgc = self.float_stats[bgc_filter]['wmoid'].tolist()
         floats_bgc = self.sprof_index[self.sprof_index['wmoid'].isin(floats_bgc)]
 
         ## Gather phys profiles for these floats from prof index frame 
-        phys_filter = (self.float_is_bgc_index['wmoid'].isin(self.float_ids)) & (self.float_is_bgc_index['is_bgc'] == False)
-        floats_phys = self.float_is_bgc_index[phys_filter]['wmoid'].tolist()
+        phys_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == False)
+        floats_phys = self.float_stats[phys_filter]['wmoid'].tolist()
         floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
 
         # If the user has passed a dictionary also filter by profiles
-        if self.float_profiles_dict is not None : 
+        if self.float_profiles_dict is not None: 
             # Flatten the float_dictionary into a DataFrame
             data = []
             for wmoid, profile_indexes in self.float_profiles_dict.items():
-                # Calculate the differences between consecutive elements
-                nans_needed = np.diff(profile_indexes)
-                
-                for i in range(1, len(profile_indexes)):
-                    # If the difference is greater than 1, insert NaNs
-                    if nans_needed[i-1] > 1:
-                        data.append({'wmoid': wmoid, 'profile_index': np.nan})
-                    
-                    # Add the current profile index
-                    data.append({'wmoid': wmoid, 'profile_index': profile_indexes[i]})
+                if len(profile_indexes) == 1:
+                    # If there is only one profile index, add it directly
+                    data.append({'wmoid': wmoid, 'profile_index': profile_indexes[0]})
+                else:
+                    # Calculate the differences between consecutive elements
+                    nans_needed = np.diff(profile_indexes)
+                    # Add elements and nans
+                    for i in range(1, len(profile_indexes)):
+                        # If the difference is greater than 1, insert NaNs
+                        if nans_needed[i-1] > 1:
+                            data.append({'wmoid': wmoid, 'profile_index': np.nan})
+                        
+                        # Add the current profile index
+                        data.append({'wmoid': wmoid, 'profile_index': profile_indexes[i]})
 
             # Convert the list of dictionaries into a DataFrame
             profile_df = pd.DataFrame(data)
+            print("PROFILE DATAFRAME")
+            print(profile_df)
 
             # Filter only profiles included in dataframe for bgc floats
             floats_bgc = pd.merge(floats_bgc, profile_df, on=['wmoid', 'profile_index'], how='right')
@@ -958,13 +1127,14 @@ class Argo:
 
         return floats_profiles
     
+
     def __set_graph_limits(self, ax, axis: str)-> None:
         """ A Function for setting the graph's longitude and latitude extents. 
         """
-        if axis == 'x' :
+        if axis == 'x':
             min, max = ax.get_xlim()
             diff = max - min
-        elif axis == 'y' :
+        elif axis == 'y':
             min, max = ax.get_ylim()
             diff = max - min
 
@@ -973,9 +1143,9 @@ class Argo:
             pad = 0.5 * (5.0 - diff)
             min -= pad
             max += pad
-            if axis == 'x' :
+            if axis == 'x':
                 ax.set_xlim([min, max])
-            elif axis == 'y' :
+            elif axis == 'y':
                 ax.set_ylim([min, max])
 
     
@@ -1002,10 +1172,10 @@ class Argo:
     def __determine_graph_step(self, ax, axis: str)-> int:
         """ A graph to determine the step of the longitude and latitude gridlines.
         """
-        if axis == 'x' :
+        if axis == 'x':
             min, max = ax.get_xlim()
             diff = max - min
-        elif axis == 'y' :
+        elif axis == 'y':
             min, max = ax.get_ylim()
             diff = max - min
 
@@ -1019,3 +1189,304 @@ class Argo:
             step = 2
         
         return step
+
+
+    def __variable_premutations(self, nc_file)-> list:
+        """ A function to filter the list of variables to be loaded so 
+            that we only load variables that are in the file.  
+
+            :param: nc_file : Any - The .nc file we're reading from. 
+
+            :return: list - A list to of all the variables passed
+                that are inside of the nc_file.
+        """
+        # If the variables is in the file also add it's permutations to the list
+        if isinstance(self.float_variables, list):
+
+            # Parameters that are in the passed .nc file
+            file_variables = nc_file.variables
+
+            # List to store variables and their additioal associated columns
+            variable_columns = []
+            
+            for variable in self.float_variables: 
+                if variable in file_variables: 
+                    # We add PRES no matter what, so if the user passed it 
+                    # don't add it to the variable list at this time.
+                    if variable != 'PRES': 
+                        variable_columns.append(variable)
+                        variable_columns.append(variable + '_QC')
+                        variable_columns.append(variable + '_ADJUSTED')
+                        variable_columns.append(variable + '_ADJUSTED_QC')
+                        variable_columns.append(variable + '_ADJUSTED_ERROR')
+                else: 
+                    print(f'WARNING: {variable} does not exist in FILE "{nc_file}".')
+            
+            if len(variable_columns) > 0: 
+                pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 'PRES_ADJUSTED_ERROR']
+                existing_variable_columns = pressure + variable_columns
+                return existing_variable_columns
+            else: 
+                return None
+        
+        else: 
+            return None
+
+    
+    def __fill_float_data_dataframe(self, files: list)-> pd: 
+        """ A Function to load data into the float data dataframe.
+ 
+            :param: files : list - A list of files to read in data from.
+
+            :return: pd : Dataframe - The dataframe of float data with rows 
+                where measurements were not collected excluded.
+        """
+        if self.download_settings.verbose: print(f'Loading float data...')
+
+        # Getting the file paths for downloaded .nc files
+        directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
+        file_paths = []
+        for file in files: 
+            file_paths.append(directory.joinpath(file))
+
+        # Columns that will always be in the dataframe, these columns are one dimensional
+        static_columns = ['WMOID', 'CYCLE_NUMBER', 'DIRECTION', 
+                                'DATE', 'DATE_QC', 'LATITUDE', 
+                                'LONGITUDE', 'POSITION_QC']
+        # Columns that need to be calculated or derived 
+        special_case_static_columns = ['DATE', 'DATE_QC', 'WMOID']
+
+        # Dataframe to return at end of function with all loaded data added
+        float_data_dataframe = pd.DataFrame()
+
+        # Iterate through files
+        for file in file_paths:             
+            # Open File
+            nc_file = netCDF4.Dataset(file, mode='r')
+            
+            # Get dimensions of .nc file
+            number_of_profiles = nc_file.dimensions['N_PROF'].size
+            number_of_levels = nc_file.dimensions['N_LEVELS'].size
+
+            # Get float id of current file
+            float_id_array = nc_file.variables['PLATFORM_NUMBER'][0]
+            float_id = int(float_id_array.data.tobytes().decode('utf-8').strip('\x00'))
+
+            # Get the range of profiles from the index file
+            # If the file ends in Sprof then use the sprof index for profile count
+            if 'Sprof' in str(file):
+                profile_count = self.sprof_index['wmoid'].value_counts().get(float_id, 0)
+            # Else use the prof index for profile count
+            else:
+                profile_count = self.prof_index['wmoid'].value_counts().get(float_id, 0)
+
+            # Load only passed profiles if requested (floats is a dictionary)
+            if self.float_profiles_dict is not None: 
+
+                if profile_count > number_of_profiles: 
+                    print(f'Skipping float {float_id}...')
+                    print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles for float {float_id}..')
+                    continue
+
+                # Get list of profiles passed in dictionary for float
+                profiles_to_pull = self.float_profiles_dict[float_id]
+
+                # Adjusting profile to index correctly from .nc file arrays
+                profiles_to_pull = [index - 1 for index in profiles_to_pull]
+
+                # The case for if we are pulling a single profile
+                if len(profiles_to_pull) == 1: 
+                    profiles_to_pull = int(profiles_to_pull[0])
+                    static_length = 1
+                else: 
+                    static_length = len(profiles_to_pull)
+            # If no profiles are passed then we want to pull all of the profiles from the float
+            else: 
+                profiles_to_pull = list(range(0, number_of_profiles, 1))
+                static_length = number_of_profiles
+
+            # Narrow variable list to only thoes that are in the current file
+            variable_columns = self.__variable_premutations(nc_file)
+            
+            # Temporary dataframe to make indexing simpler for each float
+            temp_frame = pd.DataFrame()
+
+            if self.download_settings.verbose: print(f'Loading Float data from float {float_id} with {static_length} profiles...')
+
+            # Iterate through static columns
+            for column in static_columns:
+
+                # Customize the nc_variable if we have a special case where values need to be calculated
+                if column in special_case_static_columns: 
+                    nc_variable = self.__calculate_nc_variable_values(column, nc_file, static_length, profiles_to_pull)
+                else: 
+                    nc_variable = nc_file.variables[column][profiles_to_pull]
+                
+                # Read in variable from .nc file
+                column_values = self.__read_from_static_nc_variable(variable_columns, nc_variable, number_of_levels, static_length)
+                
+                if column.endswith('_QC'):
+                        # Replace b'n' and b' ' with b'0' so that all values are numbers
+                        modified_column = [b'0' if item == b'n' or item == b' ' else item 
+                                           for item in column_values]
+                        # These columns (DATE_QC and POSITION_QC) are always present, convert to int8
+                        column_values = np.char.decode(modified_column, 'utf-8').astype('int8')
+
+                if column == 'DIRECTION': 
+                    # The DIRECTION column is always present, convert to char
+                    column_values = np.char.decode(column_values, 'utf-8')
+
+                # Add list of values gathered for column to the temp dataframe
+                temp_frame[column] = column_values
+
+            # Iterate through variable columns, if there are none nothing happens
+            if variable_columns is not None:
+                for column in variable_columns: 
+
+                    # Setting nc_variable
+                    nc_variable = nc_file.variables[column][profiles_to_pull,:]
+
+                    # Replacing missing variables with NaNs
+                    nc_variable = nc_variable.filled(np.nan)
+
+                    # Read in variable from .nc file
+                    column_values = self.__read_from_paramater_nc_variable(nc_variable)
+
+                    if column.endswith('_QC'):
+                        # Replace b'n' and b' ' with b'0' so that all values are numbers
+                        modified_column = [b'0' if item == b'n' or item == b' ' else item
+                                           for item in column_values]
+                        # Floats that do not have this column will have NaN here; convert to float
+                        column_values = np.char.decode(modified_column, 'utf-8').astype('float')
+
+                    # Add list of values gathered for column to the temp dataframe
+                    temp_frame[column] = column_values
+
+            # Clean up dataframe
+            if 'PRES' in temp_frame.columns:
+                if self.download_settings.verbose: print(f'Dropping rows where no measurements were taken for {float_id}...')
+                temp_frame = temp_frame.dropna(subset=['PRES', 'PRES_ADJUSTED'])
+            
+            # Concatonate the final dataframe and the temp dataframe
+            float_data_dataframe = pd.concat([float_data_dataframe, temp_frame], ignore_index=True)
+
+            # Close File 
+            nc_file.close()
+
+        # Return dataframe
+        return float_data_dataframe
+    
+
+    def __calculate_nc_variable_values(self, column: str, nc_file, number_of_profiles: int, profiles_to_pull: list) -> list:
+        """ Function for specalized columns that must be calculated or derived. 
+
+            :param: files : list - A list of files to read in data from.
+            :param: column : str - The name of the column of the dataframe we want information.
+            :param: nc_file - The NC file object to read from.
+            :param: number_of_profiles : int - The number of profiles expected to be read in.
+            :param: profiles_to_pull : The indexes of the profiles we're pulling form the NC file.
+
+            :return: list - The nc_variable adjusted for special cases. 
+        """
+        
+        if column == 'DATE' : 
+            
+            # Acessing nc variables that we calculate date from
+            nc_variable = nc_file.variables['JULD'][profiles_to_pull]
+            
+            # Making a list to store the calculated dates
+            new_nc_variable = []
+
+            # Check if nc_variable is 0-dimensional aka only one profile is passed
+            if getattr(nc_variable, "shape", None) == ():
+                reference_date = datetime(1950, 1, 1)
+                utc_date = reference_date + timedelta(days=float(nc_variable))
+                new_nc_variable.append(utc_date)
+            
+            else:
+                # Calculating the dates
+                for date in nc_variable: 
+                    reference_date = datetime(1950, 1, 1)
+                    utc_date = reference_date + timedelta(days=date)
+                    new_nc_variable.append(utc_date)
+            
+            # Returning list of calculated lists to be added to dataframe
+            return new_nc_variable
+
+        elif column == 'DATE_QC': 
+
+            # Acessing nc variable that we pull date_qc from
+            nc_variable = nc_file.variables['JULD_QC'][profiles_to_pull]
+
+            # Returning nc variable
+            return nc_variable
+
+        elif column == 'WMOID': 
+
+            # Parsing float id from file name
+            float_id_array = nc_file.variables['PLATFORM_NUMBER'][0]
+            float_id = int(float_id_array.data.tobytes().decode('utf-8').strip('\x00'))
+            
+            # List with the float id the same length as a one dimensional variable
+            nc_variable = [int(float_id)] * number_of_profiles
+
+            # Returning nc variable
+            return nc_variable
+
+    
+    def __read_from_static_nc_variable(self, variable_columns: list, nc_variable, number_of_levels: int, number_of_profiles: int)-> list: 
+        """ A function to read in data from one dimentional variables in the passed .nc file. 
+
+            :param: variable_columns : list - The list of variable columns in the .nc file. This
+                determines how many times the static variables should be repeated to match the expected
+                length of the dataframe. 
+            :param: nc_variable - The .nc variable we're reading from.
+            :param: number_of_levels : int - The number of depth levels the float compleated per profile. 
+            :param: number_of_profiles : int - The number of profiles being pulled from a float. 
+
+            :return: list - The list of values for that nc_variable. 
+        """
+
+        column_values = []
+
+        # Check if nc_variable is 0-dimensional aka only one profile is passed
+        if getattr(nc_variable, "shape", None) == ():
+
+            column_values = [nc_variable] * (number_of_levels if variable_columns else number_of_profiles)
+
+        # If there are no variables then then we'll only need the rows to match the number of profiles in the file
+        elif variable_columns is None:
+
+            for value in nc_variable: 
+                column_values.append(value)
+
+        # If there are variables then the static rows need to match the number of levels 
+        else: 
+        
+            for value in nc_variable: 
+                value_repeats = [value] * number_of_levels
+                column_values.extend(value_repeats)
+
+        return column_values
+    
+
+    def __read_from_paramater_nc_variable(self, nc_variable)-> list:
+        """ A function to read in data from two dimentional variables in the passed .nc file.
+
+            :param: nc_variable - The nc variable we're reading from
+
+            :return: list - A list of values pulled from the nc variable passed.
+        """
+
+        column_values = []
+
+        # Check if nc_variable is 0-dimensional aka only one profile is passed
+        if nc_variable.ndim == 1:
+            for profile in nc_variable: 
+                    column_values.append(profile)
+        else: 
+            for profile in nc_variable: 
+                for depth in profile: 
+                    column_values.append(depth)
+
+        return column_values
