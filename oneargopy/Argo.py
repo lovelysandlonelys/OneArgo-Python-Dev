@@ -1220,7 +1220,7 @@ class Argo:
                         variable_columns.append(variable + '_ADJUSTED_QC')
                         variable_columns.append(variable + '_ADJUSTED_ERROR')
                 else: 
-                    print(f'WARNING: The variable: {variable} does not exist in the file.')
+                    print(f'WARNING: {variable} does not exist in FILE "{nc_file}".')
             
             if len(variable_columns) > 0: 
                 pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 'PRES_ADJUSTED_ERROR']
