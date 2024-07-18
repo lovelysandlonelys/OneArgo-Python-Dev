@@ -1569,6 +1569,7 @@ class Argo:
         colormap = self.__choose_colormap(variable)
         
         # Plot Data
+        if self.download_settings.verbose: print(f'Plotting data...')
         plt.figure(figsize=(10, 6))
         plt.pcolormesh(time_grid, pres_grid, param_gridded, shading='auto', cmap=colormap)
         # Y Axis 
@@ -1591,6 +1592,7 @@ class Argo:
     def __grid_section_data(self, float_data, variable):
         """ Function to grid the data
         """
+        if self.download_settings.verbose: print(f'Gridding data...')
         # Parse out values for specified float
         time_values = pd.to_datetime(float_data['DATE']).values
         pres_values = float_data['PRES'].values
@@ -1627,6 +1629,7 @@ class Argo:
         """ A function to choose the colormap 
             for the graph. 
         """
+        if self.download_settings.verbose: print(f'Choosing colormap...')
         colormap = 'viridis'
         if variable == 'TEMP' :
             colormap = 'turbo'
