@@ -1563,7 +1563,7 @@ class Argo:
         """
         # Grid Data
         float_data = all_float_data[all_float_data['WMOID'] == float_id]
-        time_grid, pres_grid, param_gridded = self.__grid_section_data(float_data, float_id, variable)
+        time_grid, pres_grid, param_gridded = self.__grid_section_data(float_data, variable)
 
         # Determine Colormap
         colormap = self.__choose_colormap(variable)
@@ -1588,7 +1588,7 @@ class Argo:
         plt.show()
 
 
-    def __grid_section_data(self, float_data, float_id, variable):
+    def __grid_section_data(self, float_data, variable):
         """ Function to grid the data
         """
         # Parse out values for specified float
@@ -1622,7 +1622,7 @@ class Argo:
 
         return time_grid, pres_grid, param_gridded
     
-    
+
     def __choose_colormap(self, variable)-> str:
         """ A function to choose the colormap 
             for the graph. 
