@@ -331,7 +331,7 @@ class Argo:
         return float_data_frame
     
 
-    def section_plots()-> None:
+    def sections()-> None:
         """ A function to graph...
         """
         # Validated passed dataframe
