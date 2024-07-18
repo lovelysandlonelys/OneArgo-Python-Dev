@@ -8,18 +8,12 @@ import time
 # Test against matlab
 argo = Argo()
 
-data = argo.load_float_data(5903611, variables='TEMP')
-data.to_csv('sprof_as_prof.txt', encoding='utf-8', index=False, na_rep='nan')
-
-data = argo.load_float_data(5903611, variables='DOXY')
-data.to_csv('sprof_as_sprof.txt', encoding='utf-8', index=False, na_rep='nan')
-
-# print(f'Passing DOXY')
-# floats = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
-# data = argo.load_float_data(floats, variables='DOXY')
-# print(data)
-# data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='nan')
-# print(f'\n\n')
+print(f'Passing DOXY')
+floats = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
+data = argo.load_float_data(floats, variables='DOXY')
+print(data)
+data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='nan')
+print(f'\n\n')
 
 # print(f'Passing Nothing')
 # data = argo.load_float_data(5905105)
@@ -76,11 +70,11 @@ data.to_csv('sprof_as_sprof.txt', encoding='utf-8', index=False, na_rep='nan')
 # argo.trajectories(list(profiles))
 
 # Graph for slide
-profiles = argo.select_profiles(lon_lim=[-130,-115], 
-                                lat_lim=[32.5,49], 
-                                start_date='2020-01-01', 
-                                type='bgc')
-argo.trajectories(profiles)
+# profiles = argo.select_profiles(lon_lim=[-130,-115], 
+#                                 lat_lim=[32.5,49], 
+#                                 start_date='2020-01-01', 
+#                                 type='bgc')
+# argo.trajectories(profiles)
 
 # # Trajectories Tests
 # argo.trajectories(5905105)

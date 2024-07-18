@@ -334,17 +334,30 @@ class Argo:
     def sections(self, float_data: pd, variables: str | list)-> None:
         """ A function to graph...
 
-            :param: 
-            :param: 
+            :param: float_data : pd - A dataframe created from load_float_data
+                that contains data pulled from .nc files.
+            :param: variables : str or list - The variable(s) the user would
+                like section plots of. 
         """
-        # Validated passed dataframe
         # Validate passed variables
         self.float_variables = variables
         self.__validate_float_variables_arg()
 
+        # Validate passed dataframe
+        self.float_data = float_data
+        self.__validate_float_data_dataframe()
+
         # Determine Unique WMOID 
+        unique_float_ids = self.float_data['WMOID'].unique()
+
         # Make one plot for each float/variable combination
-        pass
+        for float_id in unique_float_ids:
+            print(f'Generating section plots for float {float_id}...')
+
+            for variable in self.float_variables:
+                print(f'Generating section plot for float {float_id} and varible {variable}')
+
+                # Check that 
         
 
     #######################################################################
@@ -822,7 +835,25 @@ class Argo:
         nonexistent_vars = [x for x in self.float_variables if x not in self.source_settings.avail_vars]
         if nonexistent_vars:
             raise Exception(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
+        
 
+    def __validate_float_data_dataframe(self): 
+        """ A function to validate a dataframe passed
+            to sections() so ensure that it has the 
+            expected columns for graphing section 
+            plots. 
+        """
+        if self.download_settings.verbose: print(f"Validating passed float_data_dataframe...")
+
+        # Check that the dataframe at the very least has wmoid and variable columns
+        required_columns = ['WMOID'] + self.float_variables
+
+        # Identify missing columns
+        missing_columns = set(required_columns) - set(self.float_data.columns)
+
+        if missing_columns:
+            raise Exception(f"The following columns are missing from the DataFrame: {missing_columns}")
+                
 
     def __prepare_selection(self):
         """ A function that determines what dataframes will be loaded/used 
