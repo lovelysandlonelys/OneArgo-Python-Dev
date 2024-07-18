@@ -363,7 +363,7 @@ class Argo:
                 
                 float_variable_data = self.float_data[self.float_data['WMOID'] == float_id][variable]
                 # float_cycle_data = self.float_data[self.float_data['WMOID'] == float_id]
-                
+
                 # Check that the float actually has data for the passed variable                                   
                 if float_variable_data.isna().all():
                     print(f'Float {float_id} has no data for variable {variable}, skipping plot...')
@@ -1561,8 +1561,37 @@ class Argo:
         """ A function to create a single section plot
             using the passed dataframe and variable.
         """
-        # Parse out values for specified float
+        # Grid Data
         float_data = all_float_data[all_float_data['WMOID'] == float_id]
+        time_grid, pres_grid, param_gridded = self.__grid_section_data(float_data, float_id, variable)
+
+        # Determine Colormap
+        colormap = self.__choose_colormap(variable)
+        
+        # Plot Data
+        plt.figure(figsize=(10, 6))
+        plt.pcolormesh(time_grid, pres_grid, param_gridded, shading='auto', cmap=colormap)
+        # Y Axis 
+        plt.ylim([0, float_data['PRES'].max()])         
+        plt.gca().invert_yaxis()
+        # Add a colorbar to show the scale of the variable
+        plt.colorbar(label=variable)
+        # X Axis 
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+        plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
+        # Titles
+        plt.xlabel('Time')
+        plt.ylabel('Pressure (dbar)')
+        plt.title(f'Section Plot of {variable} at Float {float_id}')
+
+        # Show the plot
+        plt.show()
+
+
+    def __grid_section_data(self, float_data, float_id, variable):
+        """ Function to grid the data
+        """
+        # Parse out values for specified float
         time_values = pd.to_datetime(float_data['DATE']).values
         pres_values = float_data['PRES'].values
         param_values = float_data[variable].values
@@ -1582,21 +1611,6 @@ class Argo:
         # Create grid for interpolation
         time_grid, pres_grid = np.meshgrid(unique_times_num, unique_pres)
 
-        print('Time Grid')
-        print(time_grid)
-
-        print('Pres Grid')
-        print(pres_grid)
-
-        print('Time Values')
-        print(time_values_num)
-
-        print('Pres Values')
-        print(pres_values)
-
-        print('Param Values')
-        print(param_values)
-
         # Interpolate param values onto the grid
         param_gridded = griddata(
             (time_values_num, pres_values),  # Input points
@@ -1606,22 +1620,14 @@ class Argo:
             fill_value=np.nan
         )
 
-        plt.figure(figsize=(10, 6))
-        # Use pcolormesh to create a heatmap
-        plt.pcolormesh(time_grid, pres_grid, param_gridded, shading='auto')
-        # Start at 0 at top of figure
-        plt.ylim([0, float_data['PRES'].max()])         
-        # Invert the y-axis to have pressure values decrease as you go down
-        plt.gca().invert_yaxis()
-        # Add a colorbar to show the scale of the variable
-        plt.colorbar(label=variable)
-        # Mark X axis with dates
-        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-        plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
-        # Label the axes
-        plt.xlabel('Time')
-        plt.ylabel('Pressure (dbar)')
-        plt.title(f'Section Plot of {variable} at Float {float_id}')
+        return time_grid, pres_grid, param_gridded
+    
+    def __choose_colormap(self, variable)-> str:
+        """ A function to choose the colormap 
+            for the graph. 
+        """
+        colormap = 'viridis'
+        if variable == 'TEMP' :
+            colormap = 'turbo'
 
-        # Show the plot
-        plt.show()
+        return colormap
