@@ -33,6 +33,9 @@ import netCDF4
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from matplotlib.ticker import FixedLocator
 
+from scipy.interpolate import griddata
+import matplotlib.dates as mdates
+
 
 class Argo:
     #######################################################################
@@ -1558,28 +1561,44 @@ class Argo:
         pres_values = float_data['PRES'].values
         param_values = float_data[variable].values
 
-        # Create a DataFrame for pivoting
-        df = pd.DataFrame({
-            'TIME': time_values,
-            'PRESSURE': pres_values,
-            'PARAM': param_values
-        })
+        # Remove NaN or infinite values
+        valid_indices = ~np.isnan(time_values) & ~np.isnan(pres_values) & ~np.isnan(param_values) & \
+                        ~np.isinf(time_values) & ~np.isinf(pres_values) & ~np.isinf(param_values)
+        time_values = time_values[valid_indices]
+        time_values_num = mdates.date2num(time_values)
+        pres_values = pres_values[valid_indices]
+        param_values = param_values[valid_indices]
 
-        # Pivot the DataFrame
-        pivot_table = df.pivot(index='PRESSURE', columns='TIME', values='PARAM')
+        # Unique values for creating grids
+        unique_times_num = np.unique(time_values_num)
+        unique_pres = np.unique(pres_values)
 
-        # Convert pivot table to numpy arrays
-        time_grid = pivot_table.columns.values
-        pres_grid = pivot_table.index.values
-        param_gridded = pivot_table.values
-        
-        # Plot depth section of upper ocean only
-        plt.figure(figsize=(12,6))
-        plt.pcolormesh(time_grid, pres_grid, param_gridded)
-        plt.ylim([0, 250])
+        # Create grid for interpolation
+        time_grid, pres_grid = np.meshgrid(unique_times_num, unique_pres)
+
+        # Interpolate param values onto the grid
+        param_gridded = griddata(
+            (time_values_num, pres_values),  # Input points
+            param_values,                # Input values
+            (time_grid, pres_grid),      # Grid points
+            method='linear',             # Interpolation method
+            fill_value=np.nan
+        )
+
+        plt.figure(figsize=(10, 6))
+        time_grid_dates = mdates.num2date(time_grid)
+        # Use pcolormesh to create a heatmap
+        plt.pcolormesh(time_grid_dates, pres_grid, param_gridded, shading='auto')
+        # Start at 0 at top of figure
+        plt.ylim([0, float_data['PRES'].max()])         
+        # Invert the y-axis to have pressure values decrease as you go down
         plt.gca().invert_yaxis()
-        plt.ylabel('Pressure (dbar)')
-        plt.colorbar(label=f'{variable}')
-        plt.title(f'{variable} at Float {float_id}')
+        # Add a colorbar to show the scale of the variable
+        plt.colorbar(label=variable)
+        # Label the axes
         plt.xlabel('Time')
+        plt.ylabel('Pressure (dbar)')
+        plt.title(f'Section Plot of {variable} at Float {float_id}')
+
+        # Show the plot
         plt.show()
