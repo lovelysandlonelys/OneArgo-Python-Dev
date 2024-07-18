@@ -9,13 +9,9 @@ import time
 argo = Argo()
 
 print(f'Passing DOXY')
-floats = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
-data = argo.load_float_data(floats, variables='DOXY')
-print(data)
+data = argo.load_float_data(5903611, variables=['DOXY', 'TEMP', ])
 data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='nan')
-print(f'\n\n')
-
-argo.sections(data, 'DOXY')
+argo.sections(data, ['DOXY', 'TEMP'])
 
 # print(f'Passing Nothing')
 # data = argo.load_float_data(5905105)

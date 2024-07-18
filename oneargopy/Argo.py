@@ -360,12 +360,18 @@ class Argo:
 
             for variable in self.float_variables:
 
-                # Check that the float actually has data for the passed variable
+                
                 float_variable_data = self.float_data[self.float_data['WMOID'] == float_id][variable]
+                # float_cycle_data = self.float_data[self.float_data['WMOID'] == float_id]
+                
+                # Check that the float actually has data for the passed variable                                   
                 if float_variable_data.isna().all():
                     print(f'Float {float_id} has no data for variable {variable}, skipping plot...')
                     continue
-
+                # # Only one unique cycle number, only one profile for the float
+                # elif float_cycle_data['CYCLE_NUMBER'].nunique() == 1:
+                #     print(f'Float {float_id} has only one profile for variable {variable}, skipping plot...')
+                #     continue
                 # Otherwise plot the section
                 else:
                     print(f'Generating section plot for float {float_id} with variable {variable}...')
@@ -1575,6 +1581,21 @@ class Argo:
 
         # Create grid for interpolation
         time_grid, pres_grid = np.meshgrid(unique_times_num, unique_pres)
+
+        print('Time Grid')
+        print(time_grid)
+
+        print('Pres Grid')
+        print(pres_grid)
+
+        print('Time Values')
+        print(time_values_num)
+
+        print('Pres Values')
+        print(pres_values)
+
+        print('Param Values')
+        print(param_values)
 
         # Interpolate param values onto the grid
         param_gridded = griddata(
