@@ -1549,7 +1549,7 @@ class Argo:
         if nc_variable.ndim == 1:
             for profile in nc_variable: 
                     column_values.append(profile)
-        else: 
+        else:
             for profile in nc_variable: 
                 for depth in profile: 
                     column_values.append(depth)
@@ -1593,26 +1593,34 @@ class Argo:
         """ Function to grid the data
         """
         if self.download_settings.verbose: print(f'Gridding data...')
+        
+        print(f'Parsing Values for specified flaot...')
         # Parse out values for specified float
         time_values = pd.to_datetime(float_data['DATE']).values
         pres_values = float_data['PRES'].values
         param_values = float_data[variable].values
 
-        # Remove NaN or infinite values
-        valid_indices = ~np.isnan(time_values) & ~np.isnan(pres_values) & ~np.isnan(param_values) & \
-                        ~np.isinf(time_values) & ~np.isinf(pres_values) & ~np.isinf(param_values)
+        print(f'Removing nan values...')
+        # Remove NaN values
+        valid_indices = ~np.isnan(time_values) & ~np.isnan(pres_values) & ~np.isnan(param_values) 
         time_values = time_values[valid_indices]
-        time_values_num = mdates.date2num(time_values)
         pres_values = pres_values[valid_indices]
         param_values = param_values[valid_indices]
 
+        print(f'Convert time to float...')
+        # Convert time_values to float for griddata function
+        time_values_num = mdates.date2num(time_values)
+
+        print(f'Extracting unique times...')
         # Unique values for creating grids
         unique_times_num = np.unique(time_values_num)
         unique_pres = np.unique(pres_values)
 
+        print(f'Making grid for interpolation...')
         # Create grid for interpolation
         time_grid, pres_grid = np.meshgrid(unique_times_num, unique_pres)
 
+        print(f'Interpolating...')
         # Interpolate param values onto the grid
         param_gridded = griddata(
             (time_values_num, pres_values), # Input points
@@ -1622,6 +1630,7 @@ class Argo:
             fill_value=np.nan               
         )
 
+        print(f'Returning')
         return time_grid, pres_grid, param_gridded
     
 
