@@ -332,7 +332,8 @@ class Argo:
     
 
     def sections(self, float_data: pd, variables: str | list)-> None:
-        """ A function to graph...
+        """ A function to graph section plots for the passed variables using data
+            from the passed float_data dataframe. 
 
             :param: float_data : pd - A dataframe created from load_float_data
                 that contains data pulled from .nc files.
@@ -355,9 +356,14 @@ class Argo:
             print(f'Generating section plots for float {float_id}...')
 
             for variable in self.float_variables:
-                print(f'Generating section plot for float {float_id} and varible {variable}')
-
-                # Check that 
+                # Check that the float actually has data for the passed variable
+                float_variable_data = self.float_data[self.float_data['WMOID'] == float_id][variable]
+                if float_variable_data.isna().all():
+                    print(f'Float {float_id} has no data for variable {variable}, skipping plot...')
+                    continue
+                else:
+                    print(f'Generating section plot for float {float_id} with variable {variable}...')
+                    self.__plot_section()
         
 
     #######################################################################
