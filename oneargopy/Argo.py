@@ -1622,6 +1622,7 @@ class Argo:
 
         return time_grid, pres_grid, param_gridded
     
+    
     def __choose_colormap(self, variable)-> str:
         """ A function to choose the colormap 
             for the graph. 
