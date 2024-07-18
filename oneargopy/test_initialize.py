@@ -15,6 +15,8 @@ print(data)
 data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='nan')
 print(f'\n\n')
 
+argo.sections(data, 'DOXY')
+
 # print(f'Passing Nothing')
 # data = argo.load_float_data(5905105)
 # print(data)

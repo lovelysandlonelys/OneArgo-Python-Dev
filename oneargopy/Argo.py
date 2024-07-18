@@ -356,14 +356,17 @@ class Argo:
             print(f'Generating section plots for float {float_id}...')
 
             for variable in self.float_variables:
+
                 # Check that the float actually has data for the passed variable
                 float_variable_data = self.float_data[self.float_data['WMOID'] == float_id][variable]
                 if float_variable_data.isna().all():
                     print(f'Float {float_id} has no data for variable {variable}, skipping plot...')
                     continue
+
+                # Otherwise plot the section
                 else:
                     print(f'Generating section plot for float {float_id} with variable {variable}...')
-                    self.__plot_section()
+                    self.__plot_section(self.float_data, float_id, variable)
         
 
     #######################################################################
@@ -1543,3 +1546,40 @@ class Argo:
                     column_values.append(depth)
 
         return column_values
+    
+
+    def __plot_section(self, all_float_data, float_id, variable)-> None:
+        """ A function to create a single section plot
+            using the passed dataframe and variable.
+        """
+        # Parse out values for specified float
+        float_data = all_float_data[all_float_data['WMOID'] == float_id]
+        time_values = float_data['DATE'].values
+        pres_values = float_data['PRES'].values
+        param_values = float_data[variable].values
+
+        # Create a DataFrame for pivoting
+        df = pd.DataFrame({
+            'TIME': time_values,
+            'PRESSURE': pres_values,
+            'PARAM': param_values
+        })
+
+        # Pivot the DataFrame
+        pivot_table = df.pivot(index='PRESSURE', columns='TIME', values='PARAM')
+
+        # Convert pivot table to numpy arrays
+        time_grid = pivot_table.columns.values
+        pres_grid = pivot_table.index.values
+        param_gridded = pivot_table.values
+        
+        # Plot depth section of upper ocean only
+        plt.figure(figsize=(12,6))
+        plt.pcolormesh(time_grid, pres_grid, param_gridded)
+        plt.ylim([0, 250])
+        plt.gca().invert_yaxis()
+        plt.ylabel('Pressure (dbar)')
+        plt.colorbar(label=f'{variable}')
+        plt.title(f'{variable} at Float {float_id}')
+        plt.xlabel('Time')
+        plt.show()
