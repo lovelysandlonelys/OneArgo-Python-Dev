@@ -1613,11 +1613,11 @@ class Argo:
 
         # Interpolate param values onto the grid
         param_gridded = griddata(
-            (time_values_num, pres_values),  # Input points
-            param_values,                # Input values
-            (time_grid, pres_grid),      # Grid points
-            method='linear',             # Interpolation method
-            fill_value=np.nan
+            (time_values_num, pres_values), # Input points
+            param_values,                   # Input values
+            (time_grid, pres_grid),         # Grid points
+            method='linear',                # Interpolation method
+            fill_value=np.nan               
         )
 
         return time_grid, pres_grid, param_gridded
