@@ -331,11 +331,17 @@ class Argo:
         return float_data_frame
     
 
-    def sections()-> None:
+    def sections(self, float_data: pd, variables: str | list)-> None:
         """ A function to graph...
+
+            :param: 
+            :param: 
         """
         # Validated passed dataframe
         # Validate passed variables
+        self.float_variables = variables
+        self.__validate_float_variables_arg()
+
         # Determine Unique WMOID 
         # Make one plot for each float/variable combination
         pass
@@ -812,10 +818,10 @@ class Argo:
         if not isinstance(self.float_variables, list):
             self.float_variables = [self.float_variables]
 
-        # Finding float IDs that are not present in the index dataframes
+        # Finding variables that are not present avaliable variables list
         nonexistent_vars = [x for x in self.float_variables if x not in self.source_settings.avail_vars]
         if nonexistent_vars:
-            raise Exception(f"The following float IDs do not exist in the dataframes: {nonexistent_vars}")
+            raise Exception(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
 
 
     def __prepare_selection(self):
