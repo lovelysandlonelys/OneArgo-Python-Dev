@@ -1279,7 +1279,7 @@ class Argo:
                         variable_columns.append(variable + '_ADJUSTED_QC')
                         variable_columns.append(variable + '_ADJUSTED_ERROR')
                 else: 
-                    print(f'WARNING: {variable} does not exist in FILE "{nc_file}".')
+                    print(f'WARNING: {variable} does not exist in File {nc_file.filepath()}.')
             
             if len(variable_columns) > 0: 
                 pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 'PRES_ADJUSTED_ERROR']
@@ -1557,7 +1557,7 @@ class Argo:
         """
         # Parse out values for specified float
         float_data = all_float_data[all_float_data['WMOID'] == float_id]
-        time_values = float_data['DATE'].values
+        time_values = pd.to_datetime(float_data['DATE']).values
         pres_values = float_data['PRES'].values
         param_values = float_data[variable].values
 
@@ -1586,15 +1586,17 @@ class Argo:
         )
 
         plt.figure(figsize=(10, 6))
-        time_grid_dates = mdates.num2date(time_grid)
         # Use pcolormesh to create a heatmap
-        plt.pcolormesh(time_grid_dates, pres_grid, param_gridded, shading='auto')
+        plt.pcolormesh(time_grid, pres_grid, param_gridded, shading='auto')
         # Start at 0 at top of figure
         plt.ylim([0, float_data['PRES'].max()])         
         # Invert the y-axis to have pressure values decrease as you go down
         plt.gca().invert_yaxis()
         # Add a colorbar to show the scale of the variable
         plt.colorbar(label=variable)
+        # Mark X axis with dates
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+        plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
         # Label the axes
         plt.xlabel('Time')
         plt.ylabel('Pressure (dbar)')
