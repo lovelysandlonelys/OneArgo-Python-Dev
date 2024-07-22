@@ -9,12 +9,8 @@ import time
 argo = Argo()
 
 print(f'Passing DOXY')
-data = argo.load_float_data(5903611, variables=['TEMP', 'DOXY'])
-
-start_time = time.time()
-argo.sections(data, ['TEMP', 'TEMP_ADJUSTED', 'TEMP_ADJUSTED_ERROR'])
-elapsed_time = time.time() - start_time
-print(f'The time to plot temp: {elapsed_time}\n')
+data = argo.load_float_data([5904859, 5903807, 5906297, 5903611], variables=['DOXY'])
+argo.sections(data, ['DOXY', 'DOXY_ADJUSTED', ])
 
 # start_time = time.time()
 # argo.sections(data, ['DOXY', 'DOXY_ADJUSTED'])

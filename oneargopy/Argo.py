@@ -356,13 +356,22 @@ class Argo:
 
         # Make one plot for each float/variable combination
         for float_id in unique_float_ids:
+
+            filtered_df = self.float_data[self.float_data['WMOID'] == float_id]
+
+            # Getting unique profile values for the current flaot
+            unique_values = filtered_df['CYCLE_NUMBER'].unique()
+
+            # Check that the float has more than one profile (more than one cycle number)
+            if len(unique_values) == 1 :
+                print(f'Float {float_id} only has one profile provided, skipping float...')
+                continue
+
             print(f'Generating section plots for float {float_id}...')
-
             for variable in self.float_variables:
-
                 
-                float_variable_data = self.float_data[self.float_data['WMOID'] == float_id][variable]
-                # float_cycle_data = self.float_data[self.float_data['WMOID'] == float_id]
+                # Pulling column for current float and variable
+                float_variable_data = filtered_df[variable]
 
                 # Check that the float actually has data for the passed variable                                   
                 if float_variable_data.isna().all():
@@ -889,10 +898,6 @@ class Argo:
         missing_columns = set(required_columns) - set(self.float_data.columns)
         if missing_columns:
             raise Exception(f"The following columns are missing from the DataFrame: {missing_columns}")
-        
-        # Remove flaots that only have one profile passed
-        if float_cycle_data['CYCLE_NUMBER'].nunique() == 1:
-            print(f'Float {float_id} has only one profil, removing float...')
                 
 
     def __prepare_selection(self):
