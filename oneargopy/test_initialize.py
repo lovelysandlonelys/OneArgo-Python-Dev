@@ -9,8 +9,9 @@ import time
 argo = Argo()
 
 print(f'Passing DOXY')
-data = argo.load_float_data([5904859, 5903807, 5906297, 5903611], variables=['DOXY'])
-argo.sections(data, ['DOXY', 'DOXY_ADJUSTED'])
+data = argo.load_float_data([5904859, 5903807, 5906297, 5903611], variables=['DOXY', ])
+
+argo.sections(data, ['DOXY', 'DOXY_ADJUSTED', 'DOXY_ADJUSTED_ERROR'])
 
 # start_time = time.time()
 # argo.sections(data, ['DOXY', 'DOXY_ADJUSTED'])
@@ -507,3 +508,15 @@ argo.sections(data, ['DOXY', 'DOXY_ADJUSTED'])
 #         # Move profile index column to the second position for easier comparison
 #         prof_index_column = float_data_dataframe.pop('PROF_IDX')
 #         float_data_dataframe.insert(1, 'PROF_IDX', prof_index_column)
+
+
+# grid data interpolation 
+ #     print(f'Interpolating...')
+        #     # Interpolate param values onto the grid
+        #     param_gridded = griddata(
+        #         (time_values_num, pres_values), # Input points
+        #         param_values,                   # Input values
+        #         (time_grid, pres_grid),         # Grid points
+        #         method='linear',                # Interpolation method
+        #         fill_value=np.nan               
+        #     )

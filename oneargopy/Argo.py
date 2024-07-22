@@ -1669,16 +1669,6 @@ class Argo:
 
         # Assigning data to variable to graph
         param_gridded = param_gridded_df.values
-        # else:
-        #     print(f'Interpolating...')
-        #     # Interpolate param values onto the grid
-        #     param_gridded = griddata(
-        #         (time_values_num, pres_values), # Input points
-        #         param_values,                   # Input values
-        #         (time_grid, pres_grid),         # Grid points
-        #         method='linear',                # Interpolation method
-        #         fill_value=np.nan               
-        #     )
 
         print(f'Returning')
         return time_grid, pres_grid, param_gridded
