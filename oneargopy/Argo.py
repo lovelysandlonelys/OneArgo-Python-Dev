@@ -359,12 +359,12 @@ class Argo:
 
             filtered_df = self.float_data[self.float_data['WMOID'] == float_id]
 
-            # Getting unique profile values for the current flaot
+            # Getting unique profile values for the current float 
             unique_values = filtered_df['CYCLE_NUMBER'].unique()
 
             # Check that the float has more than one profile (more than one cycle number)
-            if len(unique_values) == 1 :
-                print(f'Float {float_id} only has one profile provided, skipping float...')
+            if len(unique_values) == len(filtered_df):
+                print(f'Float {float_id} only has one profile provided per depth, skipping float...')
                 continue
 
             print(f'Generating section plots for float {float_id}...')

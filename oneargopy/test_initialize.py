@@ -10,7 +10,7 @@ argo = Argo()
 
 print(f'Passing DOXY')
 data = argo.load_float_data([5904859, 5903807, 5906297, 5903611], variables=['DOXY'])
-argo.sections(data, ['DOXY', 'DOXY_ADJUSTED', ])
+argo.sections(data, ['DOXY', 'DOXY_ADJUSTED'])
 
 # start_time = time.time()
 # argo.sections(data, ['DOXY', 'DOXY_ADJUSTED'])
