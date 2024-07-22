@@ -334,7 +334,7 @@ class Argo:
         return float_data_frame
     
 
-    def sections(self, float_data: pd, variables: str | list)-> None:
+    def sections(self, float_data: pd, variables: str | list, visible: bool = True, save_to: str = None)-> None:
         """ A function to graph section plots for the passed variables using data
             from the passed float_data dataframe. 
 
@@ -342,6 +342,10 @@ class Argo:
                 that contains data pulled from .nc files.
             :param: variables : str or list - The variable(s) the user would
                 like section plots of. 
+            :param: visible : bool - A boolean value determining if the section
+                plot is shown to the user through a popup window.
+            :param: save_to : str - An optional filepath where the user would like
+                to save their section plot.
         """
         # Validate passed variables
         self.float_variables = variables
