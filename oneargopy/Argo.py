@@ -1208,8 +1208,6 @@ class Argo:
 
             # Convert the list of dictionaries into a DataFrame
             profile_df = pd.DataFrame(data)
-            print("PROFILE DATAFRAME")
-            print(profile_df)
 
             # Filter only profiles included in dataframe for bgc floats
             floats_bgc = pd.merge(floats_bgc, profile_df, on=['wmoid', 'profile_index'], how='right')
