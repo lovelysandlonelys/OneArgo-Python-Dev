@@ -1638,6 +1638,9 @@ class Argo:
 
             # Reindex the DataFrame to ensure the grid matches the desired shape
             param_gridded_df = param_gridded_df.reindex(index=unique_pres, columns=unique_times_num)
+            # Fill missing values by forward filling and then backward filling
+            param_gridded_df = param_gridded_df.fillna(method='ffill').fillna(method='bfill')
+
             param_gridded = param_gridded_df.values
         else:
             print(f'Interpolating...')
