@@ -210,10 +210,14 @@ class Argo:
         return narrowed_profiles
     
 
-    def trajectories(self, floats: int | list | dict)-> None: 
+    def trajectories(self, floats: int | list | dict, visible: bool = True, save_to: str = None)-> None: 
         """ This function plots the trajectories of one or more specified float(s)
 
             :param: floats : int | list | dict - Floats to plot.
+            :param: visible : bool - A boolean value determining if the trajectories
+                plot is shown to the user through a popup window.
+            :param: save_to : str - An optional filepath where the user would like
+                to save their trajectories plot.
         """
 
         # Check that dataframes are loaded into memory
@@ -279,7 +283,14 @@ class Argo:
         plt.tight_layout()
 
         # Displaying graph
-        plt.show()
+        if visible == True:
+            plt.show()
+
+        # Saving Graph
+        if save_to is not None: 
+            #logic for saving graph as png
+            pass
+
 
     def load_float_data(self, floats: int | list | dict, variables: str | list = None)-> pd: 
         """ A function to load float data into memory.
@@ -355,6 +366,9 @@ class Argo:
         self.float_data = float_data
         self.__validate_float_data_dataframe()
 
+        # Validate save_to file path
+        if save_to is not None: self.__validate_plot_save_path(save_to)
+
         # Determine Unique WMOID 
         unique_float_ids = self.float_data['WMOID'].unique()
 
@@ -384,7 +398,7 @@ class Argo:
                 # Otherwise plot the section
                 else:
                     print(f'Generating section plot for float {float_id} with variable {variable}...')
-                    self.__plot_section(self.float_data, float_id, variable)
+                    self.__plot_section(self.float_data, float_id, variable, visible, save_to)
         
 
     #######################################################################
@@ -1586,7 +1600,7 @@ class Argo:
         return column_values
     
 
-    def __plot_section(self, all_float_data, float_id, variable)-> None:
+    def __plot_section(self, all_float_data, float_id, variable, visible, save_to)-> None:
         """ A function to create a single section plot
             using the passed dataframe and variable.
         """
@@ -1611,8 +1625,14 @@ class Argo:
         plt.ylabel('Pressure (dbar)')
         plt.title(f'Section Plot of {variable} at Float {float_id}')
 
-        # Show the plot
-        plt.show()
+        # Displaying graph
+        if visible == True:
+            plt.show()
+
+        if save_to is not None: 
+            #logic for saving graph as png
+            pass
+
 
 
     def __grid_section_data(self, float_data, variable):
