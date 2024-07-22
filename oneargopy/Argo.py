@@ -1617,41 +1617,41 @@ class Argo:
         # Create grid for interpolation
         time_grid, pres_grid = np.meshgrid(unique_times_num, unique_pres)
 
-        if variable == 'TEMP':
-            print(f'Variable is TEMP, setting param_gridded to NaN array...')
-            # Set param_gridded to NaN array with the same shape as the grid
-            param_gridded = np.full(time_grid.shape, np.nan)
-            # Create a DataFrame
-            df = pd.DataFrame({
-                'time': time_values_num,
-                'pressure': pres_values,
-                'param': param_values
-            })
+        # Set param_gridded to NaN array with the same shape as the grid
+        param_gridded = np.full(time_grid.shape, np.nan)
+        # Create a DataFrame
+        df = pd.DataFrame({
+            'time': time_values_num,
+            'pressure': pres_values,
+            'param': param_values
+        })
 
-            # Pivot the DataFrame to create a grid
-            param_gridded_df = df.pivot_table(
-                index='pressure',
-                columns='time',
-                values='param',
-                aggfunc='first'
-            )
+        # Pivot the DataFrame to create a grid
+        param_gridded_df = df.pivot_table(
+            index='pressure',
+            columns='time',
+            values='param',
+            aggfunc='first'
+        )
 
-            # Reindex the DataFrame to ensure the grid matches the desired shape
-            param_gridded_df = param_gridded_df.reindex(index=unique_pres, columns=unique_times_num)
-            # Fill missing values by forward filling and then backward filling
-            param_gridded_df = param_gridded_df.fillna(method='ffill').fillna(method='bfill')
+        # Reindex the DataFrame to ensure the grid matches the desired shape
+        param_gridded_df = param_gridded_df.reindex(index=unique_pres, columns=unique_times_num)
 
-            param_gridded = param_gridded_df.values
-        else:
-            print(f'Interpolating...')
-            # Interpolate param values onto the grid
-            param_gridded = griddata(
-                (time_values_num, pres_values), # Input points
-                param_values,                   # Input values
-                (time_grid, pres_grid),         # Grid points
-                method='linear',                # Interpolation method
-                fill_value=np.nan               
-            )
+        # Fill missing values by forward filling and then backward filling
+        param_gridded_df = param_gridded_df.fillna(method='ffill', axis=0).fillna(method='bfill', axis=0)
+
+        # Assigning data to variable to graph
+        param_gridded = param_gridded_df.values
+        # else:
+        #     print(f'Interpolating...')
+        #     # Interpolate param values onto the grid
+        #     param_gridded = griddata(
+        #         (time_values_num, pres_values), # Input points
+        #         param_values,                   # Input values
+        #         (time_grid, pres_grid),         # Grid points
+        #         method='linear',                # Interpolation method
+        #         fill_value=np.nan               
+        #     )
 
         print(f'Returning')
         return time_grid, pres_grid, param_gridded
