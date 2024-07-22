@@ -345,7 +345,7 @@ class Argo:
         """
         # Validate passed variables
         self.float_variables = variables
-        self.__validate_float_variables_arg()
+        self.__validate_float_variables_and_permutations_arg()
 
         # Validate passed dataframe
         self.float_data = float_data
@@ -368,10 +368,6 @@ class Argo:
                 if float_variable_data.isna().all():
                     print(f'Float {float_id} has no data for variable {variable}, skipping plot...')
                     continue
-                # # Only one unique cycle number, only one profile for the float
-                # elif float_cycle_data['CYCLE_NUMBER'].nunique() == 1:
-                #     print(f'Float {float_id} has only one profile for variable {variable}, skipping plot...')
-                #     continue
                 # Otherwise plot the section
                 else:
                     print(f'Generating section plot for float {float_id} with variable {variable}...')
@@ -854,6 +850,30 @@ class Argo:
         if nonexistent_vars:
             raise Exception(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
         
+    
+    def __validate_float_variables_and_permutations_arg(self):
+        """ A function to validate the value of the 
+            optional 'variables' passed to 
+            load_float_data.
+        """
+        if self.download_settings.verbose: print(f"Validating passed 'variables'...")
+
+        # If user has passed a single variable convert to list
+        if not isinstance(self.float_variables, list):
+            self.float_variables = [self.float_variables]
+        
+        # Constructing list of varaibles avaliable for plotting
+        adjusted_variables = []
+        for variable in self.source_settings.avail_vars: 
+            adjusted_variables.append(variable + '_ADJUSTED')
+            adjusted_variables.append(variable + '_ADJUSTED_ERROR')
+        avaliable_variables = self.source_settings.avail_vars + adjusted_variables
+
+        # Finding variables that are not present avaliable variables list
+        nonexistent_vars = [x for x in self.float_variables if x not in avaliable_variables]
+        if nonexistent_vars:
+            raise Exception(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
+        
 
     def __validate_float_data_dataframe(self): 
         """ A function to validate a dataframe passed
@@ -865,12 +885,14 @@ class Argo:
 
         # Check that the dataframe at the very least has wmoid and variable columns
         required_columns = ['WMOID'] + self.float_variables
-
         # Identify missing columns
         missing_columns = set(required_columns) - set(self.float_data.columns)
-
         if missing_columns:
             raise Exception(f"The following columns are missing from the DataFrame: {missing_columns}")
+        
+        # Remove flaots that only have one profile passed
+        if float_cycle_data['CYCLE_NUMBER'].nunique() == 1:
+            print(f'Float {float_id} has only one profil, removing float...')
                 
 
     def __prepare_selection(self):
