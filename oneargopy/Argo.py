@@ -1621,6 +1621,24 @@ class Argo:
             print(f'Variable is TEMP, setting param_gridded to NaN array...')
             # Set param_gridded to NaN array with the same shape as the grid
             param_gridded = np.full(time_grid.shape, np.nan)
+            # Create a DataFrame
+            df = pd.DataFrame({
+                'time': time_values_num,
+                'pressure': pres_values,
+                'param': param_values
+            })
+
+            # Pivot the DataFrame to create a grid
+            param_gridded_df = df.pivot_table(
+                index='pressure',
+                columns='time',
+                values='param',
+                aggfunc='first'
+            )
+
+            # Reindex the DataFrame to ensure the grid matches the desired shape
+            param_gridded_df = param_gridded_df.reindex(index=unique_pres, columns=unique_times_num)
+            param_gridded = param_gridded_df.values
         else:
             print(f'Interpolating...')
             # Interpolate param values onto the grid
