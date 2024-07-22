@@ -1564,14 +1564,11 @@ class Argo:
         # Grid Data
         float_data = all_float_data[all_float_data['WMOID'] == float_id]
         time_grid, pres_grid, param_gridded = self.__grid_section_data(float_data, variable)
-
-        # Determine Colormap
-        colormap = self.__choose_colormap(variable)
         
         # Plot Data
         if self.download_settings.verbose: print(f'Plotting data...')
         plt.figure(figsize=(10, 6))
-        plt.pcolormesh(time_grid, pres_grid, param_gridded, shading='auto', cmap=colormap)
+        plt.pcolormesh(time_grid, pres_grid, param_gridded, shading='auto')
         # Y Axis 
         plt.ylim([0, float_data['PRES'].max()])         
         plt.gca().invert_yaxis()
@@ -1620,27 +1617,20 @@ class Argo:
         # Create grid for interpolation
         time_grid, pres_grid = np.meshgrid(unique_times_num, unique_pres)
 
-        print(f'Interpolating...')
-        # Interpolate param values onto the grid
-        param_gridded = griddata(
-            (time_values_num, pres_values), # Input points
-            param_values,                   # Input values
-            (time_grid, pres_grid),         # Grid points
-            method='linear',                # Interpolation method
-            fill_value=np.nan               
-        )
+        if variable == 'TEMP':
+            print(f'Variable is TEMP, setting param_gridded to NaN array...')
+            # Set param_gridded to NaN array with the same shape as the grid
+            param_gridded = np.full(time_grid.shape, np.nan)
+        else:
+            print(f'Interpolating...')
+            # Interpolate param values onto the grid
+            param_gridded = griddata(
+                (time_values_num, pres_values), # Input points
+                param_values,                   # Input values
+                (time_grid, pres_grid),         # Grid points
+                method='linear',                # Interpolation method
+                fill_value=np.nan               
+            )
 
         print(f'Returning')
         return time_grid, pres_grid, param_gridded
-    
-
-    def __choose_colormap(self, variable)-> str:
-        """ A function to choose the colormap 
-            for the graph. 
-        """
-        if self.download_settings.verbose: print(f'Choosing colormap...')
-        colormap = 'viridis'
-        if variable == 'TEMP' :
-            colormap = 'turbo'
-
-        return colormap

@@ -9,11 +9,20 @@ import time
 argo = Argo()
 
 print(f'Passing DOXY')
-data = argo.load_float_data(5903611, variables=['DOXY', 'TEMP', ])
-data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='nan')
-argo.sections(data, ['DOXY', 'TEMP'])
+data = argo.load_float_data(5903611, variables=['TEMP', 'DOXY'])
+
+start_time = time.time()
+argo.sections(data, ['TEMP'])
+elapsed_time = time.time() - start_time
+print(f'The time to plot temp: {elapsed_time}\n')
+
+start_time = time.time()
+argo.sections(data, ['DOXY'])
+elapsed_time = time.time() - start_time
+print(f'The time to plot doxy: {elapsed_time}\n')
 
 # print(f'Passing Nothing')
+
 # data = argo.load_float_data(5905105)
 # print(data)
 # data.to_csv('output_one.txt', encoding='utf-8', index=False, na_rep='nan')
