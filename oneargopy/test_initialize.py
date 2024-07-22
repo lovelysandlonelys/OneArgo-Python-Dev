@@ -7,11 +7,15 @@ import time
 
 # Test against matlab
 argo = Argo()
-
-print(f'Passing DOXY')
-data = argo.load_float_data([5904859, 5903807, 5906297, 5903611], variables=['DOXY', ])
-
-argo.sections(data, ['DOXY', 'DOXY_ADJUSTED', 'DOXY_ADJUSTED_ERROR'])
+avail_vars = ['TEMP', 'PSAL', 'DOXY', 'NITRATE', 'CHLA', 'CHLA_FLUORESCENCE', 'BBP700', 'CDOM', 
+              'PH_IN_SITU_TOTAL', 'DOWN_IRRADIANCE380', 'DOWN_IRRADIANCE443', 'DOWN_IRRADIANCE490', 
+              'DOWN_IRRADIANCE555', 'DOWNWELLING_PAR', 'DOXY2', 'DOWN_IRRADIANCE412', 'CNDC', 'DOXY3', 
+              'BBP532', 'CP660', 'TURBIDITY', 'DOWN_IRRADIANCE665', 'BISULFIDE', 'DOWN_IRRADIANCE670', 
+              'BBP700_2', 'BBP470', 'UP_RADIANCE412', 'UP_RADIANCE443', 'UP_RADIANCE490', 'UP_RADIANCE555']
+data = argo.load_float_data([5904859, 5903807, 5906297, 5903611], variables=avail_vars)
+avail_vars = ['TEMP', 'PSAL', 'DOXY', 'NITRATE', 'CHLA', 'CHLA_FLUORESCENCE', 'BBP700', 
+              'PH_IN_SITU_TOTAL']
+argo.sections(data, avail_vars)
 
 # start_time = time.time()
 # argo.sections(data, ['DOXY', 'DOXY_ADJUSTED'])
