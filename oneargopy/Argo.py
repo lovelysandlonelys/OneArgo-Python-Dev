@@ -216,9 +216,13 @@ class Argo:
             :param: floats : int | list | dict - Floats to plot.
             :param: visible : bool - A boolean value determining if the trajectories
                 plot is shown to the user through a popup window.
-            :param: save_to : str - An optional filepath where the user would like
+            :param: save_to : str - An optional filepath to a folder where the user would like
                 to save their trajectories plot.
         """
+        # Validate save_to file path
+        if save_to is not None: 
+            save_to = Path(save_to)
+            self.__validate_plot_save_path(Path(save_to))
 
         # Check that dataframes are loaded into memory
         if not self.download_settings.keep_index_in_memory: 
@@ -288,8 +292,11 @@ class Argo:
 
         # Saving Graph
         if save_to is not None: 
-            #logic for saving graph as png
-            pass
+            if len(self.float_ids) == 1:
+                save_path = save_to.joinpath(f'trajectories_plot_{self.float_ids}')
+            else: 
+                save_path = save_to.joinpath(f'trajectories_plot_{len(self.float_ids)}')
+            plt.savefig(f'{save_path}')
 
 
     def load_float_data(self, floats: int | list | dict, variables: str | list = None)-> pd: 
@@ -355,8 +362,8 @@ class Argo:
                 like section plots of. 
             :param: visible : bool - A boolean value determining if the section
                 plot is shown to the user through a popup window.
-            :param: save_to : str - An optional filepath where the user would like
-                to save their section plot.
+            :param: save_to : str - An optional filepath to a folder where the 
+                user would like..to save their section plot.
         """
         # Validate passed variables
         self.float_variables = variables
@@ -367,7 +374,9 @@ class Argo:
         self.__validate_float_data_dataframe()
 
         # Validate save_to file path
-        if save_to is not None: self.__validate_plot_save_path(save_to)
+        if save_to is not None: 
+            save_to = Path(save_to)
+            self.__validate_plot_save_path(save_to)
 
         # Determine Unique WMOID 
         unique_float_ids = self.float_data['WMOID'].unique()
@@ -916,7 +925,16 @@ class Argo:
         missing_columns = set(required_columns) - set(self.float_data.columns)
         if missing_columns:
             raise Exception(f"The following columns are missing from the DataFrame: {missing_columns}")
-                
+        
+
+    def __validate_plot_save_path(self, save_path: Path):
+        """ A funciton to validate that the save path passed
+            actually exists. 
+        """
+        if not save_path.exists():
+            print(f'{save_path} not found!')
+            raise FileNotFoundError
+
 
     def __prepare_selection(self):
         """ A function that determines what dataframes will be loaded/used 
@@ -1629,9 +1647,9 @@ class Argo:
         if visible == True:
             plt.show()
 
-        if save_to is not None: 
-            #logic for saving graph as png
-            pass
+        if save_to is not None:  
+            save_path = save_to.joinpath(f'section_plot_{float_id}_{variable}')
+            plt.savefig(f'{save_path}')
 
 
 
