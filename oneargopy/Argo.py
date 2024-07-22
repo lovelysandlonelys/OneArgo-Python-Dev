@@ -1613,7 +1613,7 @@ class Argo:
         unique_times_num = np.unique(time_values_num)
         unique_pres = np.unique(pres_values)
 
-        print(f'Making grid for interpolation...')
+        print(f'Formatting data to grid...')
         # Create grid for interpolation
         time_grid, pres_grid = np.meshgrid(unique_times_num, unique_pres)
 
