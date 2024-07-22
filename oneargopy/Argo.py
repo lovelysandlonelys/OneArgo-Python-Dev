@@ -391,7 +391,8 @@ class Argo:
 
             # Check that the float has more than one profile (more than one cycle number)
             if len(unique_values) == len(filtered_df):
-                print(f'Float {float_id} only has one profile provided per depth, skipping float...')
+                if self.download_settings.verbose:
+                    print(f'Float {float_id} only has one profile provided per depth, skipping float...')
                 continue
 
             print(f'Generating section plots for float {float_id}...')
@@ -402,11 +403,13 @@ class Argo:
 
                 # Check that the float actually has data for the passed variable                                   
                 if float_variable_data.isna().all():
-                    print(f'Float {float_id} has no data for variable {variable}, skipping plot...')
+                    if self.download_settings.verbose:
+                        print(f'Float {float_id} has no data for variable {variable}, skipping plot...')
                     continue
                 # Otherwise plot the section
                 else:
-                    print(f'Generating section plot for float {float_id} with variable {variable}...')
+                    if self.download_settings.verbose:
+                        print(f'Generating section plot for float {float_id} with variable {variable}...')
                     self.__plot_section(self.float_data, float_id, variable, visible, save_to)
         
 
@@ -1410,8 +1413,9 @@ class Argo:
             if self.float_profiles_dict is not None: 
 
                 if profile_count > number_of_profiles: 
-                    print(f'Skipping float {float_id}...')
-                    print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles for float {float_id}..')
+                    if self.download_settings.verbose: 
+                        print(f'Skipping float {float_id}...')
+                        print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles for float {float_id}..')
                     continue
 
                 # Get list of profiles passed in dictionary for float
@@ -1627,7 +1631,6 @@ class Argo:
         time_grid, pres_grid, param_gridded = self.__grid_section_data(float_data, variable)
         
         # Plot Data
-        if self.download_settings.verbose: print(f'Plotting data...')
         plt.figure(figsize=(10, 6))
         plt.pcolormesh(time_grid, pres_grid, param_gridded, shading='auto')
         # Y Axis 
@@ -1643,44 +1646,37 @@ class Argo:
         plt.ylabel('Pressure (dbar)')
         plt.title(f'Section Plot of {variable} at Float {float_id}')
 
-        # Displaying graph
-        if visible == True:
-            plt.show()
-
+        # Saving Graph
         if save_to is not None:  
             save_path = save_to.joinpath(f'section_plot_{float_id}_{variable}')
             plt.savefig(f'{save_path}')
 
+        # Displaying graph
+        if visible == True:
+            plt.show()
 
 
     def __grid_section_data(self, float_data, variable):
         """ Function to grid the data
         """
-        if self.download_settings.verbose: print(f'Gridding data...')
-        
-        print(f'Parsing Values for specified flaot...')
         # Parse out values for specified float
         time_values = pd.to_datetime(float_data['DATE']).values
         pres_values = float_data['PRES'].values
         param_values = float_data[variable].values
 
-        print(f'Removing nan values...')
         # Remove NaN values
         valid_indices = ~np.isnan(time_values) & ~np.isnan(pres_values) & ~np.isnan(param_values) 
         time_values = time_values[valid_indices]
         pres_values = pres_values[valid_indices]
         param_values = param_values[valid_indices]
 
-        print(f'Convert time to float...')
-        # Convert time_values to float for griddata function
+        # Convert time_values to float becasue it makes gridding data easier
         time_values_num = mdates.date2num(time_values)
 
-        print(f'Extracting unique times...')
         # Unique values for creating grids
         unique_times_num = np.unique(time_values_num)
         unique_pres = np.unique(pres_values)
 
-        print(f'Formatting data to grid...')
         # Create grid for interpolation
         time_grid, pres_grid = np.meshgrid(unique_times_num, unique_pres)
 
@@ -1710,5 +1706,4 @@ class Argo:
         # Assigning data to variable to graph
         param_gridded = param_gridded_df.values
 
-        print(f'Returning')
         return time_grid, pres_grid, param_gridded
