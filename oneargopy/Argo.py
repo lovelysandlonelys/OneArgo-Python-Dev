@@ -754,12 +754,12 @@ class Argo:
 
         # Validating Lists
         if len(self.lon_lim) != len(self.lat_lim):
-            raise Exception('The length of the longitude and latitude lists must be equal.')
+            raise KeyError('The length of the longitude and latitude lists must be equal.')
         if len(self.lon_lim) == 2:
             if (self.lon_lim[1] <= self.lon_lim[0]) or (self.lat_lim[1] <= self.lat_lim[0]):
                 if self.download_settings.verbose: print(f'Longitude Limits: min={self.lon_lim[0]} max={self.lon_lim[1]}')
                 if self.download_settings.verbose: print(f'Latitude Limits: min={self.lat_lim[0]} max={self.lat_lim[1]}')
-                raise Exception('When passing longitude and latitude lists using the [min, max] format, the max value must be greater than the min value.')
+                raise KeyError('When passing longitude and latitude lists using the [min, max] format, the max value must be greater than the min value.')
             if (abs(self.lon_lim[1] - self.lon_lim[0] - 360.0) < self.epsilon) and (abs(self.lat_lim[1] - self.lat_lim[0] - 180.0) < self.epsilon): 
                 self.keep_full_geographic = True
             else: 
@@ -768,14 +768,14 @@ class Argo:
         # Validating latitudes
         if not all(-90 <= lat <= 90 for lat in self.lat_lim):
             print(f'Latitudes: {self.lat_lim}')
-            raise Exception('Latitude values should be between -90 and 90.')
+            raise KeyError('Latitude values should be between -90 and 90.')
         
         # Validate Longitudes
         ## Checking range of longitude values
         lon_range = max(self.lon_lim) - min(self.lon_lim)
         if lon_range > 360 or lon_range <= 0:
             if self.download_settings.verbose: print(f'Current longitude range: {lon_range}')
-            raise Exception('The range between the maximum and minimum longitude values must be between 0 and 360.')
+            raise KeyError('The range between the maximum and minimum longitude values must be between 0 and 360.')
         ## Adjusting values to fit between -180 and 360
         if  min(self.lon_lim) < -180:
             if self.download_settings.verbose: print('Adjusting within -180')
