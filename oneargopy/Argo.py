@@ -514,10 +514,8 @@ class Argo:
         # If the .nc file's update date is less than
         # the date in the index file return true
         # indicating that the .nc file must be updated
-        if netcdf_update_date < index_update_date: 
-            return True
-        
-        return False
+        # otherwise return false
+        return bool(netcdf_update_date < index_update_date)
 
 
     def __try_download(self, file_name: str, update_status: bool)-> None:
