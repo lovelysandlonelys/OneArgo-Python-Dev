@@ -24,17 +24,15 @@ import shutil
 import gzip
 import numpy as np
 import matplotlib.path as mpltPath
-import pandas as pd
+from matplotlib.ticker import FixedLocator
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import pandas as pd
 import cartopy.crs as ccrs
 import cartopy.feature as cf
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import netCDF4
 
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-from matplotlib.ticker import FixedLocator
-
-from scipy.interpolate import griddata
-import matplotlib.dates as mdates
 
 
 class Argo:
