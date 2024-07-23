@@ -286,7 +286,7 @@ class Argo:
         plt.tight_layout()
 
         # Displaying graph
-        if visible == True:
+        if visible:
             plt.show()
 
         # Saving Graph
@@ -1651,7 +1651,7 @@ class Argo:
             plt.savefig(f'{save_path}')
 
         # Displaying graph
-        if visible == True:
+        if visible:
             plt.show()
 
 
