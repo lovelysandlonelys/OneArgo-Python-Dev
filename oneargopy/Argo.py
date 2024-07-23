@@ -866,7 +866,7 @@ class Argo:
         """ A function to validate the value of the 
             optional 'ocean' keyword argument.
         """
-        if self.download_settings.verbose: print(f"Validating 'ocean' keyword argument...")
+        if self.download_settings.verbose: print("Validating 'ocean' keyword argument...")
 
         if self.ocean != 'A' and self.ocean != 'P' and self.ocean != 'I':
                 raise KeyError("The only acceptable values for the 'ocean' keyword argument are 'A' (Atlantic), 'P' (Pacific), and 'I' (Indian).")
