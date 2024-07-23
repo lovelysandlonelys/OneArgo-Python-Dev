@@ -684,8 +684,8 @@ class Argo:
         wmoid = prof_index['file'].str.split('/').str[1].astype('int')
         prof_index.insert(1, "wmoid", wmoid)
 
-        D_file = prof_index['file'].str.split('/').str[3].str.startswith('D')
-        prof_index.insert(2, "D_file", D_file)
+        d_file = prof_index['file'].str.split('/').str[3].str.startswith('D')
+        prof_index.insert(2, "D_file", d_file)
 
         # Add profile_index column
         prof_index.sort_values(by=['wmoid', 'date'], inplace=True)
