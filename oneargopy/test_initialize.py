@@ -12,6 +12,7 @@ argo = Argo()
 data = argo.load_float_data([5903611], 
                             variables='TEMP')
 argo.sections(data, 'TEMP')
+#test every function please
 
 # start_time = time.time()
 # argo.sections(data, ['DOXY', 'DOXY_ADJUSTED'])
