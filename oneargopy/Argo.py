@@ -819,21 +819,21 @@ class Argo:
         """ A function to validate the value of the 
             optional 'outside' keyword argument.
         """
-        if self.download_settings.verbose: print(f"Validating 'outside' keyword argument...")
+        if self.download_settings.verbose: print("Validating 'outside' keyword argument...")
 
         if self.outside is not None: 
             if self.outside != 'time' and self.outside != 'space' and self.outside != 'both':
-                raise KeyError(f"The only acceptable values for the 'outside' keyword argument are 'time', 'space', and 'both'.")
+                raise KeyError("The only acceptable values for the 'outside' keyword argument are 'time', 'space', and 'both'.")
             
     
     def __validate_type_kwarg(self): 
         """ A function to validate the value of the 
             optional 'type' keyword argument.
         """
-        if self.download_settings.verbose: print(f"Validating 'type' keyword argument...")
+        if self.download_settings.verbose: print("Validating 'type' keyword argument...")
 
         if self.float_type != 'all' and self.float_type != 'phys' and self.float_type != 'bgc':
-                raise KeyError(f"The only acceptable values for the 'type' keyword argument are 'all', 'phys', and 'bgc'.")
+                raise KeyError("The only acceptable values for the 'type' keyword argument are 'all', 'phys', and 'bgc'.")
         
     
     def __validate_floats_kwarg(self):
@@ -842,7 +842,7 @@ class Argo:
             If the floats passed are in a dictionary we separate the keys
             from the dictionary for flexibility.
         """
-        if self.download_settings.verbose: print(f"Validating passed floats...")
+        if self.download_settings.verbose: print("Validating passed floats...")
 
         # If user has passed a dictionary
         if isinstance(self.float_ids, dict):
