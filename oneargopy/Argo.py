@@ -877,7 +877,7 @@ class Argo:
             optional 'variables' passed to 
             load_float_data.
         """
-        if self.download_settings.verbose: print(f"Validating passed 'variables'...")
+        if self.download_settings.verbose: print("Validating passed 'variables'...")
 
         # If user has passed a single variable convert to list
         if not isinstance(self.float_variables, list):
