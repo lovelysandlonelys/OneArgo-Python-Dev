@@ -178,9 +178,12 @@ class Argo:
             print('Validating parameters...')
         self.__validate_lon_lat_limits()
         self.__validate_start_end_dates()
-        if self.outside: self.__validate_outside_kwarg()
-        if self.float_type: self.__validate_type_kwarg()
-        if self.ocean: self.__validate_ocean_kwarg()
+        if self.outside:
+            self.__validate_outside_kwarg()
+        if self.float_type:
+            self.__validate_type_kwarg()
+        if self.ocean:
+            self.__validate_ocean_kwarg()
         # if self.sensor : self.__validate_sensor_kwarg()
         # Load correct dataframes according to self.float_type and self.float_ids
         # we set self.selected_from_sprof_index and self.selected_from_prof_index
@@ -816,7 +819,7 @@ class Argo:
             load_float_data.
         """
         if self.download_settings.verbose:
-            print(f"Validating passed 'variables'...")
+            print("Validating passed 'variables'...")
         # If user has passed a single variable convert to list
         if not isinstance(self.float_variables, list):
             self.float_variables = [self.float_variables]
