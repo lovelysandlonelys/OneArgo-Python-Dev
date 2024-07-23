@@ -823,7 +823,7 @@ class Argo:
 
         if self.outside is not None: 
             if self.outside != 'time' and self.outside != 'space' and self.outside != 'both':
-                raise Exception(f"The only acceptable values for the 'outside' keyword argument are 'time', 'space', and 'both'.")
+                raise KeyError(f"The only acceptable values for the 'outside' keyword argument are 'time', 'space', and 'both'.")
             
     
     def __validate_type_kwarg(self): 
@@ -833,7 +833,7 @@ class Argo:
         if self.download_settings.verbose: print(f"Validating 'type' keyword argument...")
 
         if self.float_type != 'all' and self.float_type != 'phys' and self.float_type != 'bgc':
-                raise Exception(f"The only acceptable values for the 'type' keyword argument are 'all', 'phys', and 'bgc'.")
+                raise KeyError(f"The only acceptable values for the 'type' keyword argument are 'all', 'phys', and 'bgc'.")
         
     
     def __validate_floats_kwarg(self):
@@ -859,7 +859,7 @@ class Argo:
         # Finding float IDs that are not present in the index dataframes
         missing_floats = [float_id for float_id in self.float_ids if float_id not in self.prof_index['wmoid'].values]
         if missing_floats:
-            raise Exception(f"The following float IDs do not exist in the dataframes: {missing_floats}")
+            raise KeyError(f"The following float IDs do not exist in the dataframes: {missing_floats}")
             
     
     def __validate_ocean_kwarg(self): 
@@ -886,7 +886,7 @@ class Argo:
         # Finding variables that are not present avaliable variables list
         nonexistent_vars = [x for x in self.float_variables if x not in self.source_settings.avail_vars]
         if nonexistent_vars:
-            raise Exception(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
+            raise KeyError(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
         
     
     def __validate_float_variables_and_permutations_arg(self):
@@ -926,7 +926,7 @@ class Argo:
         # Identify missing columns
         missing_columns = set(required_columns) - set(self.float_data.columns)
         if missing_columns:
-            raise Exception(f"The following columns are missing from the DataFrame: {missing_columns}")
+            raise KeyError(f"The following columns are missing from the DataFrame: {missing_columns}")
         
 
     def __validate_plot_save_path(self, save_path: Path):
