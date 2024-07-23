@@ -5,10 +5,13 @@ from Argo import Argo
 import time
 
 
-# Test against matlab
+
+
+from Argo import Argo
 argo = Argo()
-data = argo.load_float_data([5904859, 5903807, 5906297, 5903611], variables='TEMP')
-argo.sections(data, 'TEMP', save_to='C:/Users/steph/Dev/OneArgo-Python-Dev/oneargopy')
+data = argo.load_float_data([5903611], 
+                            variables='TEMP')
+argo.sections(data, 'TEMP')
 
 # start_time = time.time()
 # argo.sections(data, ['DOXY', 'DOXY_ADJUSTED'])
