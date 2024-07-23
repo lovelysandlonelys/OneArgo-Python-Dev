@@ -855,7 +855,8 @@ class Argo:
             print(f'{len(self.selection_frame)} profiles selected according to time and space constraints!')
         # Filter by other constraints, these functions will use self.selection_frame
         # so we don't have to pass a frame
-        if self.ocean: self.__get_in_ocean_basin()
+        if self.ocean: 
+            self.__get_in_ocean_basin()
         # other narrowing functions that act on created selection frame...
         # Convert the working dataframe into a dictionary
         selected_floats_dict = self.__dataframe_to_dictionary()
@@ -868,17 +869,20 @@ class Argo:
         # process of checking if the points of all the floats are inside the polygon
         if self.keep_full_geographic:
             return  [True] * len(dataframe_to_filter)
-        if self.download_settings.verbose: print('Sorting floats for those within the geographic range...')
+        if self.download_settings.verbose: 
+            print('Sorting floats for those within the geographic range...')
         # Make points out of profile lat and lons
-        if self.download_settings.verbose: print('Creating point list from profiles...')
+        if self.download_settings.verbose: 
+            print('Creating point list from profiles...')
         profile_points = np.empty((len(dataframe_to_filter), 2))
         # The longitudes in the dataframe are standardized to fall within -180 and 180.
         # but our longitudes only have a standard minimum value of -180. In this section
         # we adjust the longitude and latitudes in the dataframe to follow this minimum
         # only approach.
         if max(self.lon_lim) > 180:
-            if self.download_settings.verbose: print(f'The max value in lon_lim is {max(self.lon_lim)}')
-            if self.download_settings.verbose: print('Adjusting longitude values...')
+            if self.download_settings.verbose: 
+                print(f'The max value in lon_lim is {max(self.lon_lim)}')
+                print('Adjusting longitude values...')
             profile_points[:,0] = dataframe_to_filter['longitude'].apply(lambda x: x + 360 if -180 < x < min(self.lon_lim) else x).values
         else:
             profile_points[:,0] = dataframe_to_filter['longitude'].values
@@ -940,19 +944,23 @@ class Argo:
         # Filter passed dataframe by time and space constraints to
         # create a new dataframe to return as part of the selection frame
         if self.outside == 'time':
-            if self.download_settings.verbose: print(f'Applying outside={self.outside} constraints...')
+            if self.download_settings.verbose: 
+                print(f'Applying outside={self.outside} constraints...')
             constraints = floats_in_time_and_space & profiles_in_space
             selection_frame = dataframe_to_filter[constraints]
         elif self.outside == 'space':
-            if self.download_settings.verbose: print(f'Applying outside={self.outside} constraints...')
+            if self.download_settings.verbose: 
+                print(f'Applying outside={self.outside} constraints...')
             constraints = floats_in_time_and_space & profiles_in_time
             selection_frame = dataframe_to_filter[constraints]
         elif self.outside is None:
-            if self.download_settings.verbose: print('Applying outside=None constraints...')
+            if self.download_settings.verbose: 
+                print('Applying outside=None constraints...')
             constraints = floats_in_time_and_space & profiles_in_space & profiles_in_time
             selection_frame = dataframe_to_filter[constraints]
         elif self.outside == 'both':
-            if self.download_settings.verbose: print(f'Applying outside={self.outside} constraints...')
+            if self.download_settings.verbose: 
+                print(f'Applying outside={self.outside} constraints...')
             constraints = floats_in_time_and_space
             selection_frame = dataframe_to_filter[constraints]
         return selection_frame
