@@ -1260,21 +1260,21 @@ class Argo:
         """ A Function for setting the graph's longitude and latitude extents. 
         """
         if axis == 'x':
-            min, max = ax.get_xlim()
-            diff = max - min
+            minimum, maximum = ax.get_xlim()
+            diff = maximum - minimum
         elif axis == 'y':
-            min, max = ax.get_ylim()
-            diff = max - min
+            minimum, maximum = ax.get_ylim()
+            diff = maximum - minimum
 
         if diff < 5.0:
             # Add padding to get at least 5 degrees of longitude
             pad = 0.5 * (5.0 - diff)
-            min -= pad
+            minimum -= pad
             max += pad
             if axis == 'x':
-                ax.set_xlim([min, max])
+                ax.set_xlim([minimum, maximum])
             elif axis == 'y':
-                ax.set_ylim([min, max])
+                ax.set_ylim([minimum, maximum])
 
     
     def __add_grid_lines(self, ax)-> None: 
