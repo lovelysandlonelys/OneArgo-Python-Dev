@@ -516,8 +516,8 @@ class Argo:
         # indicating that the .nc file must be updated
         if netcdf_update_date < index_update_date: 
             return True
-        else: 
-            return False
+        
+        return False
 
 
     def __try_download(self, file_name: str, update_status: bool)-> None:
