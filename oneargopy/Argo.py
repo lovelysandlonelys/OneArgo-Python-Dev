@@ -919,7 +919,7 @@ class Argo:
             expected columns for graphing section 
             plots. 
         """
-        if self.download_settings.verbose: print(f"Validating passed float_data_dataframe...")
+        if self.download_settings.verbose: print("Validating passed float_data_dataframe...")
 
         # Check that the dataframe at the very least has wmoid and variable columns
         required_columns = ['WMOID'] + self.float_variables
