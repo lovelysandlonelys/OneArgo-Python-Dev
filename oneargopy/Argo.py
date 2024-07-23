@@ -1157,7 +1157,7 @@ class Argo:
             constraints = floats_in_time_and_space & profiles_in_time
             selection_frame = dataframe_to_filter[constraints]
         
-        elif self.outside == None: 
+        elif self.outside is None: 
             if self.download_settings.verbose: print('Applying outside=None constraints...')
             constraints = floats_in_time_and_space & profiles_in_space & profiles_in_time
             selection_frame = dataframe_to_filter[constraints]
