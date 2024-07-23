@@ -869,7 +869,7 @@ class Argo:
         if self.download_settings.verbose: print(f"Validating 'ocean' keyword argument...")
 
         if self.ocean != 'A' and self.ocean != 'P' and self.ocean != 'I':
-                raise Exception("The only acceptable values for the 'ocean' keyword argument are 'A' (Atlantic), 'P' (Pacific), and 'I' (Indian).")
+                raise KeyError("The only acceptable values for the 'ocean' keyword argument are 'A' (Atlantic), 'P' (Pacific), and 'I' (Indian).")
 
 
     def __validate_float_variables_arg(self):
