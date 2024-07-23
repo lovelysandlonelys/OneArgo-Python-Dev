@@ -944,17 +944,17 @@ class Argo:
         # Filter passed dataframe by time and space constraints to
         # create a new dataframe to return as part of the selection frame
         if self.outside == 'time':
-            if self.download_settings.verbose: 
+            if self.download_settings.verbose:
                 print(f'Applying outside={self.outside} constraints...')
             constraints = floats_in_time_and_space & profiles_in_space
             selection_frame = dataframe_to_filter[constraints]
         elif self.outside == 'space':
-            if self.download_settings.verbose: 
+            if self.download_settings.verbose:
                 print(f'Applying outside={self.outside} constraints...')
             constraints = floats_in_time_and_space & profiles_in_time
             selection_frame = dataframe_to_filter[constraints]
         elif self.outside is None:
-            if self.download_settings.verbose: 
+            if self.download_settings.verbose:
                 print('Applying outside=None constraints...')
             constraints = floats_in_time_and_space & profiles_in_space & profiles_in_time
             selection_frame = dataframe_to_filter[constraints]
@@ -1070,16 +1070,16 @@ class Argo:
         gl.xlabel_style = {'size': 12, 'color': 'black'}
         gl.ylabel_style = {'size': 12, 'color': 'black'}
 
-        
+
     def __determine_graph_step(self, ax, axis: str)-> int:
         """ A graph to determine the step of the longitude and latitude gridlines.
         """
         if axis == 'x':
-            min, max = ax.get_xlim()
-            diff = max - min
+            minimum, maximum = ax.get_xlim()
+            diff = maximum - minimum
         elif axis == 'y':
-            min, max = ax.get_ylim()
-            diff = max - min
+            minimum, maximum = ax.get_ylim()
+            diff = maximum - minimum
         if diff > 80:
             step = 15
         elif diff > 30:
@@ -1089,6 +1089,8 @@ class Argo:
         else:
             step = 2
         return step
+    
+
     def __variable_premutations(self, nc_file)-> list:
         """ A function to filter the list of variables to be loaded so
             that we only load variables that are in the file.
