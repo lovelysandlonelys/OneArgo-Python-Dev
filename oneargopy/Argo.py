@@ -57,31 +57,41 @@ class Argo:
         """
         self.download_settings = DownloadSettings(user_settings)
         self.source_settings = SourceSettings(user_settings)
-        if self.download_settings.verbose: print('Starting initialize process...')
-        if self.download_settings.verbose: print(f'Your current download settings are: {self.download_settings}')
-        if self.download_settings.verbose: print(f'Your current source settings are: {self.source_settings}')
+        if self.download_settings.verbose: 
+            print('Starting initialize process...')
+        if self.download_settings.verbose: 
+            print(f'Your current download settings are: {self.download_settings}')
+        if self.download_settings.verbose: 
+            print(f'Your current source settings are: {self.source_settings}')
         # Check for and create subdirectories if needed
-        if self.download_settings.verbose: print('Checking for subdirectories...')
+        if self.download_settings.verbose: 
+            print('Checking for subdirectories...')
         self.__initialize_subdirectories()
         # Download files from GDAC to Index directory
-        if self.download_settings.verbose: print('\nDownloading index files...')
+        if self.download_settings.verbose: 
+            print('\nDownloading index files...')
         for file in self.download_settings.index_files:
             self.__download_file(file)
         # Load the index files into dataframes
-        if self.download_settings.verbose: print('\nTransferring index files into dataframes...')
+        if self.download_settings.verbose: 
+            print('\nTransferring index files into dataframes...')
         self.sprof_index  = self.__load_sprof_dataframe()
         self.prof_index = self.__load_prof_dataframe()
         # Add column noting if a float profile is also in the sprof_index, meaning that it is a bgc float
-        if self.download_settings.verbose: print('Marking bgc floats in prof_index dataframe...')
+        if self.download_settings.verbose: 
+            print('Marking bgc floats in prof_index dataframe...')
         self.__mark_bgcs_in_prof()
         # Create float_stats reference index for use in select profiles
-        if self.download_settings.verbose: print('Creating float_stats dataframe...')
+        if self.download_settings.verbose: 
+            print('Creating float_stats dataframe...')
         self.float_stats = self.__load_float_stats()
         # Print number of floats
-        if self.download_settings.verbose: self.__display_floats()
-        if self.download_settings.verbose: print('Initialize is finished!\n\n')
+        if self.download_settings.verbose: 
+            self.__display_floats()
+            print('Initialize is finished!\n\n')
         if not self.download_settings.keep_index_in_memory:
-            if self.download_settings.verbose: print('Removing dataframes from memory...')
+            if self.download_settings.verbose: 
+                print('Removing dataframes from memory...')
             del self.sprof_index
             del self.prof_index
     #######################################################################
