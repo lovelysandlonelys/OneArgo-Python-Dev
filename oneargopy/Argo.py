@@ -65,37 +65,37 @@ class Argo:
         """
         self.download_settings = DownloadSettings(user_settings)
         self.source_settings = SourceSettings(user_settings)
-        if self.download_settings.verbose: print(f'Starting initialize process...')
+        if self.download_settings.verbose: print('Starting initialize process...')
         
         if self.download_settings.verbose: print(f'Your current download settings are: {self.download_settings}')
         if self.download_settings.verbose: print(f'Your current source settings are: {self.source_settings}')
 
         # Check for and create subdirectories if needed
-        if self.download_settings.verbose: print(f'Checking for subdirectories...')
+        if self.download_settings.verbose: print('Checking for subdirectories...')
         self.__initialize_subdirectories()
 
         # Download files from GDAC to Index directory
-        if self.download_settings.verbose: print(f'\nDownloading index files...')
+        if self.download_settings.verbose: print('\nDownloading index files...')
         for file in self.download_settings.index_files:
             self.__download_file(file)
 
         # Load the index files into dataframes
-        if self.download_settings.verbose: print(f'\nTransferring index files into dataframes...')
+        if self.download_settings.verbose: print('\nTransferring index files into dataframes...')
         self.sprof_index  = self.__load_sprof_dataframe() 
         self.prof_index = self.__load_prof_dataframe()
 
         # Add column noting if a float profile is also in the sprof_index, meaning that it is a bgc float
-        if self.download_settings.verbose: print(f'Marking bgc floats in prof_index dataframe...')
+        if self.download_settings.verbose: print('Marking bgc floats in prof_index dataframe...')
         self.__mark_bgcs_in_prof()
 
         # Create float_stats reference index for use in select profiles
-        if self.download_settings.verbose: print(f'Creating float_stats dataframe...')
+        if self.download_settings.verbose: print('Creating float_stats dataframe...')
         self.float_stats = self.__load_float_stats()
         
         # Print number of floats
         if self.download_settings.verbose: self.__display_floats() 
 
-        if self.download_settings.verbose: print(f'Initialize is finished!\n\n')
+        if self.download_settings.verbose: print('Initialize is finished!\n\n')
 
         if not self.download_settings.keep_index_in_memory:
             if self.download_settings.verbose: print('Removing dataframes from memory...')
@@ -171,7 +171,7 @@ class Argo:
                     Valid values as of 2024 are any: {'aoml'; 'bodc'; 'coriolis'; ...
                     'csio'; 'csiro'; 'incois'; 'jma'; 'kma'; 'kordi'; 'meds'}
         """
-        if self.download_settings.verbose: print(f'Starting select_profiles...')
+        if self.download_settings.verbose: print('Starting select_profiles...')
         self.epsilon = 1e-3
         self.lon_lim = lon_lim
         self.lat_lim = lat_lim
@@ -183,7 +183,7 @@ class Argo:
         self.ocean = kwargs.get('ocean')
         self.sensor = kwargs.get('sensor')
 
-        if self.download_settings.verbose: print(f'Validating parameters...')
+        if self.download_settings.verbose: print('Validating parameters...')
         self.__validate_lon_lat_limits()
         self.__validate_start_end_dates()
         if self.outside: self.__validate_outside_kwarg()
@@ -282,7 +282,7 @@ class Argo:
             ax.set_title(f'Trajectories for {self.float_ids}', fontsize=18,
                          fontweight='bold')
         else:
-            ax.set_title(f'Trajectories for Selected Floats', fontsize=18,
+            ax.set_title('Trajectories for Selected Floats', fontsize=18,
                          fontweight='bold')
         plt.tight_layout()
 
@@ -454,7 +454,7 @@ class Argo:
                 # Check if the settings allow for updates of index files
                 if self.download_settings.update == 0:
                     if self.download_settings.verbose: 
-                        print(f'The download settings have update set to 0, indicating that we do not want to update index files.')
+                        print('The download settings have update set to 0, indicating that we do not want to update index files.')
                 else: 
                     last_modified_time = Path(file_path).stat().st_mtime
                     current_time = datetime.now().timestamp()
@@ -591,7 +591,7 @@ class Argo:
                             if self.download_settings.verbose:
                                 print(f'{first_save_path} cannot be read; trying again...')
                     if success: 
-                        if self.download_settings.verbose: print(f'Success!')
+                        if self.download_settings.verbose: print('Success!')
                     
                         # Exit the loop if download is successful so we don't try additional
                         # sources for no reason.
@@ -653,11 +653,11 @@ class Argo:
         result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).infer_objects(copy=False).astype('int8')
 
         # Fill in source_settings information based off of sprof index file before removing rows
-        if self.download_settings.verbose: print(f'Filling in source settings information...')
+        if self.download_settings.verbose: print('Filling in source settings information...')
         self.source_settings.set_avail_vars(sprof_index)
 
         # Merge the pivoted DataFrame back with the original DataFrame and drop split rows
-        if self.download_settings.verbose: print(f'Marking Parameters with their data mode...')
+        if self.download_settings.verbose: print('Marking Parameters with their data mode...')
         sprof_index = sprof_index.drop(columns=['parameters', 'parameter_data_mode'])
         sprof_index = sprof_index.join(result_df)
 
@@ -694,7 +694,7 @@ class Argo:
         prof_index['profile_index'] = prof_index.groupby('wmoid')['date'].cumcount() + 1
 
         # Fill in source_settings information based off of sprof index file before removing rows
-        if self.download_settings.verbose: print(f'Filling in source settings information...')
+        if self.download_settings.verbose: print('Filling in source settings information...')
         self.source_settings.set_dacs(prof_index)
 
         return prof_index
@@ -751,16 +751,16 @@ class Argo:
         """ Function to validate the length, order, and contents of 
             longitude and latitude limits passed to select_profiles.
         """
-        if self.download_settings.verbose: print(f'Validating longitude and latitude limits...')
+        if self.download_settings.verbose: print('Validating longitude and latitude limits...')
 
         # Validating Lists
         if len(self.lon_lim) != len(self.lat_lim):
-            raise Exception(f'The length of the longitude and latitude lists must be equal.')
+            raise Exception('The length of the longitude and latitude lists must be equal.')
         if len(self.lon_lim) == 2:
             if (self.lon_lim[1] <= self.lon_lim[0]) or (self.lat_lim[1] <= self.lat_lim[0]):
                 if self.download_settings.verbose: print(f'Longitude Limits: min={self.lon_lim[0]} max={self.lon_lim[1]}')
                 if self.download_settings.verbose: print(f'Latitude Limits: min={self.lat_lim[0]} max={self.lat_lim[1]}')
-                raise Exception(f'When passing longitude and latitude lists using the [min, max] format, the max value must be greater than the min value.')
+                raise Exception('When passing longitude and latitude lists using the [min, max] format, the max value must be greater than the min value.')
             if (abs(self.lon_lim[1] - self.lon_lim[0] - 360.0) < self.epsilon) and (abs(self.lat_lim[1] - self.lat_lim[0] - 180.0) < self.epsilon): 
                 self.keep_full_geographic = True
             else: 
@@ -769,17 +769,17 @@ class Argo:
         # Validating latitudes
         if not all(-90 <= lat <= 90 for lat in self.lat_lim):
             print(f'Latitudes: {self.lat_lim}')
-            raise Exception(f'Latitude values should be between -90 and 90.')
+            raise Exception('Latitude values should be between -90 and 90.')
         
         # Validate Longitudes
         ## Checking range of longitude values
         lon_range = max(self.lon_lim) - min(self.lon_lim)
         if lon_range > 360 or lon_range <= 0:
             if self.download_settings.verbose: print(f'Current longitude range: {lon_range}')
-            raise Exception(f'The range between the maximum and minimum longitude values must be between 0 and 360.')
+            raise Exception('The range between the maximum and minimum longitude values must be between 0 and 360.')
         ## Adjusting values to fit between -180 and 360
         if  min(self.lon_lim) < -180:
-            if self.download_settings.verbose: print(f'Adjusting within -180')
+            if self.download_settings.verbose: print('Adjusting within -180')
             self.lon_lim = [lon + 360.00 for lon in self.lon_lim]
 
 
@@ -787,7 +787,7 @@ class Argo:
         """ A function to validate the start and end date strings passed to select_profiles and
             converts them to datetimes for easier comparison to dataframe values later on.
         """
-        if self.download_settings.verbose: print(f'Validating start and end dates...')
+        if self.download_settings.verbose: print('Validating start and end dates...')
         
         # Parse Strings to Datetime Objects
         try:
@@ -806,7 +806,7 @@ class Argo:
             if self.download_settings.verbose: 
                 print(f'Current start date: {self.start_date}')
                 print(f'Current end date: {self.end_date}')
-            raise ValueError(f'The start date must be in the past when compared to the end date.')
+            raise ValueError('The start date must be in the past when compared to the end date.')
         if self.start_date < datetime(1995, 1, 1, tzinfo=timezone.utc):
             if self.download_settings.verbose: print(f'Current start date: {self.start_date}')
             raise ValueError(f'Start date must be after at least: {datetime(1995, 1, 1, tzinfo=timezone.utc)} for any floats to be active.')
@@ -961,7 +961,7 @@ class Argo:
             during Argo's constructor are deleted. In this function we only 
             reload the necessary dataframes into memory.
         """
-        if self.download_settings.verbose: print(f'Preparing float data for filtering...')
+        if self.download_settings.verbose: print('Preparing float data for filtering...')
         selected_floats_phys = None
         selected_floats_bgc = None
 
@@ -1058,10 +1058,10 @@ class Argo:
         if self.keep_full_geographic: 
             return  [True] * len(dataframe_to_filter)
         
-        if self.download_settings.verbose: print(f'Sorting floats for those within the geographic range...')
+        if self.download_settings.verbose: print('Sorting floats for those within the geographic range...')
 
         # Make points out of profile lat and lons
-        if self.download_settings.verbose: print(f'Creating point list from profiles...')
+        if self.download_settings.verbose: print('Creating point list from profiles...')
         profile_points = np.empty((len(dataframe_to_filter), 2))
         
         # The longitudes in the dataframe are standardized to fall within -180 and 180.
@@ -1070,7 +1070,7 @@ class Argo:
         # only approach.
         if max(self.lon_lim) > 180:
             if self.download_settings.verbose: print(f'The max value in lon_lim is {max(self.lon_lim)}')
-            if self.download_settings.verbose: print(f'Adjusting longitude values...')
+            if self.download_settings.verbose: print('Adjusting longitude values...')
             profile_points[:,0] = dataframe_to_filter['longitude'].apply(lambda x: x + 360 if -180 < x < min(self.lon_lim) else x).values
         else:
             profile_points[:,0] = dataframe_to_filter['longitude'].values
@@ -1079,7 +1079,7 @@ class Argo:
         profile_points[:,1] = dataframe_to_filter['latitude'].values
 
         # Create polygon or box using lat_lim and lon_lim 
-        if self.download_settings.verbose: print(f'Creating polygon...')
+        if self.download_settings.verbose: print('Creating polygon...')
         if len(self.lat_lim) == 2:
             shape = [[max(self.lon_lim), min(self.lat_lim)], # Top-right
                      [max(self.lon_lim), max(self.lat_lim)], # Bottom-right
@@ -1117,7 +1117,7 @@ class Argo:
         if self.start_date == beginning_of_full_range and self.end_date >= end_of_full_range: 
             return [True] * len(dataframe_to_filter)
         
-        if self.download_settings.verbose: print(f'Sorting floats for those within the date range...')
+        if self.download_settings.verbose: print('Sorting floats for those within the date range...')
 
         # Define a t/f array for dates within the range
         profiles_in_range  = ((dataframe_to_filter['date'] > self.start_date) & (dataframe_to_filter['date'] < self.end_date)).tolist()
@@ -1174,7 +1174,7 @@ class Argo:
     def __get_in_ocean_basin(self): 
         """ A function to drop floats/profiles outside of the specified ocean basin.
         """
-        if self.download_settings.verbose: print(f"Sorting floats for those passed in 'ocean' kwarg...")
+        if self.download_settings.verbose: print("Sorting floats for those passed in 'ocean' kwarg...")
         self.selection_frame = self.selection_frame[self.selection_frame['ocean'] == str(self.ocean)]
 
         if self.download_settings.verbose: 
@@ -1370,7 +1370,7 @@ class Argo:
             :return: pd : Dataframe - The dataframe of float data with rows 
                 where measurements were not collected excluded.
         """
-        if self.download_settings.verbose: print(f'Loading float data...')
+        if self.download_settings.verbose: print('Loading float data...')
 
         # Getting the file paths for downloaded .nc files
         directory = Path(self.download_settings.base_dir.joinpath("Profiles"))
