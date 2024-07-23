@@ -910,7 +910,7 @@ class Argo:
         # Finding variables that are not present avaliable variables list
         nonexistent_vars = [x for x in self.float_variables if x not in avaliable_variables]
         if nonexistent_vars:
-            raise Exception(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
+            raise KeyError(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
         
 
     def __validate_float_data_dataframe(self): 
