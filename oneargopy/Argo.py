@@ -13,9 +13,6 @@
 #
 # Imports
 
-# Local
-from Settings import DownloadSettings, SourceSettings
-
 # System
 from pathlib import Path
 import requests
@@ -33,6 +30,8 @@ import cartopy.feature as cf
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import netCDF4
 
+# Local
+from Settings import DownloadSettings, SourceSettings
 
 
 class Argo:
