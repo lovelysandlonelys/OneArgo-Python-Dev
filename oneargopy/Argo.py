@@ -13,12 +13,14 @@
 #
 # Imports
 
-# System
-from pathlib import Path
-import requests
+# System 
+## Standard Imports
 from datetime import datetime, timedelta, timezone
 import shutil
 import gzip
+## Third Party Imports
+from pathlib import Path
+import requests
 import numpy as np
 import matplotlib.path as mpltPath
 from matplotlib.ticker import FixedLocator
