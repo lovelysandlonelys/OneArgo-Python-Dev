@@ -1044,11 +1044,13 @@ class Argo:
             # Add padding to get at least 5 degrees of longitude
             pad = 0.5 * (5.0 - diff)
             minimum -= pad
-            max += pad
+            maximum += pad
             if axis == 'x':
                 ax.set_xlim([minimum, maximum])
             elif axis == 'y':
                 ax.set_ylim([minimum, maximum])
+
+
     def __add_grid_lines(self, ax)-> None:
         """ Function for setting the gridlines of passed graph.
         """
@@ -1067,6 +1069,8 @@ class Argo:
         gl.yformatter = LATITUDE_FORMATTER
         gl.xlabel_style = {'size': 12, 'color': 'black'}
         gl.ylabel_style = {'size': 12, 'color': 'black'}
+
+        
     def __determine_graph_step(self, ax, axis: str)-> int:
         """ A graph to determine the step of the longitude and latitude gridlines.
         """
