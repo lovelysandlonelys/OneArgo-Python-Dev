@@ -1542,7 +1542,7 @@ class Argo:
             # Returning list of calculated lists to be added to dataframe
             return new_nc_variable
 
-        elif column == 'DATE_QC': 
+        if column == 'DATE_QC': 
 
             # Acessing nc variable that we pull date_qc from
             nc_variable = nc_file.variables['JULD_QC'][profiles_to_pull]
@@ -1550,7 +1550,7 @@ class Argo:
             # Returning nc variable
             return nc_variable
 
-        elif column == 'WMOID': 
+        if column == 'WMOID': 
 
             # Parsing float id from file name
             float_id_array = nc_file.variables['PLATFORM_NUMBER'][0]
