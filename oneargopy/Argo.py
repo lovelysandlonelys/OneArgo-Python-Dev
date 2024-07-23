@@ -1493,7 +1493,8 @@ class Argo:
 
             # Clean up dataframe
             if 'PRES' in temp_frame.columns:
-                if self.download_settings.verbose: print(f'Dropping rows where no measurements were taken for {float_id}...')
+                if self.download_settings.verbose:
+                    print(f'Dropping rows where no measurements were taken for {float_id}...')
                 temp_frame = temp_frame.dropna(subset=['PRES', 'PRES_ADJUSTED'])
             
             # Concatonate the final dataframe and the temp dataframe
