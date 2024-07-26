@@ -1677,10 +1677,10 @@ class Argo:
 
         # Unique values for creating grids
         unique_times_num = np.unique(time_values_num)
-        unique_pres = np.unique(pres_values)
+        intp_pres = np.arange(np.ceil(min(pres_values)), np.floor(max(pres_values)))
 
         # Create grid for interpolation
-        time_grid, pres_grid = np.meshgrid(unique_times_num, unique_pres)
+        time_grid, pres_grid = np.meshgrid(unique_times_num, intp_pres)
 
         # Set param_gridded to NaN array with the same shape as the grid
         param_gridded = np.full(time_grid.shape, np.nan)
@@ -1699,11 +1699,11 @@ class Argo:
             aggfunc='first'
         )
 
-        # Reindex the DataFrame to ensure the grid matches the desired shape
-        param_gridded_df = param_gridded_df.reindex(index=unique_pres, columns=unique_times_num)
+        # Reindex the DataFrame to the interpolated depth axis
+        param_gridded_df = param_gridded_df.reindex(index=intp_pres, columns=unique_times_num)
 
-        # Fill missing values by forward filling and then backward filling
-        param_gridded_df = param_gridded_df.fillna(method='ffill', axis=0).fillna(method='bfill', axis=0)
+        # Perform linear interpolation to the new depth axis without extrapolation
+        param_gridded_df.interpolate(method='linear', limit_area='inside', axis=0, inplace=True)
 
         # Assigning data to variable to graph
         param_gridded = param_gridded_df.values
