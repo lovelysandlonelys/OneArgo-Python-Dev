@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # Argo.py
 #------------------------------------------------------------------------------
-# Created By: Savannah Stephenson
-# Creation Date: 05/30/2024
-# Version: 1.0
+# Created By: Savannah Stephenson and Hartmut Frenzel
+# Creation Date: 07/26/2024
+# Version: 0.1 (alpha)
 #------------------------------------------------------------------------------
 """ The Argo class contains the primary functions for downloading and handling
-    data gathered from GDAC.
+    data gathered from the Argo Global Data Assebly Centers.
 """
 #------------------------------------------------------------------------------
 #
@@ -260,13 +260,13 @@ class Argo:
             plt.legend(bbox_to_anchor=(1.05, 0.5), loc='center left')
         # Setting Title
         if len(self.float_ids) == 1:
-            ax.set_title(f'Trajectory for {self.float_ids}', fontsize=18,
+            ax.set_title(f'Trajectory of {self.float_ids[0]}', fontsize=18,
                          fontweight='bold')
         elif len(self.float_ids) < 4:
-            ax.set_title(f'Trajectories for {self.float_ids}', fontsize=18,
+            ax.set_title(f'Trajectories of {self.float_ids}', fontsize=18,
                          fontweight='bold')
         else:
-            ax.set_title('Trajectories for Selected Floats', fontsize=18,
+            ax.set_title('Trajectories of Selected Floats', fontsize=18,
                          fontweight='bold')
         plt.tight_layout()
         # Displaying graph
@@ -300,7 +300,8 @@ class Argo:
         self.__validate_floats_kwarg()
         # Validate passed variables
         self.float_variables = variables
-        if self.float_variables: self.__validate_float_variables_arg()
+        if self.float_variables:
+            self.__validate_float_variables_arg()
         # Check if the user has passed only phys float variables
         if self.float_variables is not None:
             phys_variables = ['TEMP', 'PSAL', 'PRES', 'CNDC']
@@ -313,7 +314,7 @@ class Argo:
             # If the float is a phys float, or if the user has provided no variables
             # or only phys variables then then use the corresponding prof file
             if ((not self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0])
-                or (self.float_variables == None) or (only_phys)):
+                or (self.float_variables is None) or (only_phys)):
                 file_name = f'{wmoid}_prof.nc'
                 files.append(file_name)
             # If the float is a bgc float it will have a corresponding sprof file
@@ -373,10 +374,9 @@ class Argo:
                               'skipping plot...')
                     continue
                 # Otherwise plot the section
-                else:
-                    if self.download_settings.verbose:
-                        print(f'Generating {variable} section plot for float {float_id}...')
-                    self.__plot_section(self.float_data, float_id, variable, visible, save_to)
+                if self.download_settings.verbose:
+                    print(f'Generating {variable} section plot for float {float_id}...')
+                self.__plot_section(self.float_data, float_id, variable, visible, save_to)
 
 
     #######################################################################
@@ -396,7 +396,7 @@ class Argo:
                     if self.download_settings.verbose:
                         print(f'Creating the {directory} directory')
                     directory_path.mkdir()
-                except Exception as e:
+                except OSError as e:
                     if self.download_settings.verbose:
                         print(f'Failed to create the {directory} directory: {e}')
 
@@ -523,7 +523,8 @@ class Argo:
                 if self.download_settings.verbose:
                     print(f'Downloading {file_name} from {url}...')
                 try:
-                    with requests.get(url, stream=True) as r:
+                    with requests.get(url, stream=True,
+                                      timeout=self.download_settings.timeout) as r:
                         r.raise_for_status()
                         with open(first_save_path, 'wb') as f:
                             r.raw.decode_content = True
@@ -564,7 +565,7 @@ class Argo:
             if update_status:
                 print(f'WARNING: Update of {file_name} failed, you are working with outdated data.')
             else:
-                raise Exception('Download failed!' +
+                raise OSError('Download failed!' +
                                 f'{file_name} could not be downloaded at this time.')
 
 
@@ -662,9 +663,9 @@ class Argo:
             Data for physical floats are taken from the prof index
             file and data for BGC floats are taken from the Sprof index file.
         """
-        # Dataframe with womid and date updated for both prof and sprof
-        float_bgc_status_prof = self.prof_index[self.prof_index['is_bgc'] == False][['wmoid',
-                                                                                     'date_update']]
+        # Dataframe with wmoid and date updated for both prof and sprof
+        float_bgc_status_prof = self.prof_index.loc[~self.prof_index['is_bgc'], ['wmoid',
+                                                                                 'date_update']]
         float_bgc_status_sprof = self.sprof_index[['wmoid', 'date_update']]
         # Only keeping rows with most recent date updated
         floats_stats_prof = float_bgc_status_prof.groupby('wmoid',
@@ -742,7 +743,7 @@ class Argo:
             # Check if the string matches the expected format
             self.start_date = datetime.fromisoformat(self.start_date).replace(tzinfo=timezone.utc)
             # end_date is optional and should be set to tomorrow if not provided
-            if self.end_date != None:
+            if self.end_date is not None:
                 self.end_date = datetime.fromisoformat(self.end_date).replace(tzinfo=timezone.utc)
             else:
                 self.end_date = datetime.now(timezone.utc) + timedelta(days=1)
@@ -772,7 +773,7 @@ class Argo:
         if self.download_settings.verbose:
             print("Validating 'outside' keyword argument...")
         if self.outside is not None:
-            if self.outside != 'time' and self.outside != 'space' and self.outside != 'both':
+            if self.outside not in ('time', 'space', 'both'):
                 raise KeyError("The only acceptable values for the 'outside' keyword argument " +
                                "are 'time', 'space', and 'both'.")
 
@@ -783,7 +784,7 @@ class Argo:
         """
         if self.download_settings.verbose:
             print("Validating 'type' keyword argument...")
-        if self.float_type != 'all' and self.float_type != 'phys' and self.float_type != 'bgc':
+        if self.float_type not in ('all', 'phys', 'bgc'):
             raise KeyError("The only acceptable values for the 'type' keyword argument are 'all'," +
                            " 'phys', and 'bgc'.")
 
@@ -821,7 +822,7 @@ class Argo:
         """
         if self.download_settings.verbose:
             print("Validating 'ocean' keyword argument...")
-        if self.ocean != 'A' and self.ocean != 'P' and self.ocean != 'I':
+        if self.ocean not in ('A', 'P', 'I'):
             raise KeyError("The only acceptable values for the 'ocean' keyword argument are 'A' " +
                            "(Atlantic), 'P' (Pacific), and 'I' (Indian).")
 
@@ -919,11 +920,12 @@ class Argo:
             self.sprof_index = self.__load_sprof_dataframe()
             self.prof_index = self.__load_prof_dataframe()
         # We can only validate floats after the dataframes are loaded into memory
-        if self.float_ids: self.__validate_floats_kwarg()
+        if self.float_ids:
+            self.__validate_floats_kwarg()
         # If we aren't filtering from specific floats assign selected frames
         # to the whole index frames
         if self.float_ids is None:
-            self.selected_from_prof_index = self.prof_index[self.prof_index['is_bgc'] == False]
+            self.selected_from_prof_index = self.prof_index[~self.prof_index['is_bgc']]
             self.selected_from_sprof_index = self.sprof_index
         # If we do have specific floats to filter from, assign
         # selected floats by pulling those floats from the
@@ -1155,7 +1157,7 @@ class Argo:
         # Gather bgc profiles for these floats from sprof index frame
         bgc_filter = ((self.float_stats['wmoid'].isin(self.float_ids)) &
                       (self.float_stats['is_bgc'] == True))
-        floats_bgc = self.float_stats[bgc_filter]['wmoid'].tolist()
+        floats_bgc = self.float_stats.loc[bgc_filter, 'wmoid'].tolist()
         floats_bgc = self.sprof_index[self.sprof_index['wmoid'].isin(floats_bgc)]
         # Gather phys profiles for these floats from prof index frame
         phys_filter = ((self.float_stats['wmoid'].isin(self.float_ids)) &
@@ -1286,8 +1288,7 @@ class Argo:
                 return existing_variable_columns
             else:
                 return None
-        else:
-            return None
+        return None
 
 
     def __fill_float_data_dataframe(self, files: list)-> pd:
@@ -1370,8 +1371,8 @@ class Argo:
                                                                     number_of_levels, static_length)
                 if column.endswith('_QC'):
                     # Replace b'n' and b' ' with b'0' so that all values are numbers
-                    modified_column = [b'0' if item == b'n' or item == b' ' else item
-                                        for item in column_values]
+                    modified_column = [b'0' if item in (b'n', b' ', b'') else item
+                                       for item in column_values]
                     # These columns (DATE_QC and POSITION_QC) are always present, convert to int8
                     column_values = np.char.decode(modified_column, 'utf-8').astype('int8')
                 if column == 'DIRECTION':
@@ -1390,11 +1391,12 @@ class Argo:
                     column_values = self.__read_from_paramater_nc_variable(nc_variable)
                     if column.endswith('_QC'):
                         # Replace b'n' and b' ' with b'0' so that all values are numbers
-                        modified_column = [b'0' if item == b'n' or item == b' ' else item
+                        modified_column = [b'0' if item in (b'n', b' ', b'') else item
                                            for item in column_values]
                         # Floats that do not have this column will have NaN here; convert to float
                         column_values = np.char.decode(modified_column, 'utf-8').astype('float')
-                    # Add list of values gathered for column to the temp dataframe
+                            
+                        # Add list of values gathered for column to the temp dataframe
                     temp_frame[column] = column_values
             # Clean up dataframe
             if 'PRES' in temp_frame.columns:
@@ -1450,6 +1452,8 @@ class Argo:
             nc_variable = [int(float_id)] * number_of_profiles
             # Returning nc variable
             return nc_variable
+        # this line should not be reached
+        raise ValueError(f'Unexpected column name: {column}')
 
 
     def __read_from_static_nc_variable(self, variable_columns: list, nc_variable,
@@ -1458,8 +1462,8 @@ class Argo:
             :param: variable_columns : list - The list of variable columns in the .nc file. This
                 determines how many times the static variables should be repeated to match the
                 expected length of the dataframe.
-            :param: nc_variable - The .nc variable we're reading from.
-            :param: number_of_levels : int - The number of depth levels the float completed per profile.
+            :param: nc_variable - The variable we're reading from.
+            :param: number_of_levels : int - The number of depth levels per profile.
             :param: number_of_profiles : int - The number of profiles being pulled from a float.
             :return: list - The list of values for that nc_variable.
         """
@@ -1519,7 +1523,7 @@ class Argo:
         # Titles
         plt.xlabel('Time')
         plt.ylabel('Pressure (dbar)')
-        plt.title(f'Section Plot of {variable} at Float {float_id}')
+        plt.title(f'{variable} Section for Float {float_id}')
         # Saving Graph
         if save_to is not None:
             save_path = save_to.joinpath(f'section_plot_{float_id}_{variable}')
