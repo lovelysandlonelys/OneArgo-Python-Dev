@@ -1650,7 +1650,7 @@ class Argo:
         
         # Saving Graph
         if save_to is not None:  
-            save_path = save_to.joinpath(f'section_plot_{float_id}_{variable}')
+            save_path = save_to.joinpath(f'section_{float_id}_{variable}')
             plt.savefig(f'{save_path}')
 
         # Displaying graph
