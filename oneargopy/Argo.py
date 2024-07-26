@@ -81,7 +81,7 @@ class Argo:
             print('\nTransferring index files into dataframes...')
         self.sprof_index  = self.__load_sprof_dataframe()
         self.prof_index = self.__load_prof_dataframe()
-        # Add column noting if a float profile is also in the sprof_index, meaning that it is a bgc float
+        # Add column noting if a profile is also in the sprof_index, which is true for bgc floats
         if self.download_settings.verbose:
             print('Marking bgc floats in prof_index dataframe...')
         self.__mark_bgcs_in_prof()
@@ -92,14 +92,14 @@ class Argo:
         # Print number of floats
         if self.download_settings.verbose:
             self.__display_floats()
-            print('Initialize is finished!\n\n')
+            print('Initialization is finished\n\n')
         if not self.download_settings.keep_index_in_memory:
             if self.download_settings.verbose:
                 print('Removing dataframes from memory...')
             del self.sprof_index
             del self.prof_index
-    
-    
+
+
     #######################################################################
     # Public Functions
     #######################################################################
@@ -170,7 +170,8 @@ class Argo:
         self.start_date = start_date
         self.end_date = end_date
         self.outside = kwargs.get('outside')
-        self.float_type = kwargs.get('type') if kwargs.get('type') is not None else self.download_settings.float_type
+        self.float_type = kwargs.get('type') if kwargs.get('type') is not None \
+            else self.download_settings.float_type
         self.float_ids = kwargs.get('floats')
         self.ocean = kwargs.get('ocean')
         self.sensor = kwargs.get('sensor')
@@ -200,9 +201,10 @@ class Argo:
         if self.download_settings.verbose:
             print(f'Floats Selected: {narrowed_profiles.keys()}\n')
         return narrowed_profiles
-    
-    
-    def trajectories(self, floats: int | list | dict, visible: bool = True, save_to: str = None)-> None:
+
+
+    def trajectories(self, floats: int | list | dict, visible: bool = True,
+                     save_to: str = None)-> None:
         """ This function plots the trajectories of one or more specified float(s)
             :param: floats : int | list | dict - Floats to plot.
             :param: visible : bool - A boolean value determining if the trajectories
@@ -240,11 +242,12 @@ class Argo:
         ax.add_feature(cf.COASTLINE, linewidth=1.5)
         ax.add_feature(cf.LAND, zorder=2, edgecolor='k', facecolor='lightgray')
         # Plot trajectories of passed floats with colorblind friendly pallet
-        colors = ("#56B4E9", "#009E73", "#F0E442", "#0072B2", 
+        colors = ("#56B4E9", "#009E73", "#F0E442", "#0072B2",
                   "#CC79A7", "#D55E00", "#E69F00", "#000000")
         for i, float_id in enumerate(self.float_ids):
             specific_float_profiles = floats_profiles[floats_profiles['wmoid'] == float_id]
-            ax.plot(specific_float_profiles['longitude'].values, specific_float_profiles['latitude'].values,
+            ax.plot(specific_float_profiles['longitude'].values,
+                    specific_float_profiles['latitude'].values,
                     marker='.', alpha=0.7, linestyle='-', linewidth=2, transform=ccrs.Geodetic(),
                     label=f'Float {float_id}', color=colors[i % len(colors)])
         # Set graph limits based on passed points
@@ -276,8 +279,8 @@ class Argo:
             else:
                 save_path = save_to.joinpath(f'trajectories_plot_{len(self.float_ids)}')
             plt.savefig(f'{save_path}')
-    
-    
+
+
     def load_float_data(self, floats: int | list | dict, variables: str | list = None)-> pd:
         """ A function to load float data into memory.
             :param: floats : int | list | dict - A float or list of floats to
@@ -309,7 +312,8 @@ class Argo:
         for wmoid in self.float_ids:
             # If the float is a phys float, or if the user has provided no variables
             # or only phys variables then then use the corresponding prof file
-            if (not self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0]) or (self.float_variables == None) or (only_phys):
+            if ((not self.float_stats.loc[self.float_stats['wmoid'] == wmoid, 'is_bgc'].values[0])
+                or (self.float_variables == None) or (only_phys)):
                 file_name = f'{wmoid}_prof.nc'
                 files.append(file_name)
             # If the float is a bgc float it will have a corresponding sprof file
@@ -321,9 +325,10 @@ class Argo:
         # Read from nc files into dataframe
         float_data_frame = self.__fill_float_data_dataframe(files)
         return float_data_frame
-    
-    
-    def sections(self, float_data: pd, variables: str | list, visible: bool = True, save_to: str = None)-> None:
+
+
+    def sections(self, float_data: pd, variables: str | list, visible: bool = True,
+                 save_to: str = None)-> None:
         """ A function to graph section plots for the passed variables using data
             from the passed float_data dataframe.
             :param: float_data : pd - A dataframe created from load_float_data
@@ -355,7 +360,7 @@ class Argo:
             # Check that the float has more than one profile (more than one cycle number)
             if len(unique_values) == len(filtered_df):
                 if self.download_settings.verbose:
-                    print(f'Float {float_id} only has one profile provided per depth, skipping float...')
+                    print(f'Float {float_id} has only one profile, skipping this float...')
                 continue
             print(f'Generating section plots for float {float_id}...')
             for variable in self.float_variables:
@@ -364,15 +369,16 @@ class Argo:
                 # Check that the float actually has data for the passed variable
                 if float_variable_data.isna().all():
                     if self.download_settings.verbose:
-                        print(f'Float {float_id} has no data for variable {variable}, skipping plot...')
+                        print(f'Float {float_id} has no data for variable {variable}, ' +
+                              'skipping plot...')
                     continue
                 # Otherwise plot the section
                 else:
                     if self.download_settings.verbose:
-                        print(f'Generating section plot for float {float_id} with variable {variable}...')
+                        print(f'Generating {variable} section plot for float {float_id}...')
                     self.__plot_section(self.float_data, float_id, variable, visible, save_to)
-    
-    
+
+
     #######################################################################
     # Private Functions
     #######################################################################
@@ -384,17 +390,17 @@ class Argo:
             directory_path = self.download_settings.base_dir.joinpath(directory)
             if directory_path.exists():
                 if self.download_settings.verbose:
-                    print(f'The {directory_path} directory already exists!')
+                    print(f'The {directory_path} directory already exists')
             else:
                 try:
                     if self.download_settings.verbose:
-                        print(f'Creating the {directory} directory!')
+                        print(f'Creating the {directory} directory')
                     directory_path.mkdir()
                 except Exception as e:
                     if self.download_settings.verbose:
                         print(f'Failed to create the {directory} directory: {e}')
-    
-    
+
+
     def __download_file(self, file_name: str) -> None:
         """ A function to download and save an index file from GDAC sources.
             :param: filename : str - The name of the file we are downloading.
@@ -412,7 +418,8 @@ class Argo:
                 # Check if the settings allow for updates of index files
                 if self.download_settings.update == 0:
                     if self.download_settings.verbose:
-                        print('The download settings have update set to 0, indicating that we do not want to update index files.')
+                        print('The download settings have update set to 0, ' +
+                              'indicating index files will not be updated.')
                 else:
                     last_modified_time = Path(file_path).stat().st_mtime
                     current_time = datetime.now().timestamp()
@@ -440,8 +447,8 @@ class Argo:
             if self.download_settings.verbose:
                 print(f'{file_name} needs to be downloaded.')
             self.__try_download(file_name, False)
-    
-    
+
+
     def __check_nc_update(self, file_path: Path, file_name: str)-> bool:
         """ A function to check if an .nc file needs to be updated.
             :param: file_path : Path - The file_path for the .nc file we
@@ -453,27 +460,32 @@ class Argo:
         # Pull float id from file_name
         float_id = file_name.split('_')[0]
         # Get float's latest update date
-        if self.prof_index.loc[self.prof_index['wmoid'] == int(float_id), 'is_bgc'].any() and file_name.endswith('_prof.nc'):
-            # Use the prof update date for the bgc float because the user didn't pass any bgc sensors
+        if (self.prof_index.loc[self.prof_index['wmoid'] == int(float_id), 'is_bgc'].any()
+            and file_name.endswith('_prof.nc')):
+            # Use the prof update date for the bgc float because user didn't pass any bgc sensors
             dates_for_float = self.prof_index[self.prof_index['wmoid'] == int(float_id)]
-            index_update_date = pd.to_datetime(dates_for_float['date_update'].drop_duplicates().max())
+            index_update_date = pd.to_datetime( \
+                dates_for_float['date_update'].drop_duplicates().max())
         else:
-            index_update_date = pd.to_datetime(self.float_stats.loc[self.float_stats['wmoid'] == int(float_id), 'date_update'].iloc[0])
+            index_update_date = pd.to_datetime( \
+                self.float_stats.loc[self.float_stats['wmoid'] == int(float_id),
+                                     'date_update'].iloc[0])
         # Read DATE_UPDATE from .nc file
         nc_file = netCDF4.Dataset(file_path, mode='r')
         netcdf_update_date = nc_file.variables['DATE_UPDATE'][:]
         nc_file.close()
         # Convert the byte strings of file_update_date into a regular string
         julian_date_str = b''.join(netcdf_update_date).decode('utf-8')
-        netcdf_update_date = datetime.strptime(julian_date_str, '%Y%m%d%H%M%S').replace(tzinfo=timezone.utc)
+        netcdf_update_date = datetime.strptime(julian_date_str,
+                                               '%Y%m%d%H%M%S').replace(tzinfo=timezone.utc)
         netcdf_update_date = np.datetime64(netcdf_update_date)
         # If the .nc file's update date is less than
         # the date in the index file return true
         # indicating that the .nc file must be updated
         # otherwise return false
         return bool(netcdf_update_date < index_update_date)
-    
-    
+
+
     def __try_download(self, file_name: str, update_status: bool)-> None:
         """ A function that attempts to download a file from both GDAC sources.
             :param: file_name : str - The name of the file to download
@@ -528,7 +540,7 @@ class Argo:
                         first_save_path.unlink()
                         success = True
                     elif file_name.endswith('.nc'):
-                        # Check that the file can be read, only keep download if file can be read/acessed
+                        # Check that the file can be read, only keep download if file can be read
                         try:
                             nc_file = netCDF4.Dataset(first_save_path, mode='r')
                             nc_file.close()
@@ -541,7 +553,7 @@ class Argo:
                         if self.download_settings.verbose:
                             print('Success!')
                         # Exit the loop if download is successful so we don't try additional
-                        # sources for no reason.
+                        # sources for no reason
                         break
                 except requests.RequestException as e:
                     print(f'Error encountered: {e}. Trying next host...')
@@ -550,19 +562,20 @@ class Argo:
         # If ultimately nothing could be downloaded
         if not success:
             if update_status:
-                print(f'WARNING: Update for {file_name} failed, you are working with out of date data.')
+                print(f'WARNING: Update of {file_name} failed, you are working with outdated data.')
             else:
-                raise Exception(f'Download failed! {file_name} could not be downloaded at this time.')
-    
-    
+                raise Exception('Download failed!' +
+                                f'{file_name} could not be downloaded at this time.')
+
+
     def __load_sprof_dataframe(self) -> pd:
         """ A function to load the sprof index file into a dataframe for easier reference.
         """
         file_name = "argo_synthetic-profile_index.txt"
-        # The header is 8 here because there are 8 lines in both index files devoted to header information.
         file_path = Path.joinpath(self.download_settings.base_dir, 'Index', file_name)
-        sprof_index = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'],
-                                date_format='%Y%m%d%H%M%S')
+        # There are 8 header lines in both index files
+        sprof_index = pd.read_csv(file_path, delimiter=',', header=8,
+                                  parse_dates=['date','date_update'], date_format='%Y%m%d%H%M%S')
         # Parsing out variables in first column: file
         dacs = sprof_index['file'].str.split('/').str[0]
         sprof_index.insert(1, "dacs", dacs)
@@ -576,7 +589,9 @@ class Argo:
         # R: raw data, A: adjusted mode (real-time adjusted),
         # D: delayed mode quality controlled
         data_type_mapping = {np.nan: 0, 'R':1, 'A':2, 'D':3 }
-        mapped_data_types_split = data_types_split.apply(lambda lst: [data_type_mapping.get(x, 0) if pd.notna(x) else 0 for x in lst])
+        mapped_data_types_split = data_types_split.apply(lambda lst: [data_type_mapping.get(x, 0)
+                                                                      if pd.notna(x) else 0
+                                                                      for x in lst])
         # Create a new DataFrame from the split parameters
         expanded_df = pd.DataFrame({
             'index': sprof_index.index.repeat(parameters_split.str.len()),
@@ -587,7 +602,8 @@ class Argo:
             # Line here to suppress warning about fillna()
             # being depreciated in future versions of pandas:
             # with pd.option_context('future.no_silent_downcasting', True):
-        result_df = expanded_df.pivot(index='index', columns='parameter', values='data_type').fillna(0).infer_objects(copy=False).astype('int8')
+        result_df = expanded_df.pivot(index='index', columns='parameter', \
+            values='data_type').fillna(0).infer_objects(copy=False).astype('int8')
         # Fill in source_settings information based off of sprof index file before removing rows
         if self.download_settings.verbose:
             print('Filling in source settings information...')
@@ -602,16 +618,16 @@ class Argo:
         sprof_index.insert(0, "profile_index", 0)
         sprof_index['profile_index'] = sprof_index.groupby('wmoid')['date'].cumcount() + 1
         return sprof_index
-    
-    
+
+
     def __load_prof_dataframe(self) -> pd:
         """ A function to load the prof index file into a dataframe for easier reference.
         """
         file_name = "ar_index_global_prof.txt"
         file_path = Path.joinpath(self.download_settings.base_dir, 'Index', file_name)
-        # The header is 8 here because there are 8 lines in both index files devoted to header information.
-        prof_index = pd.read_csv(file_path, delimiter=',', header=8, parse_dates=['date','date_update'],
-                                date_format='%Y%m%d%H%M%S')
+        # There are 8 header lines in this index file
+        prof_index = pd.read_csv(file_path, delimiter=',', header=8,
+                                 parse_dates=['date','date_update'], date_format='%Y%m%d%H%M%S')
         # Splitting up parts of the first column
         dacs = prof_index['file'].str.split('/').str[0]
         prof_index.insert(0, "dacs", dacs)
@@ -628,8 +644,8 @@ class Argo:
             print('Filling in source settings information...')
         self.source_settings.set_dacs(prof_index)
         return prof_index
-    
-    
+
+
     def __mark_bgcs_in_prof(self):
         """ A function to mark whether the floats listed in prof_index are
             biogeochemical floats or not.
@@ -637,8 +653,8 @@ class Argo:
         bgc_floats = self.sprof_index['wmoid'].unique()
         is_bgc = self.prof_index['wmoid'].isin(bgc_floats)
         self.prof_index.insert(1, "is_bgc", is_bgc)
-    
-    
+
+
     def __load_float_stats(self)-> pd:
         """ Function to create a dataframe with float IDs,
             their is_bgc status, and their most recent update
@@ -647,19 +663,22 @@ class Argo:
             file and data for BGC floats are taken from the Sprof index file.
         """
         # Dataframe with womid and date updated for both prof and sprof
-        float_bgc_status_prof = self.prof_index[self.prof_index['is_bgc'] == False][['wmoid', 'date_update']]
+        float_bgc_status_prof = self.prof_index[self.prof_index['is_bgc'] == False][['wmoid',
+                                                                                     'date_update']]
         float_bgc_status_sprof = self.sprof_index[['wmoid', 'date_update']]
         # Only keeping rows with most recent date updated
-        floats_stats_prof = float_bgc_status_prof.groupby('wmoid', as_index=False)['date_update'].max()
-        floats_stats_sprof = float_bgc_status_sprof.groupby('wmoid', as_index=False)['date_update'].max()
+        floats_stats_prof = float_bgc_status_prof.groupby('wmoid',
+                                                          as_index=False)['date_update'].max()
+        floats_stats_sprof = float_bgc_status_sprof.groupby('wmoid',
+                                                            as_index=False)['date_update'].max()
         # Adding the is_bgc column
         floats_stats_sprof['is_bgc'] = True
         floats_stats_prof['is_bgc'] = False
         # Combining the two dataframes for one refrence frame for all floats
         floats_stats = pd.concat([floats_stats_sprof, floats_stats_prof]).sort_values(by='wmoid')
         return floats_stats
-    
-    
+
+
     def __display_floats(self) -> None:
         """ A function to display information about the number of floats initially
             observed in the unfiltered dataframes.
@@ -670,8 +689,8 @@ class Argo:
         bgc_floats = self.sprof_index['wmoid'].unique()
         profiles = self.sprof_index['file'].unique()
         print(f"{len(bgc_floats)} BGC floats with {len(profiles)} profiles found.")
-    
-    
+
+
     def __validate_lon_lat_limits(self)-> None:
         """ Function to validate the length, order, and contents of
             longitude and latitude limits passed to select_profiles.
@@ -686,8 +705,10 @@ class Argo:
                 if self.download_settings.verbose:
                     print(f'Longitude Limits: min={self.lon_lim[0]} max={self.lon_lim[1]}')
                     print(f'Latitude Limits: min={self.lat_lim[0]} max={self.lat_lim[1]}')
-                raise KeyError('When passing longitude and latitude lists using the [min, max] format, the max value must be greater than the min value.')
-            if (abs(self.lon_lim[1] - self.lon_lim[0] - 360.0) < self.epsilon) and (abs(self.lat_lim[1] - self.lat_lim[0] - 180.0) < self.epsilon):
+                raise KeyError('When passing longitude and latitude lists using the [min, max] ' +
+                               'format, the max value must be greater than the min value.')
+            if ((abs(self.lon_lim[1] - self.lon_lim[0] - 360.0) < self.epsilon) and
+                (abs(self.lat_lim[1] - self.lat_lim[0] - 180.0) < self.epsilon)):
                 self.keep_full_geographic = True
             else:
                 self.keep_full_geographic = False
@@ -696,19 +717,20 @@ class Argo:
             print(f'Latitudes: {self.lat_lim}')
             raise KeyError('Latitude values should be between -90 and 90.')
         # Validate Longitudes
-        ## Checking range of longitude values
+        # Checking range of longitude values
         lon_range = max(self.lon_lim) - min(self.lon_lim)
         if lon_range > 360 or lon_range <= 0:
             if self.download_settings.verbose:
                 print(f'Current longitude range: {lon_range}')
-            raise KeyError('The range between the maximum and minimum longitude values must be between 0 and 360.')
-        ## Adjusting values to fit between -180 and 360
+            raise KeyError('The range between the maximum and minimum longitude values must be ' +
+                           'between 0 and 360.')
+        # Adjusting values to fit between -180 and 360
         if  min(self.lon_lim) < -180:
             if self.download_settings.verbose:
                 print('Adjusting within -180')
             self.lon_lim = [lon + 360.00 for lon in self.lon_lim]
-    
-    
+
+
     def __validate_start_end_dates(self):
         """ A function to validate the start and end date strings passed to select_profiles and
             converts them to datetimes for easier comparison to dataframe values later on.
@@ -725,22 +747,24 @@ class Argo:
             else:
                 self.end_date = datetime.now(timezone.utc) + timedelta(days=1)
         except ValueError:
-            print(f" Start date: {self.start_date} or end date: {self.end_date} is not in the expected format 'yyyy-mm-dd'")
+            print(f" Start date: {self.start_date} or end date: {self.end_date} is not in the " +
+                  "expected format 'yyyy-mm-dd'")
         # Validate datetimes
         if self.start_date > self.end_date:
             if self.download_settings.verbose:
                 print(f'Current start date: {self.start_date}')
                 print(f'Current end date: {self.end_date}')
-            raise ValueError('The start date must be in the past when compared to the end date.')
+            raise ValueError('The start date must be before the end date.')
         if self.start_date < datetime(1995, 1, 1, tzinfo=timezone.utc):
             if self.download_settings.verbose:
                 print(f'Current start date: {self.start_date}')
-            raise ValueError(f'Start date must be after at least: {datetime(1995, 1, 1, tzinfo=timezone.utc)} for any floats to be active.')
+            raise ValueError('Start date must be after at least: ' +
+                             f'{datetime(1995, 1, 1, tzinfo=timezone.utc)}.')
         # Set to datetime64 for dataframe comparisons
         self.start_date = np.datetime64(self.start_date)
         self.end_date = np.datetime64(self.end_date)
-    
-    
+
+
     def __validate_outside_kwarg(self):
         """ A function to validate the value of the
             optional 'outside' keyword argument.
@@ -749,9 +773,10 @@ class Argo:
             print("Validating 'outside' keyword argument...")
         if self.outside is not None:
             if self.outside != 'time' and self.outside != 'space' and self.outside != 'both':
-                raise KeyError("The only acceptable values for the 'outside' keyword argument are 'time', 'space', and 'both'.")
-    
-    
+                raise KeyError("The only acceptable values for the 'outside' keyword argument " +
+                               "are 'time', 'space', and 'both'.")
+
+
     def __validate_type_kwarg(self):
         """ A function to validate the value of the
             optional 'type' keyword argument.
@@ -759,9 +784,10 @@ class Argo:
         if self.download_settings.verbose:
             print("Validating 'type' keyword argument...")
         if self.float_type != 'all' and self.float_type != 'phys' and self.float_type != 'bgc':
-            raise KeyError("The only acceptable values for the 'type' keyword argument are 'all', 'phys', and 'bgc'.")
-    
-    
+            raise KeyError("The only acceptable values for the 'type' keyword argument are 'all'," +
+                           " 'phys', and 'bgc'.")
+
+
     def __validate_floats_kwarg(self):
         """ A function to validate the 'floats' keyword argument.
             The 'floats' must be a list even if it is a single float.
@@ -782,11 +808,13 @@ class Argo:
         else:
             self.float_profiles_dict = None
         # Finding float IDs that are not present in the index dataframes
-        missing_floats = [float_id for float_id in self.float_ids if float_id not in self.prof_index['wmoid'].values]
+        missing_floats = [float_id for float_id in self.float_ids if float_id not in
+                          self.prof_index['wmoid'].values]
         if missing_floats:
-            raise KeyError(f"The following float IDs do not exist in the dataframes: {missing_floats}")
-    
-    
+            raise KeyError("The following float IDs do not exist in the dataframes: " +
+                           f"{missing_floats}")
+
+
     def __validate_ocean_kwarg(self):
         """ A function to validate the value of the
             optional 'ocean' keyword argument.
@@ -794,9 +822,10 @@ class Argo:
         if self.download_settings.verbose:
             print("Validating 'ocean' keyword argument...")
         if self.ocean != 'A' and self.ocean != 'P' and self.ocean != 'I':
-            raise KeyError("The only acceptable values for the 'ocean' keyword argument are 'A' (Atlantic), 'P' (Pacific), and 'I' (Indian).")
-    
-    
+            raise KeyError("The only acceptable values for the 'ocean' keyword argument are 'A' " +
+                           "(Atlantic), 'P' (Pacific), and 'I' (Indian).")
+
+
     def __validate_float_variables_arg(self):
         """ A function to validate the value of the
             optional 'variables' passed to
@@ -808,11 +837,13 @@ class Argo:
         if not isinstance(self.float_variables, list):
             self.float_variables = [self.float_variables]
         # Finding variables that are not present avaliable variables list
-        nonexistent_vars = [x for x in self.float_variables if x not in self.source_settings.avail_vars]
+        nonexistent_vars = [x for x in self.float_variables if x not in
+                            self.source_settings.avail_vars]
         if nonexistent_vars:
-            raise KeyError(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
-    
-    
+            raise KeyError("The following variables do not exist in the dataframes: " +
+                           f"{nonexistent_vars}")
+
+
     def __validate_float_variables_and_permutations_arg(self):
         """ A function to validate the value of the
             optional 'variables' passed to
@@ -832,9 +863,10 @@ class Argo:
         # Finding variables that are not present avaliable variables list
         nonexistent_vars = [x for x in self.float_variables if x not in avaliable_variables]
         if nonexistent_vars:
-            raise KeyError(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
-    
-    
+            raise KeyError("The following variables do not exist in the dataframes: " +
+                           f"{nonexistent_vars}")
+
+
     def __validate_float_data_dataframe(self):
         """ A function to validate a dataframe passed
             to sections() so ensure that it has the
@@ -848,18 +880,19 @@ class Argo:
         # Identify missing columns
         missing_columns = set(required_columns) - set(self.float_data.columns)
         if missing_columns:
-            raise KeyError(f"The following columns are missing from the DataFrame: {missing_columns}")
-    
-    
+            raise KeyError("The following columns are missing from the dataframe: " +
+                           f"{missing_columns}")
+
+
     def __validate_plot_save_path(self, save_path: Path):
         """ A funciton to validate that the save path passed
             actually exists.
         """
         if not save_path.exists():
-            print(f'{save_path} not found!')
+            print(f'{save_path} not found')
             raise FileNotFoundError
-    
-    
+
+
     def __prepare_selection(self):
         """ A function that determines what dataframes will be loaded/used
             when selecting floats. We determine what dataframes to load
@@ -899,23 +932,28 @@ class Argo:
         else:
             if self.float_type != 'phys':
                 # Make a list of bgc floats that the user wants
-                bgc_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == True)
+                bgc_filter = ((self.float_stats['wmoid'].isin(self.float_ids)) &
+                              (self.float_stats['is_bgc'] == True))
                 selected_floats_bgc = self.float_stats[bgc_filter]['wmoid'].tolist()
                 # Gather bgc profiles for these floats from sprof index frame
-                self.selected_from_sprof_index = self.sprof_index[self.sprof_index['wmoid'].isin(selected_floats_bgc)]
+                self.selected_from_sprof_index = \
+                    self.sprof_index[self.sprof_index['wmoid'].isin(selected_floats_bgc)]
             if self.float_type != 'bgc':
                 # Make a list of phys floats that the user wants
-                phys_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == False)
+                phys_filter = ((self.float_stats['wmoid'].isin(self.float_ids)) &
+                               (self.float_stats['is_bgc'] == False))
                 selected_floats_phys = self.float_stats[phys_filter]['wmoid'].tolist()
                 # Gather phys profiles for these floats from prof index frame
-                self.selected_from_prof_index = self.prof_index[self.prof_index['wmoid'].isin(selected_floats_phys)]
+                self.selected_from_prof_index = \
+                    self.prof_index[self.prof_index['wmoid'].isin(selected_floats_phys)]
         if self.download_settings.verbose:
-            num_unique_floats = len(self.selected_from_sprof_index['wmoid'].unique()) + len(self.selected_from_prof_index['wmoid'].unique())
-            print(f"We will filter through {num_unique_floats} floats!")
+            num_unique_floats = len(self.selected_from_sprof_index['wmoid'].unique()) + \
+                len(self.selected_from_prof_index['wmoid'].unique())
+            print(f"Filtering through {num_unique_floats} floats")
             num_profiles = len(self.selected_from_sprof_index) + len(self.selected_from_prof_index)
-            print(f'There are {num_profiles} profiles associated with these floats!\n')
-    
-    
+            print(f'There are {num_profiles} profiles associated with these floats\n')
+
+
     def __narrow_profiles_by_criteria(self)-> dict:
         """ A function to narrow down the available profiles to only those
             that meet the criteria passed to select_profiles.
@@ -927,12 +965,14 @@ class Argo:
             # Empty df for concat
             self.selection_frame_phys = pd.DataFrame()
         else:
-            self.selection_frame_phys = self.__get_in_time_and_space_constraints(self.selected_from_prof_index)
+            self.selection_frame_phys = \
+                self.__get_in_time_and_space_constraints(self.selected_from_prof_index)
         if self.float_type == 'phys' or self.selected_from_sprof_index.empty:
             # Empty df for concat
             self.selection_frame_bgc = pd.DataFrame()
         else:
-            self.selection_frame_bgc = self.__get_in_time_and_space_constraints(self.selected_from_sprof_index)
+            self.selection_frame_bgc = \
+                self.__get_in_time_and_space_constraints(self.selected_from_sprof_index)
         # Set the selection frame
         self.selection_frame = pd.concat([self.selection_frame_bgc, self.selection_frame_phys])
         # Remove extraneous frames
@@ -942,18 +982,19 @@ class Argo:
         del self.selection_frame_bgc
         del self.selection_frame_phys
         if self.download_settings.verbose:
-            print(f"{len(self.selection_frame['wmoid'].unique())} floats selected!")
-            print(f'{len(self.selection_frame)} profiles selected according to time and space constraints!')
+            print(f"{len(self.selection_frame['wmoid'].unique())} floats selected")
+            print(f'{len(self.selection_frame)} profiles selected according to time and space ' +
+                  'constraints')
         # Filter by other constraints, these functions will use self.selection_frame
         # so we don't have to pass a frame
-        if self.ocean: 
+        if self.ocean:
             self.__get_in_ocean_basin()
         # other narrowing functions that act on created selection frame...
         # Convert the working dataframe into a dictionary
         selected_floats_dict = self.__dataframe_to_dictionary()
         return selected_floats_dict
-    
-    
+
+
     def __get_in_geographic_range(self, dataframe_to_filter: pd)-> list:
         """ A function to create and return a true false array indicating
             profiles that fall within the geographic range.
@@ -976,7 +1017,10 @@ class Argo:
             if self.download_settings.verbose:
                 print(f'The max value in lon_lim is {max(self.lon_lim)}')
                 print('Adjusting longitude values...')
-            profile_points[:,0] = dataframe_to_filter['longitude'].apply(lambda x: x + 360 if -180 < x < min(self.lon_lim) else x).values
+            profile_points[:,0] = dataframe_to_filter['longitude'].apply(lambda x: x + 360
+                                                                         if -180 < x <
+                                                                         min(self.lon_lim)
+                                                                         else x).values
         else:
             profile_points[:,0] = dataframe_to_filter['longitude'].values
         # Latitudes in the dataframe are good to go
@@ -998,11 +1042,12 @@ class Argo:
         profiles_in_range = path.contains_points(profile_points)
         if self.download_settings.verbose:
             profiles_in_range_dataframe = dataframe_to_filter[profiles_in_range]
-            print(f"{len(profiles_in_range_dataframe['wmoid'].unique())} floats fall within the geographic range!")
-            print(f'{len(profiles_in_range_dataframe)} profiles associated with those floats!')
+            print(f"{len(profiles_in_range_dataframe['wmoid'].unique())} floats fall within " +
+                  "the geographic range")
+            print(f'{len(profiles_in_range_dataframe)} profiles associated with those floats')
         return profiles_in_range
-    
-    
+
+
     def __get_in_date_range(self, dataframe_to_filter: pd)-> list:
         """ A function to create and return a true false array indicating
             profiles that fall within the date range.
@@ -1019,14 +1064,16 @@ class Argo:
         if self.download_settings.verbose:
             print('Sorting floats for those within the date range...')
         # Define a t/f array for dates within the range
-        profiles_in_range  = ((dataframe_to_filter['date'] > self.start_date) & (dataframe_to_filter['date'] < self.end_date)).tolist()
+        profiles_in_range  = ((dataframe_to_filter['date'] > self.start_date) &
+                              (dataframe_to_filter['date'] < self.end_date)).tolist()
         if self.download_settings.verbose:
             profiles_in_range_dataframe = dataframe_to_filter[profiles_in_range]
-            print(f"{len(profiles_in_range_dataframe['wmoid'].unique())} floats fall within the date range!")
-            print(f'{len(profiles_in_range_dataframe)} profiles associated with those floats!')
+            print(f"{len(profiles_in_range_dataframe['wmoid'].unique())} floats fall within " +
+                  'the date range')
+            print(f'{len(profiles_in_range_dataframe)} profiles associated with those floats')
         return profiles_in_range
-    
-    
+
+
     def __get_in_time_and_space_constraints(self, dataframe_to_filter: pd)-> pd:
         """ A function to apply the 'outside' kwarg constraints to the results after filtering by
             space and time.
@@ -1039,7 +1086,9 @@ class Argo:
         profiles_in_time = np.array(profiles_in_time, dtype=bool)
         constraints = profiles_in_time & profiles_in_space
         floats_in_time_and_space = dataframe_to_filter[constraints]
-        floats_in_time_and_space = np.array(dataframe_to_filter['wmoid'].isin(floats_in_time_and_space['wmoid']), dtype=bool)
+        floats_in_time_and_space = \
+            np.array(dataframe_to_filter['wmoid'].isin(floats_in_time_and_space['wmoid']),
+                     dtype=bool)
         # Filter passed dataframe by time and space constraints to
         # create a new dataframe to return as part of the selection frame
         if self.outside == 'time':
@@ -1063,19 +1112,21 @@ class Argo:
             constraints = floats_in_time_and_space
             selection_frame = dataframe_to_filter[constraints]
         return selection_frame
-    
-    
+
+
     def __get_in_ocean_basin(self):
         """ A function to drop floats/profiles outside of the specified ocean basin.
         """
         if self.download_settings.verbose:
             print("Sorting floats for those passed in 'ocean' kwarg...")
-        self.selection_frame = self.selection_frame[self.selection_frame['ocean'] == str(self.ocean)]
+        self.selection_frame = self.selection_frame[self.selection_frame['ocean'] ==
+                                                    str(self.ocean)]
         if self.download_settings.verbose:
-            print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within the ocean basin!")
-            print(f'{len(self.selection_frame)} profiles fall within the ocean basin!')
-    
-    
+            print(f"{len(self.selection_frame['wmoid'].unique())} floats fall within " +
+                  'the ocean basin')
+            print(f'{len(self.selection_frame)} profiles fall within the ocean basin')
+
+
     def __dataframe_to_dictionary(self)-> dict:
         """ A function to turn the working directory into a dictionary
             of float keys with a list of profiles that match the criteria.
@@ -1093,7 +1144,7 @@ class Argo:
         float_ids.sort()
         selected_profiles = {i: selected_profiles[i] for i in float_ids}
         return selected_profiles
-    
+
 
     def __filter_by_floats(self)-> pd:
         """ Function to pull profiles of floats passed to trajectories() and return
@@ -1101,12 +1152,14 @@ class Argo:
             :returns: floats_profiles: pd - The dataframe with only the profiles of
                 the passed floats.
         """
-        ## Gather bgc profiles for these floats from sprof index frame
-        bgc_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == True)
+        # Gather bgc profiles for these floats from sprof index frame
+        bgc_filter = ((self.float_stats['wmoid'].isin(self.float_ids)) &
+                      (self.float_stats['is_bgc'] == True))
         floats_bgc = self.float_stats[bgc_filter]['wmoid'].tolist()
         floats_bgc = self.sprof_index[self.sprof_index['wmoid'].isin(floats_bgc)]
-        ## Gather phys profiles for these floats from prof index frame
-        phys_filter = (self.float_stats['wmoid'].isin(self.float_ids)) & (self.float_stats['is_bgc'] == False)
+        # Gather phys profiles for these floats from prof index frame
+        phys_filter = ((self.float_stats['wmoid'].isin(self.float_ids)) &
+                       (self.float_stats['is_bgc'] == False))
         floats_phys = self.float_stats[phys_filter]['wmoid'].tolist()
         floats_phys = self.prof_index[self.prof_index['wmoid'].isin(floats_phys)]
         # If the user has passed a dictionary also filter by profiles
@@ -1130,14 +1183,16 @@ class Argo:
             # Convert the list of dictionaries into a DataFrame
             profile_df = pd.DataFrame(data)
             # Filter only profiles included in dataframe for bgc floats
-            floats_bgc = pd.merge(floats_bgc, profile_df, on=['wmoid', 'profile_index'], how='right')
+            floats_bgc = pd.merge(floats_bgc, profile_df, on=['wmoid', 'profile_index'],
+                                  how='right')
             floats_bgc = floats_bgc.reset_index(drop=True)
             # Filter only profiles included in the dataframe for phys floats
-            floats_phys = pd.merge(floats_phys, profile_df, on=['wmoid', 'profile_index'], how='right')
+            floats_phys = pd.merge(floats_phys, profile_df, on=['wmoid', 'profile_index'],
+                                   how='right')
             floats_phys = floats_phys.reset_index(drop=True)
         floats_profiles = pd.concat([floats_bgc, floats_phys])
         return floats_profiles
-    
+
 
     def __set_graph_limits(self, ax, axis: str)-> None:
         """ A Function for setting the graph's longitude and latitude extents.
@@ -1197,9 +1252,9 @@ class Argo:
         else:
             step = 2
         return step
-    
 
-    def __variable_premutations(self, nc_file)-> list:
+
+    def __variable_permutations(self, nc_file)-> list:
         """ A function to filter the list of variables to be loaded so
             that we only load variables that are in the file.
             :param: nc_file : Any - The .nc file we're reading from.
@@ -1225,15 +1280,16 @@ class Argo:
                 else:
                     print(f'WARNING: {variable} does not exist in File {nc_file.filepath()}.')
             if len(variable_columns) > 0:
-                pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 'PRES_ADJUSTED_ERROR']
+                pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC',
+                            'PRES_ADJUSTED_ERROR']
                 existing_variable_columns = pressure + variable_columns
                 return existing_variable_columns
             else:
                 return None
         else:
             return None
-    
-    
+
+
     def __fill_float_data_dataframe(self, files: list)-> pd:
         """ A Function to load data into the float data dataframe.
             :param: files : list - A list of files to read in data from.
@@ -1277,7 +1333,8 @@ class Argo:
                 if profile_count > number_of_profiles:
                     if self.download_settings.verbose:
                         print(f'Skipping float {float_id}...')
-                        print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles for float {float_id}..')
+                        print(f'The index file has {profile_count} profiles and the .nc file ' +
+                              f'has {number_of_profiles} profiles for float {float_id}')
                     continue
                 # Get list of profiles passed in dictionary for float
                 profiles_to_pull = self.float_profiles_dict[float_id]
@@ -1294,20 +1351,23 @@ class Argo:
                 profiles_to_pull = list(range(0, number_of_profiles, 1))
                 static_length = number_of_profiles
             # Narrow variable list to only thoes that are in the current file
-            variable_columns = self.__variable_premutations(nc_file)
+            variable_columns = self.__variable_permutations(nc_file)
             # Temporary dataframe to make indexing simpler for each float
             temp_frame = pd.DataFrame()
             if self.download_settings.verbose:
                 print(f'Loading Float data from float {float_id} with {static_length} profiles...')
             # Iterate through static columns
             for column in static_columns:
-                # Customize the nc_variable if we have a special case where values need to be calculated
+                # Customize nc_variable if we have a special case where values need to be calculated
                 if column in special_case_static_columns:
-                    nc_variable = self.__calculate_nc_variable_values(column, nc_file, static_length, profiles_to_pull)
+                    nc_variable = self.__calculate_nc_variable_values(column, nc_file,
+                                                                      static_length,
+                                                                      profiles_to_pull)
                 else:
                     nc_variable = nc_file.variables[column][profiles_to_pull]
                 # Read in variable from .nc file
-                column_values = self.__read_from_static_nc_variable(variable_columns, nc_variable, number_of_levels, static_length)
+                column_values = self.__read_from_static_nc_variable(variable_columns, nc_variable,
+                                                                    number_of_levels, static_length)
                 if column.endswith('_QC'):
                     # Replace b'n' and b' ' with b'0' so that all values are numbers
                     modified_column = [b'0' if item == b'n' or item == b' ' else item
@@ -1347,9 +1407,10 @@ class Argo:
             nc_file.close()
         # Return dataframe
         return float_data_dataframe
-    
-    
-    def __calculate_nc_variable_values(self, column: str, nc_file, number_of_profiles: int, profiles_to_pull: list) -> list:
+
+
+    def __calculate_nc_variable_values(self, column: str, nc_file, number_of_profiles: int,
+                                       profiles_to_pull: list) -> list:
         """ Function for specalized columns that must be calculated or derived.
             :param: files : list - A list of files to read in data from.
             :param: column : str - The name of the column of the dataframe we want information.
@@ -1389,23 +1450,26 @@ class Argo:
             nc_variable = [int(float_id)] * number_of_profiles
             # Returning nc variable
             return nc_variable
-    
-    
-    def __read_from_static_nc_variable(self, variable_columns: list, nc_variable, number_of_levels: int, number_of_profiles: int)-> list:
+
+
+    def __read_from_static_nc_variable(self, variable_columns: list, nc_variable,
+                                       number_of_levels: int, number_of_profiles: int)-> list:
         """ A function to read in data from one dimentional variables in the passed .nc file.
             :param: variable_columns : list - The list of variable columns in the .nc file. This
-                determines how many times the static variables should be repeated to match the expected
-                length of the dataframe.
+                determines how many times the static variables should be repeated to match the
+                expected length of the dataframe.
             :param: nc_variable - The .nc variable we're reading from.
-            :param: number_of_levels : int - The number of depth levels the float compleated per profile.
+            :param: number_of_levels : int - The number of depth levels the float completed per profile.
             :param: number_of_profiles : int - The number of profiles being pulled from a float.
             :return: list - The list of values for that nc_variable.
         """
         column_values = []
         # Check if nc_variable is 0-dimensional aka only one profile is passed
         if getattr(nc_variable, "shape", None) == ():
-            column_values = [nc_variable] * (number_of_levels if variable_columns else number_of_profiles)
-        # If there are no variables then then we'll only need the rows to match the number of profiles in the file
+            column_values = [nc_variable] * (number_of_levels if variable_columns
+                                             else number_of_profiles)
+        # If there are no variables then we'll only need the rows to match the number of
+        # profiles in the file
         elif variable_columns is None:
             for value in nc_variable:
                 column_values.append(value)
@@ -1415,8 +1479,8 @@ class Argo:
                 value_repeats = [value] * number_of_levels
                 column_values.extend(value_repeats)
         return column_values
-    
-    
+
+
     def __read_from_paramater_nc_variable(self, nc_variable)-> list:
         """ A function to read in data from two dimentional variables in the passed .nc file.
             :param: nc_variable - The nc variable we're reading from
@@ -1432,8 +1496,8 @@ class Argo:
                 for depth in profile:
                     column_values.append(depth)
         return column_values
-    
-    
+
+
     def __plot_section(self, all_float_data, float_id, variable, visible, save_to)-> None:
         """ A function to create a single section plot
             using the passed dataframe and variable.
@@ -1463,8 +1527,8 @@ class Argo:
         # Displaying graph
         if visible:
             plt.show()
-    
-    
+
+
     def __grid_section_data(self, float_data, variable):
         """ Function to grid the data
         """
@@ -1502,7 +1566,8 @@ class Argo:
         # Reindex the DataFrame to ensure the grid matches the desired shape
         param_gridded_df = param_gridded_df.reindex(index=unique_pres, columns=unique_times_num)
         # Fill missing values by forward filling and then backward filling
-        param_gridded_df = param_gridded_df.fillna(method='ffill', axis=0).fillna(method='bfill', axis=0)
+        param_gridded_df = param_gridded_df.fillna(method='ffill', axis=0).fillna(method='bfill',
+                                                                                  axis=0)
         # Assigning data to variable to graph
         param_gridded = param_gridded_df.values
         return time_grid, pres_grid, param_gridded
