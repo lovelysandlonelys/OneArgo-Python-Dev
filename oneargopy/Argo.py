@@ -1672,7 +1672,7 @@ class Argo:
         pres_values = pres_values[valid_indices]
         param_values = param_values[valid_indices]
 
-        # Convert time_values to float becasue it makes gridding data easier
+        # Convert time_values to float because it makes gridding data easier
         time_values_num = mdates.date2num(time_values)
 
         # Unique values for creating grids
