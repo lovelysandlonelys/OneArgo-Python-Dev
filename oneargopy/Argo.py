@@ -217,7 +217,8 @@ class Argo:
             :param: visible : bool - A boolean value determining if the trajectories
                 plot is shown to the user through a popup window.
             :param: save_to : str - A path to a folder where the user would like
-                to save their trajectories plot.
+                to save their trajectories plot. The path must exist.
+                The file name is automatically generated.
         """
         # Validate save_to file path
         if save_to is not None: 
