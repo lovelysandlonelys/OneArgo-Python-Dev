@@ -216,7 +216,7 @@ class Argo:
             :param: floats : int | list | dict - Floats to plot.
             :param: visible : bool - A boolean value determining if the trajectories
                 plot is shown to the user through a popup window.
-            :param: save_to : str - An optional filepath to a folder where the user would like
+            :param: save_to : str - A path to a folder where the user would like
                 to save their trajectories plot.
         """
         # Validate save_to file path
