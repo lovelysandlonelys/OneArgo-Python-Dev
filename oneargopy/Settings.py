@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-#initialize.py
+# Settings.py
 #------------------------------------------------------------------------------
-# Created By: Savannah Stephenson
-# Creation Date: 05/31/2024
-# Version: 1.0
+# Created By: Savannah Stephenson and Hartmut Frenzel
+# Creation Date: 07/26/2024
+# Version: 0.1 (alpha)
 #------------------------------------------------------------------------------
 """ This file holds the classes that the library will use to describe 
     various settings involved in the process of extracting and 
@@ -12,14 +12,14 @@
     viewed and altered with setter and getter functions.  
 """
 #------------------------------------------------------------------------------
-# 
+#
 #
 # Imports
 
 # System
 from pathlib import Path
-import pandas as pd
 import json
+import pandas as pd
 
 
 class DownloadSettings():
@@ -53,6 +53,9 @@ class DownloadSettings():
         float_type : str - 'all' by default, a string indicating the type
             of floats that the researcher would like to handle. Valid options
             are 'bgc', 'phys', and 'all'.
+        timeout : int - An integer value representing the number of seconds
+            to wait for a web server to respond to a download request;
+            default value: 300 (5 minutes). 
     """
     def __init__(self, user_settings: str = None) -> None:
         if user_settings is not None:
@@ -65,18 +68,21 @@ class DownloadSettings():
             self.max_attempts = ds_data['max_attempts']
             self.keep_index_in_memory = ds_data['keep_index_in_memory']
             self.float_type = ds_data['float_type']
-        else: 
+            self.timeout = ds_data['timeout']
+        else:
             self.base_dir =  Path(__file__).resolve().parent
             self.sub_dirs =  ["Index", "Meta", "Tech", "Traj", "Profiles"]
-            self.index_files =  ["ar_index_global_traj.txt", "ar_index_global_tech.txt", "ar_index_global_meta.txt", 
-                                 "ar_index_global_prof.txt", "argo_synthetic-profile_index.txt"]
+            self.index_files =  ["ar_index_global_traj.txt", "ar_index_global_tech.txt",
+                                 "ar_index_global_meta.txt", "ar_index_global_prof.txt",
+                                 "argo_synthetic-profile_index.txt"]
             self.verbose = True
             self.update = 3600
             self.max_attempts = 10
             self.keep_index_in_memory = True
             self.float_type = "all"
+            self.timeout = 300
 
-    
+
     def __parse_download_settings(self, user_settings: Path) -> dict:
         """ A function to parse a given user_settings file to initialize
             the Download Settings classes based off of a passed path to a json
@@ -90,7 +96,7 @@ class DownloadSettings():
         if not user_settings.exists():
             print(f'{user_settings} not found!')
             raise FileNotFoundError
-        
+
         with user_settings.open('r', encoding='utf-8') as file:
             data = json.load(file)
 
@@ -100,24 +106,26 @@ class DownloadSettings():
 
 
     def __str__(self) -> str:
-        return f'\n[Download Settings] -> \nBase Directory: {self.base_dir}, \nSub Directories: {self.sub_dirs}, \nIndex Files: {self.index_files}, \nVerbose Setting: {self.verbose}, \nMax Attempts: {self.max_attempts}, \nKeep Index In Memory: {self.keep_index_in_memory}, \nFloat Type: {self.float_type}\n'
-    
+        return (f'\n[Download Settings] -> \nBase Directory: {self.base_dir}, ' +
+                f'\nSub Directories: {self.sub_dirs}, \nIndex Files: {self.index_files}, ' +
+                f'\nVerbose Setting: {self.verbose}, \nMax Attempts: {self.max_attempts}, ' +
+                f'\nKeep Index In Memory: {self.keep_index_in_memory}, ' +
+                f'\nFloat Type: {self.float_type}\n')
+
 
     def __repr__(self) -> str:
-        return f'\nDownloadSettings(PATH TO USER SETTINGS FILE)'
-    
+        return '\nDownloadSettings(PATH TO USER SETTINGS FILE)'
+
 
     def __eq__(self, __value: object) -> bool:
-        if (self.base_dir == __value.base_dir and 
+        return (self.base_dir == __value.base_dir and
             self.sub_dirs == __value.sub_dirs and
             self.index_files == __value.index_files and
             self.verbose == __value.verbose and
             self.update == __value.update and
             self.max_attempts == __value.max_attempts and
             self.keep_index_in_memory == __value.keep_index_in_memory and
-            self.float_type == __value.float_type):
-            return True
-        else: return False
+            self.float_type == __value.float_type)
 
 
 class AnalysisSettings():
@@ -160,29 +168,29 @@ class AnalysisSettings():
         if not user_settings.exists():
             print(f'{user_settings} not found!')
             raise FileNotFoundError
-        
+
         with user_settings.open('r', encoding='utf-8') as file:
             data = json.load(file)
 
         # Parse DownloadSettings
         as_data = data['AnalysisSettings']
         return as_data
-        
+
 
     def __str__(self) -> str:
-        return f'\n[Analysis Settings] -> \nTemperature Threshold: {self.temp_thresh}, \nDensity Threshold: {self.dens_thresh}, \nInterpolate Latitude and Longitude: {self.interp_lonlat}\n'
-    
+        return (f'\n[Analysis Settings] -> \nTemperature Threshold: {self.temp_thresh}, ' +
+                f'\nDensity Threshold: {self.dens_thresh}, ' +
+                f'\nInterpolate Latitude and Longitude: {self.interp_lonlat}\n')
+
 
     def __repr__(self) -> str:
-        return f'\nAnalysisSettings(PATH TO USER SETTINGS FILE)'
-    
+        return '\nAnalysisSettings(PATH TO USER SETTINGS FILE)'
+
 
     def __eq__(self, __value: object) -> bool:
-        if (self.temp_thresh == __value.temp_thresh and 
-            self.dens_thresh == __value.dens_thresh and 
-            self.interp_lonlat == __value.interp_lonlat):
-            return True
-        else: return False
+        return (self.temp_thresh == __value.temp_thresh and
+            self.dens_thresh == __value.dens_thresh and
+            self.interp_lonlat == __value.interp_lonlat)
 
 
 class SourceSettings():
@@ -225,7 +233,7 @@ class SourceSettings():
         if not user_settings.exists():
             print(f'{user_settings} not found!')
             raise FileNotFoundError
-        
+
         with user_settings.open('r', encoding='utf-8') as file:
             data = json.load(file)
 
@@ -252,16 +260,16 @@ class SourceSettings():
 
 
     def __str__(self) -> str:
-        return f'\n[Source Settings] -> \nHosts: {self.hosts}, \nAvailable Variables: {self.avail_vars}, \nData Assimilation Centers: {self.dacs}\n'
-    
+        return (f'\n[Source Settings] -> \nHosts: {self.hosts}, ' +
+                f'\nAvailable Variables: {self.avail_vars}, ' +
+                f'\nData Assimilation Centers: {self.dacs}\n')
+
 
     def __repr__(self) -> str:
-        return f'\nSourceSettings(PATH TO USER SETTINGS FILE)'
-    
+        return '\nSourceSettings(PATH TO USER SETTINGS FILE)'
+
 
     def __eq__(self, __value: object) -> bool:
-        if (self.hosts == __value.hosts and 
-            self.avail_vars == __value.avail_vars and 
-            self.dacs == __value.dacs):
-            return True
-        else: return False
+        return (self.hosts == __value.hosts and
+            self.avail_vars == __value.avail_vars and
+            self.dacs == __value.dacs)
