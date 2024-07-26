@@ -910,7 +910,7 @@ class Argo:
             adjusted_variables.append(variable + '_ADJUSTED_ERROR')
         avaliable_variables = self.source_settings.avail_vars + adjusted_variables
 
-        # Finding variables that are not present avaliable variables list
+        # Finding variables that are not present in the available variables list
         nonexistent_vars = [x for x in self.float_variables if x not in avaliable_variables]
         if nonexistent_vars:
             raise Exception(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
