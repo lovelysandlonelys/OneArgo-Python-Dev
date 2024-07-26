@@ -363,8 +363,9 @@ class Argo:
                 like section plots of. 
             :param: visible : bool - A boolean value determining if the section
                 plot is shown to the user through a popup window.
-            :param: save_to : str - An optional filepath to a folder where the 
-                user would like..to save their section plot.
+            :param: save_to : str - A path to a folder where the 
+                user would like to save their section plot. The folder must exist.
+                The filename is automatically generated.
         """
         # Validate passed variables
         self.float_variables = variables
