@@ -9,7 +9,12 @@ import time
 
 from Argo import Argo
 argo = Argo()
-data = argo.load_float_data([5903611], 
+profiles = argo.select_profiles(lon_lim=[-127,-115],
+                                 lat_lim=[32.5,45.5],
+                                 start_date='2021-09-01',
+                                 type='bgc')
+argo.trajectories(list(profiles))
+data = argo.load_float_data(profiles, 
                             variables='TEMP')
 argo.sections(data, 'TEMP')
 #test every function please
