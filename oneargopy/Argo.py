@@ -286,17 +286,17 @@ class Argo:
                          fontweight='bold')
         plt.tight_layout()
 
-        # Displaying graph
-        if visible == True:
-            plt.show()
-
         # Saving Graph
         if save_to is not None: 
             if len(self.float_ids) == 1:
-                save_path = save_to.joinpath(f'trajectories_plot_{self.float_ids}')
+                save_path = save_to.joinpath(f'trajectories_{self.float_ids}[0]')
             else: 
-                save_path = save_to.joinpath(f'trajectories_plot_{len(self.float_ids)}')
+                save_path = save_to.joinpath(f'trajectories_plot_{len(self.float_ids)}_floats')
             plt.savefig(f'{save_path}')
+
+        # Displaying graph
+        if visible:
+            plt.show()
 
 
     def load_float_data(self, floats: int | list | dict, variables: str | list = None)-> pd: 
@@ -1645,14 +1645,14 @@ class Argo:
         plt.xlabel('Time')
         plt.ylabel('Pressure (dbar)')
         plt.title(f'Section Plot of {variable} at Float {float_id}')
-
+        
         # Saving Graph
         if save_to is not None:  
             save_path = save_to.joinpath(f'section_plot_{float_id}_{variable}')
             plt.savefig(f'{save_path}')
 
         # Displaying graph
-        if visible == True:
+        if visible:
             plt.show()
 
 
