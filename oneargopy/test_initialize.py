@@ -5,23 +5,21 @@ from Argo import Argo
 import time
 
 
-# Test against matlab
+
+
+from Argo import Argo
 argo = Argo()
+data = argo.load_float_data([5903611], 
+                            variables='TEMP')
+argo.sections(data, 'TEMP')
 
-data = argo.load_float_data(5903611, variables='TEMP')
-data.to_csv('sprof_as_prof.txt', encoding='utf-8', index=False, na_rep='nan')
-
-data = argo.load_float_data(5903611, variables='DOXY')
-data.to_csv('sprof_as_sprof.txt', encoding='utf-8', index=False, na_rep='nan')
-
-# print(f'Passing DOXY')
-# floats = argo.select_profiles([-170, -168], [20, 25], '2012-01-01', '2013-01-01')
-# data = argo.load_float_data(floats, variables='DOXY')
-# print(data)
-# data.to_csv('output_five.txt', encoding='utf-8', index=False, na_rep='nan')
-# print(f'\n\n')
+# start_time = time.time()
+# argo.sections(data, ['DOXY', 'DOXY_ADJUSTED'])
+# elapsed_time = time.time() - start_time
+# print(f'The time to plot doxy: {elapsed_time}\n')
 
 # print(f'Passing Nothing')
+
 # data = argo.load_float_data(5905105)
 # print(data)
 # data.to_csv('output_one.txt', encoding='utf-8', index=False, na_rep='nan')
@@ -510,3 +508,15 @@ argo.trajectories(profiles)
 #         # Move profile index column to the second position for easier comparison
 #         prof_index_column = float_data_dataframe.pop('PROF_IDX')
 #         float_data_dataframe.insert(1, 'PROF_IDX', prof_index_column)
+
+
+# grid data interpolation 
+ #     print(f'Interpolating...')
+        #     # Interpolate param values onto the grid
+        #     param_gridded = griddata(
+        #         (time_values_num, pres_values), # Input points
+        #         param_values,                   # Input values
+        #         (time_grid, pres_grid),         # Grid points
+        #         method='linear',                # Interpolation method
+        #         fill_value=np.nan               
+        #     )

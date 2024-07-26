@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # Argo.py
 #------------------------------------------------------------------------------
-# Created By: Savannah Stephenson
+# Created By: Savannah Stephenson and Hartmut Frenzel
 # Creation Date: 05/30/2024
-# Version: 1.0
+# Version: 0.1 (alpha)
 #------------------------------------------------------------------------------
 """ The Argo class contains the primary functions for downloading and handling
     data gathered from GDAC.
@@ -32,6 +32,9 @@ import netCDF4
 
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from matplotlib.ticker import FixedLocator
+
+from scipy.interpolate import griddata
+import matplotlib.dates as mdates
 
 
 class Argo:
@@ -207,11 +210,20 @@ class Argo:
         return narrowed_profiles
     
 
-    def trajectories(self, floats: int | list | dict)-> None: 
+    def trajectories(self, floats: int | list | dict, visible: bool = True, save_to: str = None)-> None: 
         """ This function plots the trajectories of one or more specified float(s)
 
             :param: floats : int | list | dict - Floats to plot.
+            :param: visible : bool - A boolean value determining if the trajectories
+                plot is shown to the user through a popup window.
+            :param: save_to : str - A path to a folder where the user would like
+                to save the trajectories plot(s). The path must exist.
+                The file name is automatically generated.
         """
+        # Validate save_to file path
+        if save_to is not None: 
+            save_to = Path(save_to)
+            self.__validate_plot_save_path(Path(save_to))
 
         # Check that dataframes are loaded into memory
         if not self.download_settings.keep_index_in_memory: 
@@ -265,18 +277,28 @@ class Argo:
 
         # Setting Title
         if len(self.float_ids) == 1:
-            ax.set_title(f'Trajectory for {self.float_ids}', fontsize=18,
+            ax.set_title(f'Trajectory of {self.float_ids}', fontsize=18,
                          fontweight='bold')
         elif len(self.float_ids) < 4:
-            ax.set_title(f'Trajectories for {self.float_ids}', fontsize=18,
+            ax.set_title(f'Trajectories of {self.float_ids}', fontsize=18,
                          fontweight='bold')
         else:
-            ax.set_title(f'Trajectories for Selected Floats', fontsize=18,
+            ax.set_title(f'Trajectories of Selected Floats', fontsize=18,
                          fontweight='bold')
         plt.tight_layout()
 
+        # Saving Graph
+        if save_to is not None: 
+            if len(self.float_ids) == 1:
+                save_path = save_to.joinpath(f'trajectories_{self.float_ids}[0]')
+            else: 
+                save_path = save_to.joinpath(f'trajectories_plot_{len(self.float_ids)}_floats')
+            plt.savefig(f'{save_path}')
+
         # Displaying graph
-        plt.show()
+        if visible:
+            plt.show()
+
 
     def load_float_data(self, floats: int | list | dict, variables: str | list = None)-> pd: 
         """ A function to load float data into memory.
@@ -329,6 +351,68 @@ class Argo:
         float_data_frame = self.__fill_float_data_dataframe(files)
 
         return float_data_frame
+    
+
+    def sections(self, float_data: pd, variables: str | list, visible: bool = True, save_to: str = None)-> None:
+        """ A function to graph section plots for the passed variables using data
+            from the passed float_data dataframe. 
+
+            :param: float_data : pd - A dataframe created from load_float_data
+                that contains data pulled from .nc files.
+            :param: variables : str or list - The variable(s) the user would
+                like section plots of. 
+            :param: visible : bool - A boolean value determining if the section
+                plot is shown to the user through a popup window.
+            :param: save_to : str - A path to a folder where the 
+                user would like to save the section plot(s). The folder must exist.
+                The filename is automatically generated.
+        """
+        # Validate passed variables
+        self.float_variables = variables
+        self.__validate_float_variables_and_permutations_arg()
+
+        # Validate passed dataframe
+        self.float_data = float_data
+        self.__validate_float_data_dataframe()
+
+        # Validate save_to file path
+        if save_to is not None: 
+            save_to = Path(save_to)
+            self.__validate_plot_save_path(save_to)
+
+        # Determine Unique WMOID 
+        unique_float_ids = self.float_data['WMOID'].unique()
+
+        # Make one plot for each float/variable combination
+        for float_id in unique_float_ids:
+
+            filtered_df = self.float_data[self.float_data['WMOID'] == float_id]
+
+            # Getting unique profile values for the current float 
+            unique_values = filtered_df['CYCLE_NUMBER'].unique()
+
+            # Check that the float has more than one profile (more than one cycle number)
+            if len(unique_values) == len(filtered_df):
+                if self.download_settings.verbose:
+                    print(f'Float {float_id} only has one profile provided per depth, skipping float...')
+                continue
+
+            print(f'Generating section plots for float {float_id}...')
+            for variable in self.float_variables:
+                
+                # Pulling column for current float and variable
+                float_variable_data = filtered_df[variable]
+
+                # Check that the float actually has data for the passed variable                                   
+                if float_variable_data.isna().all():
+                    if self.download_settings.verbose:
+                        print(f'Float {float_id} has no data for variable {variable}, skipping plot...')
+                    continue
+                # Otherwise plot the section
+                else:
+                    if self.download_settings.verbose:
+                        print(f'Generating section plot for float {float_id} with variable {variable}...')
+                    self.__plot_section(self.float_data, float_id, variable, visible, save_to)
         
 
     #######################################################################
@@ -802,10 +886,59 @@ class Argo:
         if not isinstance(self.float_variables, list):
             self.float_variables = [self.float_variables]
 
-        # Finding float IDs that are not present in the index dataframes
+        # Finding variables that are not present avaliable variables list
         nonexistent_vars = [x for x in self.float_variables if x not in self.source_settings.avail_vars]
         if nonexistent_vars:
-            raise Exception(f"The following float IDs do not exist in the dataframes: {nonexistent_vars}")
+            raise Exception(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
+        
+    
+    def __validate_float_variables_and_permutations_arg(self):
+        """ A function to validate the value of the 
+            optional 'variables' passed to 
+            load_float_data.
+        """
+        if self.download_settings.verbose: print(f"Validating passed 'variables'...")
+
+        # If user has passed a single variable convert to list
+        if not isinstance(self.float_variables, list):
+            self.float_variables = [self.float_variables]
+        
+        # Constructing list of variables avaliable for plotting
+        adjusted_variables = []
+        for variable in self.source_settings.avail_vars: 
+            adjusted_variables.append(variable + '_ADJUSTED')
+            adjusted_variables.append(variable + '_ADJUSTED_ERROR')
+        available_variables = self.source_settings.avail_vars + adjusted_variables
+
+        # Finding variables that are not present in the available variables list
+        nonexistent_vars = [x for x in self.float_variables if x not in available_variables]
+        if nonexistent_vars:
+            raise Exception(f"The following variables do not exist in the dataframes: {nonexistent_vars}")
+        
+
+    def __validate_float_data_dataframe(self): 
+        """ A function to validate a dataframe passed
+            to sections() so ensure that it has the 
+            expected columns for graphing section 
+            plots. 
+        """
+        if self.download_settings.verbose: print(f"Validating passed float_data_dataframe...")
+
+        # Check that the dataframe at the very least has wmoid and variable columns
+        required_columns = ['WMOID'] + self.float_variables
+        # Identify missing columns
+        missing_columns = set(required_columns) - set(self.float_data.columns)
+        if missing_columns:
+            raise Exception(f"The following columns are missing from the DataFrame: {missing_columns}")
+        
+
+    def __validate_plot_save_path(self, save_path: Path):
+        """ A function to validate that the save path passed
+            actually exists. 
+        """
+        if not save_path.exists():
+            print(f'{save_path} not found!')
+            raise FileNotFoundError
 
 
     def __prepare_selection(self):
@@ -1112,8 +1245,6 @@ class Argo:
 
             # Convert the list of dictionaries into a DataFrame
             profile_df = pd.DataFrame(data)
-            print("PROFILE DATAFRAME")
-            print(profile_df)
 
             # Filter only profiles included in dataframe for bgc floats
             floats_bgc = pd.merge(floats_bgc, profile_df, on=['wmoid', 'profile_index'], how='right')
@@ -1220,7 +1351,7 @@ class Argo:
                         variable_columns.append(variable + '_ADJUSTED_QC')
                         variable_columns.append(variable + '_ADJUSTED_ERROR')
                 else: 
-                    print(f'WARNING: {variable} does not exist in FILE "{nc_file}".')
+                    print(f'WARNING: {variable} does not exist in File {nc_file.filepath()}.')
             
             if len(variable_columns) > 0: 
                 pressure = ['PRES', 'PRES_QC', 'PRES_ADJUSTED', 'PRES_ADJUSTED_QC', 'PRES_ADJUSTED_ERROR']
@@ -1284,8 +1415,9 @@ class Argo:
             if self.float_profiles_dict is not None: 
 
                 if profile_count > number_of_profiles: 
-                    print(f'Skipping float {float_id}...')
-                    print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles for float {float_id}..')
+                    if self.download_settings.verbose: 
+                        print(f'Skipping float {float_id}...')
+                        print(f'The index file has {profile_count} profiles and the .nc file has {number_of_profiles} profiles for float {float_id}..')
                     continue
 
                 # Get list of profiles passed in dictionary for float
@@ -1484,9 +1616,96 @@ class Argo:
         if nc_variable.ndim == 1:
             for profile in nc_variable: 
                     column_values.append(profile)
-        else: 
+        else:
             for profile in nc_variable: 
                 for depth in profile: 
                     column_values.append(depth)
 
         return column_values
+    
+
+    def __plot_section(self, all_float_data, float_id, variable, visible, save_to)-> None:
+        """ A function to create a single section plot
+            using the passed dataframe and variable.
+        """
+        # Grid Data
+        float_data = all_float_data[all_float_data['WMOID'] == float_id]
+        time_grid, pres_grid, param_gridded = self.__grid_section_data(float_data, variable)
+        
+        # Plot Data
+        plt.figure(figsize=(10, 6))
+        plt.pcolormesh(time_grid, pres_grid, param_gridded, shading='auto')
+        # Y Axis 
+        plt.ylim([0, float_data['PRES'].max()])         
+        plt.gca().invert_yaxis()
+        # Add a colorbar to show the scale of the variable
+        plt.colorbar(label=variable)
+        # X Axis 
+        plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+        plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
+        # Titles
+        plt.xlabel('Time')
+        plt.ylabel('Pressure (dbar)')
+        plt.title(f'{variable} Section of Float {float_id}')
+        
+        # Saving Graph
+        if save_to is not None:  
+            save_path = save_to.joinpath(f'section_{float_id}_{variable}')
+            plt.savefig(f'{save_path}')
+
+        # Displaying graph
+        if visible:
+            plt.show()
+
+
+    def __grid_section_data(self, float_data, variable):
+        """ Function to grid the data
+        """
+        # Parse out values for specified float
+        time_values = pd.to_datetime(float_data['DATE']).values
+        pres_values = float_data['PRES'].values
+        param_values = float_data[variable].values
+
+        # Remove NaN values
+        valid_indices = ~np.isnan(time_values) & ~np.isnan(pres_values) & ~np.isnan(param_values) 
+        time_values = time_values[valid_indices]
+        pres_values = pres_values[valid_indices]
+        param_values = param_values[valid_indices]
+
+        # Convert time_values to float because it makes gridding data easier
+        time_values_num = mdates.date2num(time_values)
+
+        # Unique values for creating grids
+        unique_times_num = np.unique(time_values_num)
+        intp_pres = np.arange(np.ceil(min(pres_values)), np.floor(max(pres_values)))
+
+        # Create grid for interpolation
+        time_grid, pres_grid = np.meshgrid(unique_times_num, intp_pres)
+
+        # Set param_gridded to NaN array with the same shape as the grid
+        param_gridded = np.full(time_grid.shape, np.nan)
+        # Create a DataFrame
+        df = pd.DataFrame({
+            'time': time_values_num,
+            'pressure': pres_values,
+            'param': param_values
+        })
+
+        # Pivot the DataFrame to create a grid
+        param_gridded_df = df.pivot_table(
+            index='pressure',
+            columns='time',
+            values='param',
+            aggfunc='first'
+        )
+
+        # Reindex the DataFrame to the interpolated depth axis
+        param_gridded_df = param_gridded_df.reindex(index=intp_pres, columns=unique_times_num)
+
+        # Perform linear interpolation to the new depth axis without extrapolation
+        param_gridded_df.interpolate(method='linear', limit_area='inside', axis=0, inplace=True)
+
+        # Assigning data to variable to graph
+        param_gridded = param_gridded_df.values
+
+        return time_grid, pres_grid, param_gridded
