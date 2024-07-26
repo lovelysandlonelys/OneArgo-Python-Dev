@@ -277,13 +277,13 @@ class Argo:
 
         # Setting Title
         if len(self.float_ids) == 1:
-            ax.set_title(f'Trajectory for {self.float_ids}', fontsize=18,
+            ax.set_title(f'Trajectory of {self.float_ids}', fontsize=18,
                          fontweight='bold')
         elif len(self.float_ids) < 4:
-            ax.set_title(f'Trajectories for {self.float_ids}', fontsize=18,
+            ax.set_title(f'Trajectories of {self.float_ids}', fontsize=18,
                          fontweight='bold')
         else:
-            ax.set_title(f'Trajectories for Selected Floats', fontsize=18,
+            ax.set_title(f'Trajectories of Selected Floats', fontsize=18,
                          fontweight='bold')
         plt.tight_layout()
 
@@ -1646,7 +1646,7 @@ class Argo:
         # Titles
         plt.xlabel('Time')
         plt.ylabel('Pressure (dbar)')
-        plt.title(f'{variable} Section at Float {float_id}')
+        plt.title(f'{variable} Section of Float {float_id}')
         
         # Saving Graph
         if save_to is not None:  
