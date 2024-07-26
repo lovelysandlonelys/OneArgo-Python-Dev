@@ -1646,7 +1646,7 @@ class Argo:
         # Titles
         plt.xlabel('Time')
         plt.ylabel('Pressure (dbar)')
-        plt.title(f'Section Plot of {variable} at Float {float_id}')
+        plt.title(f'{variable} Section at Float {float_id}')
         
         # Saving Graph
         if save_to is not None:  
