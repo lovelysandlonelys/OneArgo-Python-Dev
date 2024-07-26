@@ -931,7 +931,7 @@ class Argo:
         
 
     def __validate_plot_save_path(self, save_path: Path):
-        """ A funciton to validate that the save path passed
+        """ A function to validate that the save path passed
             actually exists. 
         """
         if not save_path.exists():
