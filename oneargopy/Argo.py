@@ -903,7 +903,7 @@ class Argo:
         if not isinstance(self.float_variables, list):
             self.float_variables = [self.float_variables]
         
-        # Constructing list of varaibles avaliable for plotting
+        # Constructing list of variables avaliable for plotting
         adjusted_variables = []
         for variable in self.source_settings.avail_vars: 
             adjusted_variables.append(variable + '_ADJUSTED')
