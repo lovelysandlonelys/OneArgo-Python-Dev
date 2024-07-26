@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # Argo.py
 #------------------------------------------------------------------------------
-# Created By: Savannah Stephenson
+# Created By: Savannah Stephenson and Hartmut Frenzel
 # Creation Date: 05/30/2024
-# Version: 1.0
+# Version: 0.1 (alpha)
 #------------------------------------------------------------------------------
 """ The Argo class contains the primary functions for downloading and handling
     data gathered from GDAC.
@@ -217,7 +217,7 @@ class Argo:
             :param: visible : bool - A boolean value determining if the trajectories
                 plot is shown to the user through a popup window.
             :param: save_to : str - A path to a folder where the user would like
-                to save their trajectories plot. The path must exist.
+                to save the trajectories plot(s). The path must exist.
                 The file name is automatically generated.
         """
         # Validate save_to file path
@@ -364,7 +364,7 @@ class Argo:
             :param: visible : bool - A boolean value determining if the section
                 plot is shown to the user through a popup window.
             :param: save_to : str - A path to a folder where the 
-                user would like to save their section plot. The folder must exist.
+                user would like to save the section plot(s). The folder must exist.
                 The filename is automatically generated.
         """
         # Validate passed variables
