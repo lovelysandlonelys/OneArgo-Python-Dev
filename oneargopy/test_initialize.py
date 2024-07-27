@@ -80,11 +80,11 @@ argo.sections(data, 'TEMP')
 # argo.trajectories(list(profiles))
 
 # Graph for slide
-# profiles = argo.select_profiles(lon_lim=[-130,-115], 
-#                                 lat_lim=[32.5,49], 
-#                                 start_date='2020-01-01', 
-#                                 type='bgc')
-# argo.trajectories(profiles)
+profiles = argo.select_profiles(lon_lim=[-130,-115], 
+                                lat_lim=[32.5,49], 
+                                start_date='2020-01-01', 
+                                type='bgc')
+argo.trajectories(profiles)
 
 # # Trajectories Tests
 # argo.trajectories(5905105)

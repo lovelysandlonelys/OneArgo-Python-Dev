@@ -209,8 +209,9 @@ class Argo:
             :param: floats : int | list | dict - Floats to plot.
             :param: visible : bool - A boolean value determining if the trajectories
                 plot is shown to the user through a popup window.
-            :param: save_to : str - An optional filepath to a folder where the user would like
-                to save their trajectories plot.
+            :param: save_to : str - A path to a folder where the user would like
+                to save the trajectories plot(s). The path must exist.
+                The file name is automatically generated.
         """
         # Validate save_to file path
         if save_to is not None:
@@ -266,19 +267,22 @@ class Argo:
             ax.set_title(f'Trajectories of {self.float_ids}', fontsize=18,
                          fontweight='bold')
         else:
-            ax.set_title('Trajectories of Selected Floats', fontsize=18,
+
+            ax.set_title(f'Trajectories of Selected Floats', fontsize=18,
                          fontweight='bold')
         plt.tight_layout()
-        # Displaying graph
-        if visible:
-            plt.show()
+
         # Saving Graph
         if save_to is not None:
             if len(self.float_ids) == 1:
-                save_path = save_to.joinpath(f'trajectories_plot_{self.float_ids}')
-            else:
-                save_path = save_to.joinpath(f'trajectories_plot_{len(self.float_ids)}')
+                save_path = save_to.joinpath(f'trajectories_{self.float_ids}[0]')
+            else: 
+                save_path = save_to.joinpath(f'trajectories_plot_{len(self.float_ids)}_floats')
             plt.savefig(f'{save_path}')
+
+        # Displaying graph
+        if visible:
+            plt.show()
 
 
     def load_float_data(self, floats: int | list | dict, variables: str | list = None)-> pd:
@@ -338,8 +342,9 @@ class Argo:
                 like section plots of.
             :param: visible : bool - A boolean value determining if the section
                 plot is shown to the user through a popup window.
-            :param: save_to : str - An optional filepath to a folder where the
-                user would like..to save their section plot.
+            :param: save_to : str - A path to a folder where the 
+                user would like to save the section plot(s). The folder must exist.
+                The filename is automatically generated.
         """
         # Validate passed variables
         self.float_variables = variables
@@ -855,14 +860,14 @@ class Argo:
         # If user has passed a single variable convert to list
         if not isinstance(self.float_variables, list):
             self.float_variables = [self.float_variables]
-        # Constructing list of varaibles avaliable for plotting
+        # Constructing list of variables avaliable for plotting
         adjusted_variables = []
         for variable in self.source_settings.avail_vars:
             adjusted_variables.append(variable + '_ADJUSTED')
             adjusted_variables.append(variable + '_ADJUSTED_ERROR')
-        avaliable_variables = self.source_settings.avail_vars + adjusted_variables
-        # Finding variables that are not present avaliable variables list
-        nonexistent_vars = [x for x in self.float_variables if x not in avaliable_variables]
+        available_variables = self.source_settings.avail_vars + adjusted_variables
+        # Finding variables that are not present in the available variables list
+        nonexistent_vars = [x for x in self.float_variables if x not in available_variables]
         if nonexistent_vars:
             raise KeyError("The following variables do not exist in the dataframes: " +
                            f"{nonexistent_vars}")
@@ -886,8 +891,8 @@ class Argo:
 
 
     def __validate_plot_save_path(self, save_path: Path):
-        """ A funciton to validate that the save path passed
-            actually exists.
+        """ A function to validate that the save path passed
+            actually exists. 
         """
         if not save_path.exists():
             print(f'{save_path} not found')
@@ -1523,10 +1528,10 @@ class Argo:
         # Titles
         plt.xlabel('Time')
         plt.ylabel('Pressure (dbar)')
-        plt.title(f'{variable} Section for Float {float_id}')
+        plt.title(f'{variable} Section of Float {float_id}')        
         # Saving Graph
-        if save_to is not None:
-            save_path = save_to.joinpath(f'section_plot_{float_id}_{variable}')
+        if save_to is not None:  
+            save_path = save_to.joinpath(f'section_{float_id}_{variable}')
             plt.savefig(f'{save_path}')
         # Displaying graph
         if visible:
@@ -1577,4 +1582,5 @@ class Argo:
         param_gridded_df = param_gridded_df.reindex(index=intp_pres, columns=unique_times_num)
         # Assigning data to variable to graph
         param_gridded = param_gridded_df.values
+        
         return time_grid, pres_grid, param_gridded
