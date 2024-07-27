@@ -261,22 +261,18 @@ class Argo:
             plt.legend(bbox_to_anchor=(1.05, 0.5), loc='center left')
         # Setting Title
         if len(self.float_ids) == 1:
-            ax.set_title(f'Trajectory of {self.float_ids[0]}', fontsize=18,
-                         fontweight='bold')
+            ax.set_title(f'Trajectory of {self.float_ids[0]}', fontsize=18, fontweight='bold')
         elif len(self.float_ids) < 4:
-            ax.set_title(f'Trajectories of {self.float_ids}', fontsize=18,
-                         fontweight='bold')
+            ax.set_title(f'Trajectories of {self.float_ids}', fontsize=18, fontweight='bold')
         else:
-
-            ax.set_title(f'Trajectories of Selected Floats', fontsize=18,
-                         fontweight='bold')
+            ax.set_title('Trajectories of Selected Floats', fontsize=18, fontweight='bold')
         plt.tight_layout()
 
         # Saving Graph
         if save_to is not None:
             if len(self.float_ids) == 1:
                 save_path = save_to.joinpath(f'trajectories_{self.float_ids}[0]')
-            else: 
+            else:
                 save_path = save_to.joinpath(f'trajectories_plot_{len(self.float_ids)}_floats')
             plt.savefig(f'{save_path}')
 
@@ -1291,8 +1287,6 @@ class Argo:
                             'PRES_ADJUSTED_ERROR']
                 existing_variable_columns = pressure + variable_columns
                 return existing_variable_columns
-            else:
-                return None
         return None
 
 
@@ -1400,7 +1394,6 @@ class Argo:
                                            for item in column_values]
                         # Floats that do not have this column will have NaN here; convert to float
                         column_values = np.char.decode(modified_column, 'utf-8').astype('float')
-                            
                         # Add list of values gathered for column to the temp dataframe
                     temp_frame[column] = column_values
             # Clean up dataframe
@@ -1528,9 +1521,9 @@ class Argo:
         # Titles
         plt.xlabel('Time')
         plt.ylabel('Pressure (dbar)')
-        plt.title(f'{variable} Section of Float {float_id}')        
+        plt.title(f'{variable} Section of Float {float_id}')
         # Saving Graph
-        if save_to is not None:  
+        if save_to is not None:
             save_path = save_to.joinpath(f'section_{float_id}_{variable}')
             plt.savefig(f'{save_path}')
         # Displaying graph
@@ -1582,5 +1575,4 @@ class Argo:
         param_gridded_df = param_gridded_df.reindex(index=intp_pres, columns=unique_times_num)
         # Assigning data to variable to graph
         param_gridded = param_gridded_df.values
-        
         return time_grid, pres_grid, param_gridded
