@@ -266,7 +266,7 @@ class Argo:
             ax.set_title(f'Trajectories of {self.float_ids}', fontsize=18, fontweight='bold')
         else:
             ax.set_title('Trajectories of Selected Floats', fontsize=18, fontweight='bold')
-        plt.tight_layout()
+        plt.tight_layout();
 
         # Saving Graph
         if save_to is not None:
@@ -364,7 +364,8 @@ class Argo:
                 if self.download_settings.verbose:
                     print(f'Float {float_id} has only one profile, skipping this float...')
                 continue
-            print(f'Generating section plots for float {float_id}...')
+            if self.download_settings.verbose:
+                print(f'Generating section plots for float {float_id}...')
             for variable in self.float_variables:
                 # Pulling column for current float and variable
                 float_variable_data = filtered_df[variable]

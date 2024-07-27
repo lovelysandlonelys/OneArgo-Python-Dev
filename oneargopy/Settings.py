@@ -38,7 +38,7 @@ class DownloadSettings():
             downloaded data.
         index_files : list - A list of the index files that will be 
             downloaded.
-        verbose : bool - A boolean value that determines weather to 
+        verbose : bool - A boolean value that determines whether to 
             log verbosely or not.
         update : int - An integer value that determines the threshold
             for updating downloaded files (0: do not update; >0: maximum 
@@ -75,7 +75,7 @@ class DownloadSettings():
             self.index_files =  ["ar_index_global_traj.txt", "ar_index_global_tech.txt",
                                  "ar_index_global_meta.txt", "ar_index_global_prof.txt",
                                  "argo_synthetic-profile_index.txt"]
-            self.verbose = True
+            self.verbose = False
             self.update = 3600
             self.max_attempts = 10
             self.keep_index_in_memory = True
@@ -140,7 +140,7 @@ class AnalysisSettings():
             layer depth calculations measured in degrees Celsius. 
         dens_thresh : float - The density threshold for mixed layer 
             depth calculations measured in kg/m^3.
-        interp_lonlat : bool - A boolean value determining weather 
+        interp_lonlat : bool - A boolean value determining whether 
             or not to interpolate missing latitude and longitude values
     """
     def __init__(self, user_settings: str = None) -> None:
