@@ -1547,6 +1547,7 @@ class Argo:
         time_values_num = mdates.date2num(time_values)
         # Unique values for creating grids
         unique_times_num = np.unique(time_values_num)
+        # Create a pressure axis with regular intervals, covering all existing values
         intp_pres = np.arange(np.ceil(min(pres_values)), np.floor(max(pres_values)))
         # Create grid for interpolation
         time_grid, pres_grid = np.meshgrid(unique_times_num, intp_pres)
